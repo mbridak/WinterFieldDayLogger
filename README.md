@@ -10,6 +10,7 @@ The logger will generate a cabrillo for submission, An ADIF file so you can merg
 
 ## Caveats
 This is a simple logger ment for single op, it's not usable for clubs.
+WFD only has a generic digital mode designator 'DI', which gets exported to the cabrillo file. But ADIF and CloudLog needed something else, So I Chose RTTY. Feel free to change it to what ever you will use. Just search for the two places in the code 'RTTY' is used and Bob's your dads brother. 
 
 ## Initial Setup
 When run for the first time, you will need to set your callsign, class, section, band, mode and power used for the contacts. This can be found at the bottom of the screen.
@@ -28,7 +29,9 @@ If you run rigctld a computer connected to the radio, it can be polled for band/
 ![Alt text](https://github.com/mbridak/pyqtwfdlogger/blob/main/pics/loggerSettingsDialog.png)
 
 #### Cloudlog and QRZ API's
-If you use either Cloudlog logging or QRZ lookup you can click the gear icon to enter your credentials. Q's are pushed to CloudLog as soon as they are logged. 
+If you use either Cloudlog logging or QRZ lookup you can click the gear icon to enter your credentials. Q's are pushed to CloudLog as soon as they are logged.
+
+The QRZ lookup is only used to get the name and gridsquare for the call. Mainly because when a Q is pushed to CloudLog it will not show as a pin on the map unless it has a gridsquare. So this is a scratch my own itch feature.
 
 
 #### Editing an existing contact
@@ -53,3 +56,16 @@ Once you type a complete callsign and press TAB or SPACE to advance to the next 
 
 #### Autofill
 If you have worked this person before on another band/mode the program will load the class and section used previously for this call so you will not have to enter this info again.
+
+#### When the event is over
+After the big weekend, once you've swept up all the broken beer bottles and wiped the BBQ sauce off your chin, go ahead and click the Generate Logs button.
+
+![Alt text](https://github.com/mbridak/pyqtwfdlogger/blob/main/pics/genlog.png)
+
+This will generate the following:
+
+An ADIF log 'WFD.adi'.
+
+A Cabrillo log 'Yourcall.log'. Which you edit to fill in your address etc. If your not using Windows, you must ensure whatever editor you use uses CR/LF line endings. Cause whatever they use at the Winter Field Day society will choke with out them. To be safe you might want to run it through 'unix2dos' before submitting it.
+
+A 'Statistics.txt' file which breaks down your band mode usage. Each unique band/mode combo is a multiplier.
