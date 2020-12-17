@@ -38,14 +38,17 @@ Double click a contact in the upper left of the screen to edit or delete it.
 
 #### Super Check Partial
 If you type more than two characters in the callsign field the program will filter the input through a "Super Check Partial" routine and show you possible matches to known contesting call signs. Is this useful? Doubt it.
+
 ![Alt text](https://github.com/mbridak/pyqtwfdlogger/blob/main/pics/scp.png)
 
 #### Section partial check
 As you type the section abbreviation you are presented with a list of all possible sections that start with what you have typed.
+
 ![Alt text](https://github.com/mbridak/pyqtwfdlogger/blob/main/pics/sectioncheck.png)
 
 #### DUP checking
 Once you type a complete callsign and press TAB or SPACE to advance to the next field. The callsign is checked against previous callsigns in your log. It will list any prior contact made showing the band and mode of the contact. If the band and mode are the same as the one you are currently using, the listing will be highlighted, the screen will flash, a bell will sound to alert you that this is a DUP. At this point you and the other OP can argue back and forth about who's wrong. In the end you'll put your big boy pants on and make a decision if you'll enter the call or not.
+
 ![Alt text](https://github.com/mbridak/pyqtwfdlogger/blob/main/pics/dupe.png)
 
 #### Autofill
