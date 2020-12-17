@@ -13,10 +13,10 @@ from datetime import datetime
 from sqlite3 import Error
 
 class MainWindow(QtWidgets.QMainWindow):
-	database = "WFD_Curses.db"
-	mycall = "YOURCALL"
-	myclass = "CLASS"
-	mysection = "SECT"
+	database = "WFD.db"
+	mycall = ""
+	myclass = ""
+	mysection = ""
 	power = "0"
 	band = "40"
 	mode = "CW"
@@ -106,8 +106,11 @@ class MainWindow(QtWidgets.QMainWindow):
 			else:
 				self.qrzsession = False
 				self.QRZ_icon.setStyleSheet("color: rgb(136, 138, 133);")
+			if r.status_code == 200 and r.text.find('<Error>') > 0:
+				errorText = r.text[r.text.find('<Error>')+7:r.text.find('</Error>')]
+				self.infobox.insertPlainText("\nQRZ Error: "+ errorText + "\n")
 		else:
-			self.QRZ_icon.setStyleSheet("color: rgb(0, 0, 0);")
+			self.QRZ_icon.setStyleSheet("color: rgb(26, 26, 26);")
 			self.qrzsession = False
 
 	def cloudlogauth(self):
@@ -300,7 +303,7 @@ class MainWindow(QtWidgets.QMainWindow):
 			c = conn.cursor()
 			sql_table = """ CREATE TABLE IF NOT EXISTS contacts (id INTEGER PRIMARY KEY, callsign text NOT NULL, class text NOT NULL, section text NOT NULL, date_time text NOT NULL, band text NOT NULL, mode text NOT NULL, power INTEGER NOT NULL); """
 			c.execute(sql_table)
-			sql_table = """ CREATE TABLE IF NOT EXISTS preferences (id INTEGER, mycallsign TEXT DEFAULT 'YOURCALL', myclass TEXT DEFAULT 'YOURCLASS', mysection TEXT DEFAULT 'YOURSECTION', power TEXT DEFAULT '0', altpower INTEGER DEFAULT 0, outdoors INTEGER DEFAULT 0, notathome INTEGER DEFAULT 0, satellite INTEGER DEFAULT 0, qrzusername TEXT DEFAULT 'w1aw', qrzpassword TEXT default 'secret', qrzurl TEXT DEFAULT 'http://xmldata.qrz.com/xml/',cloudlogapi TEXT DEFAULT 'cl12345678901234567890', cloudlogurl TEXT DEFAULT 'http://www.yoururl.com/Cloudlog/index.php/api/qso', useqrz INTEGER DEFAULT 0, usecloudlog INTEGER DEFAULT 0, userigcontrol INTEGER DEFAULT 0, rigcontrolip TEXT DEFAULT '127.0.0.1', rigcontrolport TEXT DEFAULT '4532'); """
+			sql_table = """ CREATE TABLE IF NOT EXISTS preferences (id INTEGER, mycallsign TEXT DEFAULT '', myclass TEXT DEFAULT '', mysection TEXT DEFAULT '', power TEXT DEFAULT '0', altpower INTEGER DEFAULT 0, outdoors INTEGER DEFAULT 0, notathome INTEGER DEFAULT 0, satellite INTEGER DEFAULT 0, qrzusername TEXT DEFAULT 'w1aw', qrzpassword TEXT default 'secret', qrzurl TEXT DEFAULT 'http://xmldata.qrz.com/xml/',cloudlogapi TEXT DEFAULT 'cl12345678901234567890', cloudlogurl TEXT DEFAULT 'http://www.yoururl.com/Cloudlog/index.php/api/qso', useqrz INTEGER DEFAULT 0, usecloudlog INTEGER DEFAULT 0, userigcontrol INTEGER DEFAULT 0, rigcontrolip TEXT DEFAULT '127.0.0.1', rigcontrolport TEXT DEFAULT '4532'); """
 			c.execute(sql_table)
 			conn.commit()
 			conn.close()
