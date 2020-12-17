@@ -129,7 +129,7 @@ dmypy.json
 .pyre/
 
 # Other Stuff
-WFD_Curses.db
+WFD.db
 Statistics.txt
 *.log
 *.adi
