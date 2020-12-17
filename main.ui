@@ -3160,6 +3160,9 @@ color: rgb(0, 0, 0);</string>
       <bold>true</bold>
      </font>
     </property>
+    <property name="styleSheet">
+     <string notr="true">color: rgb(26, 26, 26);</string>
+    </property>
     <property name="text">
      <string>QRZ</string>
     </property>
