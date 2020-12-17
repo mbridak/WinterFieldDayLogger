@@ -14,6 +14,8 @@ This is a simple logger ment for single op, it's not usable for clubs.
 ## Initial Setup
 When run for the first time, you will need to set your callsign, class, section, band, mode and power used for the contacts. This can be found at the bottom of the screen.
 
+![Alt text](https://github.com/mbridak/pyqtwfdlogger/blob/main/pics/yourstuff.png)
+
 ## Logging
 Okay you've made a contact. Enter the call in the call field. As you type it in, it will do a super check partial (see below). Press TAB or SPACE to advance to the next field. Once the call is complete it will do a DUP check (see below). It will try and Autofill the next fields (see below). When entering the section, it will do a section partial check (see below). Press the ENTER key to submit the Q to the log. If it's a busted call or a dup, press the ESC key to clear all inputs and start again.
 
