@@ -14,7 +14,9 @@ WFD only has a generic digital mode designator 'DI', which gets exported to the 
 
 ## Initial Setup
 Install Python 3, then two required libs via pip.
+
 pip install PyQt5
+
 pip install requests
 
 When run for the first time, you will need to set your callsign, class, section, band, mode and power used for the contacts. This can be found at the bottom of the screen.
