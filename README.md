@@ -1,6 +1,6 @@
 ## K6GTE Winter Field Day logger
 
-The logger is written in Python 3, and uses the PyQT5 lib. Qt5 is cross platform so it might work on everything. I myself have only tested it in Linux, YMMV.
+The logger is written in Python 3, and uses the PyQT5 lib. Qt5 is cross platform so it might work on everything. I have tested it on Linux and Windows.
 
 The log is stored in an sqlite3 database file 'WFD.db'. If you need to wipe everything and start clean, just delete this file. Just make wfdlogger.py executable and run it within the same folder.
 
@@ -13,6 +13,10 @@ This is a simple logger ment for single op, it's not usable for clubs.
 WFD only has a generic digital mode designator 'DI', which gets exported to the cabrillo file. But ADIF and CloudLog needed something else, So I Chose RTTY. Feel free to change it to what ever you will use. Just search for the two places in the code 'RTTY' is used and Bob's your dads brother. 
 
 ## Initial Setup
+Install Python 3, then two required libs via pip.
+pip install PyQt5
+pip install requests
+
 When run for the first time, you will need to set your callsign, class, section, band, mode and power used for the contacts. This can be found at the bottom of the screen.
 
 ![Alt text](https://github.com/mbridak/pyqtwfdlogger/blob/main/pics/yourstuff.png)
