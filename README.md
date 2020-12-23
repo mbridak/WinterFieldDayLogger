@@ -1,4 +1,4 @@
-## K6GTE Winter Field Day logger
+## K6GTE Winter Field Day logger (PyQt5)
 
 The logger is written in Python 3, and uses the PyQT5 lib. Qt5 is cross platform so it might work on everything. I have tested it on Linux and Windows.
 
