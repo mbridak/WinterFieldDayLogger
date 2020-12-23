@@ -2,7 +2,7 @@
 
 The logger is written in Python 3, and uses the PyQT5 lib. Qt5 is cross platform so it might work on everything. I have tested it on Linux and Windows.
 
-The log is stored in an sqlite3 database file 'WFD.db'. If you need to wipe everything and start clean, just delete this file. Just make wfdlogger.py executable and run it within the same folder.
+The log is stored in an sqlite3 database file 'WFD.db'. If you need to wipe everything and start clean, just delete this file and re-run wfdlogger.py 
 
 The logger will generate a cabrillo for submission, An ADIF file so you can merge contacts into your normal Log, and a Statistics file with a band mode breakdown.
 
@@ -18,6 +18,10 @@ Install Python 3, then two required libs via pip.
 pip install PyQt5
 
 pip install requests
+
+Just make wfdlogger.py executable and run it within the same folder, or type:
+
+python3 wfdlogger.py
 
 When run for the first time, you will need to set your callsign, class, section, band, mode and power used for the contacts. This can be found at the bottom of the screen.
 
