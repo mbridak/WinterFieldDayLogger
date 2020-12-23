@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Settings</string>
   </property>
   <property name="styleSheet">
    <string notr="true">background-color: rgb(46, 52, 54);
@@ -32,6 +32,14 @@ color: rgb(211, 215, 207);</string>
      <verstretch>0</verstretch>
     </sizepolicy>
    </property>
+   <property name="font">
+    <font>
+     <family>Courier</family>
+     <pointsize>11</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
    <property name="layoutDirection">
     <enum>Qt::LeftToRight</enum>
    </property>
@@ -48,11 +56,19 @@ color: rgb(211, 215, 207);</string>
   <widget class="QLabel" name="label">
    <property name="geometry">
     <rect>
-     <x>40</x>
+     <x>79</x>
      <y>21</y>
-     <width>78</width>
-     <height>17</height>
+     <width>81</width>
+     <height>18</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Courier</family>
+     <pointsize>11</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
    </property>
    <property name="text">
     <string>QRZ Name:</string>
@@ -64,11 +80,19 @@ color: rgb(211, 215, 207);</string>
   <widget class="QLabel" name="label_2">
    <property name="geometry">
     <rect>
-     <x>21</x>
+     <x>42</x>
      <y>64</y>
-     <width>102</width>
-     <height>17</height>
+     <width>117</width>
+     <height>18</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Courier</family>
+     <pointsize>11</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
    </property>
    <property name="text">
     <string>QRZ Password:</string>
@@ -80,11 +104,19 @@ color: rgb(211, 215, 207);</string>
   <widget class="QLabel" name="label_3">
    <property name="geometry">
     <rect>
-     <x>50</x>
+     <x>88</x>
      <y>106</y>
-     <width>65</width>
-     <height>17</height>
+     <width>72</width>
+     <height>18</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Courier</family>
+     <pointsize>11</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
    </property>
    <property name="text">
     <string>QRZ URL:</string>
@@ -96,11 +128,19 @@ color: rgb(211, 215, 207);</string>
   <widget class="QLabel" name="label_4">
    <property name="geometry">
     <rect>
-     <x>21</x>
-     <y>198</y>
-     <width>95</width>
-     <height>17</height>
+     <x>43</x>
+     <y>203</y>
+     <width>117</width>
+     <height>18</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Courier</family>
+     <pointsize>11</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
    </property>
    <property name="text">
     <string>CloudLog API:</string>
@@ -112,11 +152,19 @@ color: rgb(211, 215, 207);</string>
   <widget class="QLabel" name="label_5">
    <property name="geometry">
     <rect>
-     <x>21</x>
-     <y>240</y>
-     <width>100</width>
-     <height>17</height>
+     <x>42</x>
+     <y>244</y>
+     <width>117</width>
+     <height>18</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Courier</family>
+     <pointsize>11</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
    </property>
    <property name="text">
     <string>CloudLog URL:</string>
@@ -128,11 +176,19 @@ color: rgb(211, 215, 207);</string>
   <widget class="QLabel" name="label_6">
    <property name="geometry">
     <rect>
-     <x>30</x>
+     <x>34</x>
      <y>338</y>
-     <width>94</width>
-     <height>17</height>
+     <width>126</width>
+     <height>18</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Courier</family>
+     <pointsize>11</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
    </property>
    <property name="text">
     <string>RigControl IP:</string>
@@ -144,11 +200,19 @@ color: rgb(211, 215, 207);</string>
   <widget class="QLabel" name="label_7">
    <property name="geometry">
     <rect>
-     <x>21</x>
+     <x>16</x>
      <y>380</y>
-     <width>110</width>
-     <height>17</height>
+     <width>144</width>
+     <height>18</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Courier</family>
+     <pointsize>11</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
    </property>
    <property name="text">
     <string>RigControl Port:</string>
@@ -160,11 +224,25 @@ color: rgb(211, 215, 207);</string>
   <widget class="QCheckBox" name="useqrz_checkBox">
    <property name="geometry">
     <rect>
-     <x>140</x>
+     <x>240</x>
      <y>140</y>
-     <width>84</width>
-     <height>23</height>
+     <width>86</width>
+     <height>21</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Courier</family>
+     <pointsize>11</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="autoFillBackground">
+    <bool>false</bool>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">border: 1px solid red;</string>
    </property>
    <property name="text">
     <string>Use QRZ</string>
@@ -173,11 +251,22 @@ color: rgb(211, 215, 207);</string>
   <widget class="QCheckBox" name="usecloudlog_checkBox">
    <property name="geometry">
     <rect>
-     <x>140</x>
+     <x>240</x>
      <y>280</y>
-     <width>119</width>
-     <height>23</height>
+     <width>131</width>
+     <height>21</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Courier</family>
+     <pointsize>11</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">border: 1px solid red;</string>
    </property>
    <property name="text">
     <string>Use CloudLog</string>
@@ -186,11 +275,22 @@ color: rgb(211, 215, 207);</string>
   <widget class="QCheckBox" name="userigcontrol_checkBox">
    <property name="geometry">
     <rect>
-     <x>140</x>
+     <x>240</x>
      <y>420</y>
-     <width>127</width>
-     <height>23</height>
+     <width>149</width>
+     <height>21</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Courier</family>
+     <pointsize>11</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">border: 1px solid red;</string>
    </property>
    <property name="text">
     <string>Use RigControl</string>
@@ -205,6 +305,14 @@ color: rgb(211, 215, 207);</string>
      <height>25</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <family>Courier</family>
+     <pointsize>11</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
    <property name="text">
     <string>W1AW</string>
    </property>
@@ -217,6 +325,14 @@ color: rgb(211, 215, 207);</string>
      <width>142</width>
      <height>25</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Courier</family>
+     <pointsize>11</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
    </property>
    <property name="text">
     <string>Secret</string>
@@ -231,6 +347,14 @@ color: rgb(211, 215, 207);</string>
      <height>25</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <family>Courier</family>
+     <pointsize>11</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
    <property name="text">
     <string>http://xmldata.qrz.com/xml/</string>
    </property>
@@ -243,6 +367,14 @@ color: rgb(211, 215, 207);</string>
      <width>211</width>
      <height>25</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Courier</family>
+     <pointsize>11</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
    </property>
    <property name="text">
     <string>cl12345678901234567890</string>
@@ -257,6 +389,14 @@ color: rgb(211, 215, 207);</string>
      <height>25</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <family>Courier</family>
+     <pointsize>11</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
    <property name="text">
     <string>http://www.yoururl.com/Cloudlog/index.php/api/qso</string>
    </property>
@@ -269,6 +409,14 @@ color: rgb(211, 215, 207);</string>
      <width>142</width>
      <height>25</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Courier</family>
+     <pointsize>11</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
    </property>
    <property name="text">
     <string>127.0.0.1</string>
@@ -283,6 +431,14 @@ color: rgb(211, 215, 207);</string>
      <height>25</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <family>Courier</family>
+     <pointsize>11</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
    <property name="text">
     <string>4532</string>
    </property>
@@ -296,6 +452,14 @@ color: rgb(211, 215, 207);</string>
      <height>20</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <family>Courier</family>
+     <pointsize>11</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
    <property name="orientation">
     <enum>Qt::Horizontal</enum>
    </property>
@@ -308,6 +472,14 @@ color: rgb(211, 215, 207);</string>
      <width>541</width>
      <height>16</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Courier</family>
+     <pointsize>11</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
    </property>
    <property name="orientation">
     <enum>Qt::Horizontal</enum>
