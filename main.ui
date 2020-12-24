@@ -17,7 +17,7 @@
    </font>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>K6GTE Winter Field Day Logger</string>
   </property>
   <property name="autoFillBackground">
    <bool>false</bool>

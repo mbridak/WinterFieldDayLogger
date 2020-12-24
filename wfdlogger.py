@@ -60,7 +60,6 @@ class MainWindow(QtWidgets.QMainWindow):
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		uic.loadUi("main.ui", self)
-		self.setWindowTitle("K6GTE Winter Field Day Logger")
 		self.listWidget.itemDoubleClicked.connect(self.qsoclicked)
 		self.altpowerButton.clicked.connect(self.claimAltPower)
 		self.outdoorsButton.clicked.connect(self.claimOutdoors)
@@ -341,8 +340,7 @@ class MainWindow(QtWidgets.QMainWindow):
 					self.useqrz = bool(useqrz)
 					self.userigctl = bool(userigcontrol)
 			else:
-				sql = "INSERT INTO preferences(id, mycallsign, myclass, mysection, power, altpower, outdoors, notathome, satellite) VALUES(1,'" + self.mycall + "','" + self.myclass + "','" + self.mysection + "','" + self.power + "'," + str(
-					int(self.altpower)) + "," + str(int(self.outdoors)) + "," + str(int(self.notathome)) + "," + str(int(self.satellite)) + ")"
+				sql = f"INSERT INTO preferences(id, mycallsign, myclass, mysection, power, altpower, outdoors, notathome, satellite) VALUES(1,'{self.mycall}','{self.myclass}','{self.mysection}','{self.power}',{int(self.altpower)},{int(self.outdoors)},{int(self.notathome)},{int(self.satellite)})"
 				c.execute(sql)
 				conn.commit()
 			conn.close()
@@ -352,9 +350,7 @@ class MainWindow(QtWidgets.QMainWindow):
 	def writepreferences(self):
 		try:
 			conn = sqlite3.connect(self.database)
-			sql = "UPDATE preferences SET mycallsign = '" + self.mycall + "', myclass = '" + self.myclass + "', mysection = '" + self.mysection + "', power = '" + str(self.power_selector.value()) + "', altpower = " + str(
-				int(self.altpower)) + ", outdoors = " + str(int(self.outdoors)) + ", notathome = " + str(
-				int(self.notathome)) + ", satellite = " + str(int(self.satellite)) + " WHERE id = 1"
+			sql = f"UPDATE preferences SET mycallsign = '{self.mycall}', myclass = '{self.myclass}', mysection = '{self.mysection}', power = '{self.power_selector.value()}', altpower = {int(self.altpower)}, outdoors = {int(self.outdoors)}, notathome = {int(self.notathome)}, satellite = {int(self.satellite)} WHERE id = 1"
 			cur = conn.cursor()
 			cur.execute(sql)
 			conn.commit()
@@ -460,8 +456,7 @@ class MainWindow(QtWidgets.QMainWindow):
 			hissection = hissection + sectfiller[:-len(hissection)]
 			band = band + bandfiller[:-len(band)]
 			mode = mode + modefiller[:-len(mode)]
-			logline = logid + " " + hiscall + " " + hisclass + " " + hissection + " " + datetime + " " + band + " " + mode + " " + str(
-				power)
+			logline = f"{logid} {hiscall} {hisclass} {hissection} {datetime} {band} {mode} {power}"
 			self.listWidget.addItem(logline)
 	
 	def qsoclicked(self):
@@ -521,8 +516,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		self.infobox.clear()
 		conn = sqlite3.connect(self.database)
 		c = conn.cursor()
-		c.execute(
-			"select callsign, class, section, band, mode from contacts where callsign like '" + acall + "' order by band")
+		c.execute(f"select callsign, class, section, band, mode from contacts where callsign like '{acall}' order by band")
 		log = c.fetchall()
 		conn.close()
 		for x in log:
@@ -534,7 +528,7 @@ class MainWindow(QtWidgets.QMainWindow):
 				self.infobox.setTextColor(QtGui.QColor(245, 121, 0))
 			else:
 				self.infobox.setTextColor(QtGui.QColor(211, 215, 207))
-			self.infobox.insertPlainText(hiscall + ": " + hisband + " " + hismode + "\n")
+			self.infobox.insertPlainText(f"{hiscall}: {hisband} {hismode}\n")
 
 	def workedSections(self):
 		conn = sqlite3.connect(self.database)
@@ -693,7 +687,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		conn = ""
 		conn = sqlite3.connect(self.database)
 		c = conn.cursor()
-		c.execute("select count(*) as tally, MAX(power) as mpow from contacts where band = '"+band+"' AND mode ='"+mode+"'")
+		c.execute(f"select count(*) as tally, MAX(power) as mpow from contacts where band = '{band}' AND mode ='{mode}'")
 		return c.fetchone()
 
 	def getbands(self):
@@ -718,7 +712,7 @@ class MainWindow(QtWidgets.QMainWindow):
 				cwt = self.getBandModeTally(b,"CW")
 				dit = self.getBandModeTally(b,"DI")
 				pht = self.getBandModeTally(b,"PH")
-				print("Band:\t%s\t%s\t%s\t%s\t%s\t%s\t%s" % (b, cwt[0], cwt[1], dit[0], dit[1], pht[0], pht[1]), end='\r\n', file=open(bmtfn, "a"))
+				print(f"Band:\t{b}\t{cwt[0]}\t{cwt[1]}\t{dit[0]}\t{dit[1]}\t{pht[0]}\t{pht[1]}", end='\r\n', file=open(bmtfn, "a"))
 				print("-"*60, end='\r\n', file=open(bmtfn, "a"))
 
 	def getState(self, section):
@@ -773,28 +767,29 @@ class MainWindow(QtWidgets.QMainWindow):
 								name += " " + r.text[r.text.find('<name>')+6:r.text.find('</name>')]
 			except:
 				pass
-			print("<QSO_DATE:%s:d>%s" % (len("".join(loggeddate.split("-"))), "".join(loggeddate.split("-"))), end='\r\n', file=open(logname, "a"))
-			print("<TIME_ON:%s>%s" % (len(loggedtime), loggedtime), end='\r\n', file=open(logname, "a"))
-			print("<CALL:%s>%s" % (len(hiscall), hiscall), end='\r\n', file=open(logname, "a"))
-			print("<MODE:%s>%s" % (len(mode), mode), end='\r\n', file=open(logname, "a"))
-			print("<BAND:%s>%s" % (len(band + "M"), band + "M"), end='\r\n', file=open(logname, "a"))
+			print(f"<QSO_DATE:{len(''.join(loggeddate.split('-')))}:d>{''.join(loggeddate.split('-'))}", end='\r\n', file=open(logname, 'a'))
+			print(f"<TIME_ON:{len(loggedtime)}>{loggedtime}", end='\r\n', file=open(logname, 'a'))
+			print(f"<CALL:{len(hiscall)}>{hiscall}", end='\r\n', file=open(logname, 'a'))
+			print(f"<MODE:{len(mode)}>{mode}", end='\r\n', file=open(logname, 'a'))
+			print(f"<BAND:{len(band + 'M')}>{band + 'M'}", end='\r\n', file=open(logname, 'a'))
 			try:
-				print("<FREQ:%s>%s" % (len(self.dfreq[band]), self.dfreq[band]), end='\r\n', file=open(logname, "a"))
+				print(f"<FREQ:{len(self.dfreq[band])}>{self.dfreq[band]}", end='\r\n', file=open(logname, 'a'))
 			except:
 				pass
-			print("<RST_SENT:%s>%s" % (len(rst), rst), end='\r\n', file=open(logname, "a"))
-			print("<RST_RCVD:%s>%s" % (len(rst), rst), end='\r\n', file=open(logname, "a"))
-			print("<STX_STRING:%s>%s" % (len(self.myclass + " " + self.mysection), self.myclass + " " + self.mysection), end='\r\n', file=open(logname, "a"))
-			print("<SRX_STRING:%s>%s" % (len(hisclass + " " + hissection), hisclass + " " + hissection), end='\r\n', file=open(logname, "a"))
-			print("<ARRL_SECT:%s>%s" % (len(hissection), hissection), end='\r\n', file=open(logname, "a"))
-			print("<CLASS:%s>%s" % (len(hisclass), hisclass), end='\r\n', file=open(logname, "a"))
+			print(f"<RST_SENT:{len(rst)}>{rst}", end='\r\n', file=open(logname, 'a'))
+			print(f"<RST_RCVD:{len(rst)}>{rst}", end='\r\n', file=open(logname, 'a'))
+			print(f"<STX_STRING:{len(self.myclass + ' ' + self.mysection)}>{self.myclass + ' ' + self.mysection}", end='\r\n', file=open(logname, 'a'))
+			print(f"<SRX_STRING:{len(hisclass + ' ' + hissection)}>{hisclass + ' ' + hissection}", end='\r\n', file=open(logname, 'a'))
+			print(f"<ARRL_SECT:{len(hissection)}>{hissection}", end='\r\n', file=open(logname, 'a'))
+			print(f"<CLASS:{len(hisclass)}>{hisclass}", end='\r\n', file=open(logname, 'a'))
 			state = self.getState(hissection)
-			if state: print("<STATE:%s>%s" % (len(state), state), end='\r\n', file=open(logname, "a"))
-			if grid: print("<GRIDSQUARE:%s>%s" % (len(grid), grid), end='\r\n', file=open(logname, "a"))
-			if name: print("<NAME:%s>%s" % (len(name), name), end='\r\n', file=open(logname, "a"))
-			print("<COMMENT:19>WINTER-FIELD-DAY", end='\r\n', file=open(logname, "a"))
-			print("<EOR>", end='\r\n', file=open(logname, "a"))
-			print("", end='\r\n', file=open(logname, "a"))
+			if state: print(f"<STATE:{len(state)}>{state}", end='\r\n', file=open(logname, 'a'))
+			if grid: print(f"<GRIDSQUARE:{len(grid)}>{grid}", end='\r\n', file=open(logname, 'a'))
+			if name: print(f"<NAME:{len(name)}>{name}", end='\r\n', file=open(logname, 'a'))
+			comment = "WINTER-FIELD-DAY"
+			print(f"<COMMENT:{len(comment)}>{comment}", end='\r\n', file=open(logname, 'a'))
+			print("<EOR>", end='\r\n', file=open(logname, 'a'))
+			print("", end='\r\n', file=open(logname, 'a'))
 		self.infobox.insertPlainText("Done\n\n")
 		app.processEvents()
 
@@ -830,23 +825,24 @@ class MainWindow(QtWidgets.QMainWindow):
 			rst = "59"
 		loggeddate = datetime[:10]
 		loggedtime = datetime[11:13] + datetime[14:16]
-		adifq = "<QSO_DATE:%s:d>%s" % (len("".join(loggeddate.split("-"))), "".join(loggeddate.split("-")))
-		adifq += "<TIME_ON:%s>%s" % (len(loggedtime), loggedtime)
-		adifq += "<CALL:%s>%s" % (len(hiscall), hiscall)
-		adifq += "<MODE:%s>%s" % (len(mode), mode)
-		adifq += "<BAND:%s>%s" % (len(band + "M"), band + "M")
-		adifq += "<FREQ:%s>%s" % (len(self.dfreq[band]), self.dfreq[band])
-		adifq += "<RST_SENT:%s>%s" % (len(rst), rst)
-		adifq += "<RST_RCVD:%s>%s" % (len(rst), rst)
-		adifq += "<STX_STRING:%s>%s" % (len(self.myclass + " " + self.mysection), self.myclass + " " + self.mysection)
-		adifq += "<SRX_STRING:%s>%s" % (len(hisclass + " " + hissection), hisclass + " " + hissection)
-		adifq += "<ARRL_SECT:%s>%s" % (len(hissection), hissection)
-		adifq += "<CLASS:%s>%s" % (len(hisclass), hisclass)
+		adifq = f"<QSO_DATE:{len(''.join(loggeddate.split('-')))}:d>{''.join(loggeddate.split('-'))}"
+		adifq += f"<TIME_ON:{len(loggedtime)}>{loggedtime}"
+		adifq += f"<CALL:{len(hiscall)}>{hiscall}"
+		adifq += f"<MODE:{len(mode)}>{mode}"
+		adifq += f"<BAND:{len(band + 'M')}>{band + 'M'}"
+		adifq += f"<FREQ:{len(self.dfreq[band])}>{self.dfreq[band]}"
+		adifq += f"<RST_SENT:{len(rst)}>{rst}"
+		adifq += f"<RST_RCVD:{len(rst)}>{rst}"
+		adifq += f"<STX_STRING:{len(self.myclass + ' ' + self.mysection)}>{self.myclass + ' ' + self.mysection}"
+		adifq += f"<SRX_STRING:{len(hisclass + ' ' + hissection)}>{hisclass + ' ' + hissection}"
+		adifq += f"<ARRL_SECT:{len(hissection)}>{hissection}"
+		adifq += f"<CLASS:{len(hisclass)}>{hisclass}"
 		state = self.getState(hissection)
-		if state: adifq += "<STATE:%s>%s" % (len(state), state)
-		if grid: adifq += "<GRIDSQUARE:%s>%s" % (len(grid), grid)
-		if name: adifq += "<NAME:%s>%s" % (len(name), name)
-		adifq += "<COMMENT:16>Winter Field Day"
+		if state: adifq += f"<STATE:{len(state)}>{state}"
+		if grid: adifq += f"<GRIDSQUARE:{len(grid)}>{grid}"
+		if name: adifq += f"<NAME:{len(name)}>{name}"
+		comment = "Winter Field Day"
+		adifq += f"<COMMENT:{len(comment)}>{comment}"
 		adifq += "<EOR>"
 
 		payloadDict = {
@@ -860,7 +856,7 @@ class MainWindow(QtWidgets.QMainWindow):
 	def cabrillo(self):
 		filename = self.mycall.upper()+".log"
 		self.infobox.setTextColor(QtGui.QColor(211, 215, 207))
-		self.infobox.insertPlainText("Saving cabrillo to: "+filename)
+		self.infobox.insertPlainText(f"Saving cabrillo to: {filename}")
 		app.processEvents()
 		bonuses = 0
 		conn = sqlite3.connect(self.database)
@@ -879,11 +875,11 @@ class MainWindow(QtWidgets.QMainWindow):
 		print("START-OF-LOG: 3.0", end='\r\n', file=open(filename, "w"))
 		print("CREATED-BY: K6GTE Winter Field Day Logger", end='\r\n', file=open(filename, "a"))
 		print("CONTEST: WFD", end='\r\n', file=open(filename, "a"))
-		print("CALLSIGN:", self.mycall, end='\r\n', file=open(filename, "a"))
+		print(f"CALLSIGN: {self.mycall}", end='\r\n', file=open(filename, "a"))
 		print("LOCATION:", end='\r\n', file=open(filename, "a"))
-		print("ARRL-SECTION:", self.mysection, end='\r\n', file=open(filename, "a"))
-		print("CATEGORY:", self.myclass, end='\r\n', file=open(filename, "a"))
-		print("CATEGORY-POWER: " + catpower, end='\r\n', file=open(filename, "a"))
+		print(f"ARRL-SECTION: {self.mysection}", end='\r\n', file=open(filename, "a"))
+		print(f"CATEGORY: {self.myclass}", end='\r\n', file=open(filename, "a"))
+		print(f"CATEGORY-POWER: {catpower}", end='\r\n', file=open(filename, "a"))
 		if self.altpower:
 			print("SOAPBOX: 1,500 points for not using commercial power", end='\r\n', file=open(filename, "a"))
 			bonuses = bonuses + 1500
@@ -896,10 +892,9 @@ class MainWindow(QtWidgets.QMainWindow):
 		if self.satellite:
 			print("SOAPBOX: 1,500 points for working satellite", end='\r\n', file=open(filename, "a"))
 			bonuses = bonuses + 1500
-		print("SOAPBOX: BONUS Total " + str(bonuses), end='\r\n', file=open(filename, "a"))
-
-		print("CLAIMED-SCORE: " + str(self.calcscore()), end='\r\n', file=open(filename, "a"))
-		print("OPERATORS:", self.mycall, end='\r\n', file=open(filename, "a"))
+		print(f"SOAPBOX: BONUS Total {bonuses}", end='\r\n', file=open(filename, "a"))
+		print(f"CLAIMED-SCORE: {self.calcscore()}", end='\r\n', file=open(filename, "a"))
+		print(f"OPERATORS:{self.mycall}", end='\r\n', file=open(filename, "a"))
 		print("NAME: ", end='\r\n', file=open(filename, "a"))
 		print("ADDRESS: ", end='\r\n', file=open(filename, "a"))
 		print("ADDRESS-CITY: ", end='\r\n', file=open(filename, "a"))
@@ -911,9 +906,7 @@ class MainWindow(QtWidgets.QMainWindow):
 			_, hiscall, hisclass, hissection, datetime, band, mode, _ = x
 			loggeddate = datetime[:10]
 			loggedtime = datetime[11:13] + datetime[14:16]
-			# print(value1, ..., sep=' ', end='\r\n', file=sys.stdout, flush=False)
-			print("QSO:", band + "M", mode, loggeddate, loggedtime, self.mycall, self.myclass, self.mysection, hiscall, hisclass,
-				hissection, sep=' ', end='\r\n', file=open(filename, "a"))
+			print(f"QSO: {band}M {mode} {loggeddate} {loggedtime} {self.mycall} {self.myclass} {self.mysection} {hiscall} {hisclass} {hissection}", end='\r\n', file=open(filename, "a"))
 		print("END-OF-LOG:", end='\r\n', file=open(filename, "a"))
 		self.infobox.insertPlainText(" Done\n\n")
 		app.processEvents()
@@ -947,7 +940,7 @@ class editQSODialog(QtWidgets.QDialog):
 	def saveChanges(self):
 		try:
 			conn = sqlite3.connect(window.database)
-			sql = "update contacts set callsign = '"+self.editCallsign.text()+"', class = '"+self.editClass.text()+"', section = '"+self.editSection.text()+"', date_time = '"+self.editDateTime.text()+"', band = '"+self.editBand.currentText()+"', mode = '"+self.editMode.currentText()+"', power = '"+str(self.editPower.value())+"'  where id="+ self.theitem
+			sql = f"update contacts set callsign = '{self.editCallsign.text()}', class = '{self.editClass.text()}', section = '{self.editSection.text()}', date_time = '{self.editDateTime.text()}', band = '{self.editBand.currentText()}', mode = '{self.editMode.currentText()}', power = '{self.editPower.value()}'  where id={self.theitem}"
 			cur = conn.cursor()
 			cur.execute(sql)
 			conn.commit()
@@ -961,7 +954,7 @@ class editQSODialog(QtWidgets.QDialog):
 	def delete_contact(self):
 		try:
 			conn = sqlite3.connect(window.database)
-			sql = "delete from contacts where id=" + self.theitem
+			sql = f"delete from contacts where id={self.theitem}"
 			cur = conn.cursor()
 			cur.execute(sql)
 			conn.commit()
@@ -1002,7 +995,7 @@ class settings(QtWidgets.QDialog):
 	def saveChanges(self):
 		try:
 			conn = sqlite3.connect(window.database)
-			sql = "UPDATE preferences SET qrzusername = '"+self.qrzname_field.text()+"', qrzpassword = '"+self.qrzpass_field.text()+"', qrzurl = '"+self.qrzurl_field.text()+"', cloudlogapi = '"+self.cloudlogapi_field.text()+"', cloudlogurl = '"+self.cloudlogurl_field.text()+"', rigcontrolip = '"+self.rigcontrolip_field.text()+"', rigcontrolport = '"+self.rigcontrolport_field.text()+ "', useqrz = '"+str(int(self.useqrz_checkBox.isChecked()))+ "', usecloudlog = '"+str(int(self.usecloudlog_checkBox.isChecked()))+"', userigcontrol = '"+str(int(self.userigcontrol_checkBox.isChecked()))+"'  where id=1;"
+			sql = f"UPDATE preferences SET qrzusername = '{self.qrzname_field.text()}', qrzpassword = '{self.qrzpass_field.text()}', qrzurl = '{self.qrzurl_field.text()}', cloudlogapi = '{self.cloudlogapi_field.text()}', cloudlogurl = '{self.cloudlogurl_field.text()}', rigcontrolip = '{self.rigcontrolip_field.text()}', rigcontrolport = '{self.rigcontrolport_field.text()}', useqrz = '{int(self.useqrz_checkBox.isChecked())}', usecloudlog = '{int(self.usecloudlog_checkBox.isChecked())}', userigcontrol = '{int(self.userigcontrol_checkBox.isChecked())}'  where id=1;"
 			cur = conn.cursor()
 			cur.execute(sql)
 			conn.commit()
