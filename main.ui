@@ -3161,10 +3161,10 @@ color: rgb(0, 0, 0);</string>
    <widget class="QLabel" name="label_7">
     <property name="geometry">
      <rect>
-      <x>649</x>
-      <y>500</y>
-      <width>41</width>
-      <height>20</height>
+      <x>645</x>
+      <y>501</y>
+      <width>32</width>
+      <height>16</height>
      </rect>
     </property>
     <property name="font">
@@ -3185,10 +3185,10 @@ color: rgb(0, 0, 0);</string>
    <widget class="QLabel" name="label_8">
     <property name="geometry">
      <rect>
-      <x>639</x>
-      <y>473</y>
-      <width>51</width>
-      <height>20</height>
+      <x>645</x>
+      <y>476</y>
+      <width>32</width>
+      <height>16</height>
      </rect>
     </property>
     <property name="font">
@@ -3200,7 +3200,7 @@ color: rgb(0, 0, 0);</string>
      </font>
     </property>
     <property name="text">
-     <string>Local:</string>
+     <string>LOC:</string>
     </property>
     <property name="alignment">
      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -3209,15 +3209,16 @@ color: rgb(0, 0, 0);</string>
    <widget class="QLabel" name="localtime">
     <property name="geometry">
      <rect>
-      <x>690</x>
+      <x>681</x>
       <y>476</y>
-      <width>101</width>
-      <height>17</height>
+      <width>110</width>
+      <height>16</height>
      </rect>
     </property>
     <property name="font">
      <font>
       <family>Courier</family>
+      <pointsize>10</pointsize>
       <weight>75</weight>
       <bold>true</bold>
      </font>
@@ -3229,15 +3230,16 @@ color: rgb(0, 0, 0);</string>
    <widget class="QLabel" name="utctime">
     <property name="geometry">
      <rect>
-      <x>690</x>
-      <y>502</y>
-      <width>101</width>
-      <height>17</height>
+      <x>681</x>
+      <y>501</y>
+      <width>110</width>
+      <height>16</height>
      </rect>
     </property>
     <property name="font">
      <font>
       <family>Courier</family>
+      <pointsize>10</pointsize>
       <weight>75</weight>
       <bold>true</bold>
      </font>
