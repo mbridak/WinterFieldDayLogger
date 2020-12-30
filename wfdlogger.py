@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+
+#Nothing to see here move along.
+#xplanet -body earth -window -longitude -117 -latitude 38 -config Default -projection azmithal -radius 200
+
+
 import json
 import requests
 import sys
@@ -11,6 +16,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5 import uic
 from datetime import datetime
 from sqlite3 import Error
+from pathlib import Path
 
 class MainWindow(QtWidgets.QMainWindow):
 	database = "WFD.db"
@@ -300,7 +306,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		try:
 			conn = sqlite3.connect(self.database)
 			c = conn.cursor()
-			sql_table = """ CREATE TABLE IF NOT EXISTS contacts (id INTEGER PRIMARY KEY, callsign text NOT NULL, class text NOT NULL, section text NOT NULL, date_time text NOT NULL, band text NOT NULL, mode text NOT NULL, power INTEGER NOT NULL); """
+			sql_table = """ CREATE TABLE IF NOT EXISTS contacts (id INTEGER PRIMARY KEY, callsign text NOT NULL, class text NOT NULL, section text NOT NULL, date_time text NOT NULL, band text NOT NULL, mode text NOT NULL, power INTEGER NOT NULL, grid text NOT NULL, opname text NOT NULL); """
 			c.execute(sql_table)
 			sql_table = """ CREATE TABLE IF NOT EXISTS preferences (id INTEGER, mycallsign TEXT DEFAULT '', myclass TEXT DEFAULT '', mysection TEXT DEFAULT '', power TEXT DEFAULT '0', altpower INTEGER DEFAULT 0, outdoors INTEGER DEFAULT 0, notathome INTEGER DEFAULT 0, satellite INTEGER DEFAULT 0, qrzusername TEXT DEFAULT 'w1aw', qrzpassword TEXT default 'secret', qrzurl TEXT DEFAULT 'http://xmldata.qrz.com/xml/',cloudlogapi TEXT DEFAULT 'cl12345678901234567890', cloudlogurl TEXT DEFAULT 'http://www.yoururl.com/Cloudlog/index.php/api/qso', useqrz INTEGER DEFAULT 0, usecloudlog INTEGER DEFAULT 0, userigcontrol INTEGER DEFAULT 0, rigcontrolip TEXT DEFAULT '127.0.0.1', rigcontrolport TEXT DEFAULT '4532'); """
 			c.execute(sql_table)
@@ -360,10 +366,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
 	def log_contact(self):
 		if(len(self.callsign_entry.text()) == 0 or len(self.class_entry.text()) == 0 or len(self.section_entry.text()) == 0): return
-		contact = (self.callsign_entry.text(), self.class_entry.text(), self.section_entry.text(), self.band, self.mode, int(self.power_selector.value()))
+		grid, opname = self.qrzlookup(self.callsign_entry.text())
+		contact = (self.callsign_entry.text(), self.class_entry.text(), self.section_entry.text(), self.band, self.mode, int(self.power_selector.value()), grid, opname)
 		try:
 			conn = sqlite3.connect(self.database)
-			sql = "INSERT INTO contacts(callsign, class, section, date_time, band, mode, power) VALUES(?,?,?,datetime('now'),?,?,?)"
+			sql = "INSERT INTO contacts(callsign, class, section, date_time, band, mode, power, grid, opname) VALUES(?,?,?,datetime('now'),?,?,?,?,?)"
 			cur = conn.cursor()
 			cur.execute(sql, contact)
 			conn.commit()
@@ -372,6 +379,7 @@ class MainWindow(QtWidgets.QMainWindow):
 			print(e)
 		self.sections()
 		self.stats()
+		#self.updatemarker(self.callsign_entry.text())
 		self.logwindow()
 		self.clearinputs()
 		self.postcloudlog()
@@ -449,7 +457,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		log = c.fetchall()
 		conn.close()
 		for x in log:
-			logid, hiscall, hisclass, hissection, datetime, band, mode, power = x
+			logid, hiscall, hisclass, hissection, datetime, band, mode, power, _, _ = x
 			logid = zerofiller[:-len(str(logid))] + str(logid)
 			hiscall = hiscall + callfiller[:-len(hiscall)]
 			hisclass = hisclass + classfiller[:-len(hisclass)]
@@ -523,12 +531,14 @@ class MainWindow(QtWidgets.QMainWindow):
 			hiscall, hisclass, hissection, hisband, hismode = x
 			if len(self.class_entry.text()) == 0: self.class_entry.setText(hisclass)
 			if len(self.section_entry.text()) == 0: self.section_entry.setText(hissection)
+			dupetext=""
 			if hisband == self.band and hismode == self.mode:
 				self.flash()
 				self.infobox.setTextColor(QtGui.QColor(245, 121, 0))
+				dupetext = " DUP!!!"
 			else:
 				self.infobox.setTextColor(QtGui.QColor(211, 215, 207))
-			self.infobox.insertPlainText(f"{hiscall}: {hisband} {hismode}\n")
+			self.infobox.insertPlainText(f"{hiscall}: {hisband} {hismode}{dupetext}\n")
 
 	def workedSections(self):
 		conn = sqlite3.connect(self.database)
@@ -724,6 +734,71 @@ class MainWindow(QtWidgets.QMainWindow):
 			return False
 		return False
 
+	def gridtolatlon(self, maiden):
+		maiden = str(maiden).strip().upper()
+
+		N = len(maiden)
+		if not 8 >= N >= 2 and N % 2 == 0:
+			return 0,0
+
+		lon = (ord(maiden[0]) - 65) * 20 - 180
+		lat = (ord(maiden[1]) - 65) * 10 - 90
+
+		if N >= 4:
+			lon += (ord(maiden[2])-48) * 2
+			lat += (ord(maiden[3])-48)
+
+		if N >= 6:
+			lon += (ord(maiden[4]) - 65) / 12 + 1 / 24
+			lat += (ord(maiden[5]) - 65) / 24 + 1 / 48
+
+		if N >= 8:
+			lon += (ord(maiden[6])) * 5.0 / 600
+			lat += (ord(maiden[7])) * 2.5 / 600
+
+		return lat, lon
+
+#	def updatemarker(self, call):
+#		return
+#		print(f"looking up call {call}")
+#		markerfile = "/.xplanet/markers/wfd"
+#		grid = False
+#		try:
+#			if self.qrzsession and self.useqrz:
+#				payload = {'s':self.qrzsession, 'callsign':call}
+#				r=requests.get(self.qrzurl,params=payload, timeout=3.0)
+#				if r.status_code == 200:
+#					if r.text.find('<grid>') > 0:
+#						grid = r.text[r.text.find('<grid>')+6:r.text.find('</grid>')]
+#		except:
+#			pass
+#
+#		if grid:
+#			lat, lon = self.gridtolatlon(grid)
+#			print(f'{lat} {lon} "{call}"', end='\r\n', file=open(str(Path.home())+markerfile, "a"))
+
+	def qrzlookup(self, call):
+		grid = False
+		name = False
+		try:
+			if self.qrzsession and self.useqrz:
+				payload = {'s':self.qrzsession, 'callsign':call}
+				r=requests.get(self.qrzurl,params=payload, timeout=3.0)
+				if r.status_code == 200:
+					if r.text.find('<grid>') > 0:
+						grid = r.text[r.text.find('<grid>')+6:r.text.find('</grid>')]
+					if r.text.find('<fname>') > 0:
+						name = r.text[r.text.find('<fname>')+7:r.text.find('</fname>')]
+					if r.text.find('<name>') > 0:
+						if not name:
+							name = r.text[r.text.find('<name>')+6:r.text.find('</name>')]
+						else:
+							name += " " + r.text[r.text.find('<name>')+6:r.text.find('</name>')]
+		except:
+			pass
+		return grid, name
+
+
 	def adif(self):
 		logname = "WFD.adi"
 		self.infobox.setTextColor(QtGui.QColor(211, 215, 207))
@@ -735,12 +810,11 @@ class MainWindow(QtWidgets.QMainWindow):
 		log = c.fetchall()
 		conn.close()
 		grid = False
+		opname = False
 		print("<ADIF_VER:5>2.2.0", end='\r\n', file=open(logname, "w"))
 		print("<EOH>", end='\r\n', file=open(logname, "a"))
 		for x in log:
-			self.infobox.insertPlainText(".")
-			app.processEvents()
-			_, hiscall, hisclass, hissection, datetime, band, mode, _ = x
+			_, hiscall, hisclass, hissection, datetime, band, mode, _, grid, opname = x
 			if mode == "DI": mode = "RTTY"
 			if mode == "PH": mode = "SSB"
 			if mode == "CW":
@@ -749,24 +823,6 @@ class MainWindow(QtWidgets.QMainWindow):
 				rst = "59"
 			loggeddate = datetime[:10]
 			loggedtime = datetime[11:13] + datetime[14:16]
-			grid = False
-			name = False
-			try:
-				if self.qrzsession and self.useqrz:
-					payload = {'s':self.qrzsession, 'callsign':hiscall}
-					r=requests.get(self.qrzurl,params=payload, timeout=3.0)
-					if r.status_code == 200:
-						if r.text.find('<grid>') > 0:
-							grid = r.text[r.text.find('<grid>')+6:r.text.find('</grid>')]
-						if r.text.find('<fname>') > 0:
-							name = r.text[r.text.find('<fname>')+7:r.text.find('</fname>')]
-						if r.text.find('<name>') > 0:
-							if not name:
-								name = r.text[r.text.find('<name>')+6:r.text.find('</name>')]
-							else:
-								name += " " + r.text[r.text.find('<name>')+6:r.text.find('</name>')]
-			except:
-				pass
 			print(f"<QSO_DATE:{len(''.join(loggeddate.split('-')))}:d>{''.join(loggeddate.split('-'))}", end='\r\n', file=open(logname, 'a'))
 			print(f"<TIME_ON:{len(loggedtime)}>{loggedtime}", end='\r\n', file=open(logname, 'a'))
 			print(f"<CALL:{len(hiscall)}>{hiscall}", end='\r\n', file=open(logname, 'a'))
@@ -784,8 +840,8 @@ class MainWindow(QtWidgets.QMainWindow):
 			print(f"<CLASS:{len(hisclass)}>{hisclass}", end='\r\n', file=open(logname, 'a'))
 			state = self.getState(hissection)
 			if state: print(f"<STATE:{len(state)}>{state}", end='\r\n', file=open(logname, 'a'))
-			if grid: print(f"<GRIDSQUARE:{len(grid)}>{grid}", end='\r\n', file=open(logname, 'a'))
-			if name: print(f"<NAME:{len(name)}>{name}", end='\r\n', file=open(logname, 'a'))
+			if len(grid) > 1: print(f"<GRIDSQUARE:{len(grid)}>{grid}", end='\r\n', file=open(logname, 'a'))
+			if len(opname) > 1: print(f"<NAME:{len(opname)}>{opname}", end='\r\n', file=open(logname, 'a'))
 			comment = "WINTER-FIELD-DAY"
 			print(f"<COMMENT:{len(comment)}>{comment}", end='\r\n', file=open(logname, 'a'))
 			print("<EOR>", end='\r\n', file=open(logname, 'a'))
@@ -800,22 +856,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		c.execute("select * from contacts order by id DESC")
 		q = c.fetchone()
 		conn.close()
-		_, hiscall, hisclass, hissection, datetime, band, mode, _ = q
-		grid = False
-		name = False
-		if self.qrzsession:
-			payload = {'s':self.qrzsession, 'callsign':hiscall}
-			r=requests.get(self.qrzurl,params=payload, timeout=1.0)
-			if r.status_code == 200:
-				if r.text.find('<grid>') > 0:
-					grid = r.text[r.text.find('<grid>')+6:r.text.find('</grid>')]
-				if r.text.find('<fname>') > 0:
-					name = r.text[r.text.find('<fname>')+7:r.text.find('</fname>')]
-				if r.text.find('<name>') > 0:
-					if not name:
-						name = r.text[r.text.find('<name>')+6:r.text.find('</name>')]
-					else:
-						name += " " + r.text[r.text.find('<name>')+6:r.text.find('</name>')]
+		_, hiscall, hisclass, hissection, datetime, band, mode, _, grid, opname = q
 			
 		if mode == "DI": mode = "RTTY"
 		if mode == "PH": mode = "SSB"
@@ -839,8 +880,8 @@ class MainWindow(QtWidgets.QMainWindow):
 		adifq += f"<CLASS:{len(hisclass)}>{hisclass}"
 		state = self.getState(hissection)
 		if state: adifq += f"<STATE:{len(state)}>{state}"
-		if grid: adifq += f"<GRIDSQUARE:{len(grid)}>{grid}"
-		if name: adifq += f"<NAME:{len(name)}>{name}"
+		if len(grid) > 1: adifq += f"<GRIDSQUARE:{len(grid)}>{grid}"
+		if len(opname) > 1: adifq += f"<NAME:{len(opname)}>{opname}"
 		comment = "Winter Field Day"
 		adifq += f"<COMMENT:{len(comment)}>{comment}"
 		adifq += "<EOR>"
@@ -903,7 +944,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		print("ADDRESS-COUNTRY: ", end='\r\n', file=open(filename, "a"))
 		print("EMAIL: ", end='\r\n', file=open(filename, "a"))
 		for x in log:
-			_, hiscall, hisclass, hissection, datetime, band, mode, _ = x
+			_, hiscall, hisclass, hissection, datetime, band, mode, _, _, _ = x
 			loggeddate = datetime[:10]
 			loggedtime = datetime[11:13] + datetime[14:16]
 			print(f"QSO: {band}M {mode} {loggeddate} {loggedtime} {self.mycall} {self.myclass} {self.mysection} {hiscall} {hisclass} {hissection}", end='\r\n', file=open(filename, "a"))
