@@ -523,12 +523,14 @@ class MainWindow(QtWidgets.QMainWindow):
 			hiscall, hisclass, hissection, hisband, hismode = x
 			if len(self.class_entry.text()) == 0: self.class_entry.setText(hisclass)
 			if len(self.section_entry.text()) == 0: self.section_entry.setText(hissection)
+			dupetext=""
 			if hisband == self.band and hismode == self.mode:
 				self.flash()
 				self.infobox.setTextColor(QtGui.QColor(245, 121, 0))
+				dupetext = " DUP!!!"
 			else:
 				self.infobox.setTextColor(QtGui.QColor(211, 215, 207))
-			self.infobox.insertPlainText(f"{hiscall}: {hisband} {hismode}\n")
+			self.infobox.insertPlainText(f"{hiscall}: {hisband} {hismode}{dupetext}\n")
 
 	def workedSections(self):
 		conn = sqlite3.connect(self.database)
