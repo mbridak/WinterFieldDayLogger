@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 
-
 #Nothing to see here move along.
 #xplanet -body earth -window -longitude -117 -latitude 38 -config Default -projection azmithal -radius 200
-
 
 import json
 import requests
