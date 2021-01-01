@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 #Nothing to see here move along.
-#xplanet -body earth -window -longitude -117 -latitude 38 -config Default -projection azmithal -radius 200
+#xplanet -body earth -window -longitude -117 -latitude 38 -config Default -projection azmithal -radius 200 -wait 5
 
 import json
 import requests
@@ -57,6 +57,8 @@ class MainWindow(QtWidgets.QMainWindow):
 	rigctrlport = ""
 	rigonline = False
 	userigctl = False
+	markerfile = ".xplanet/markers/ham"
+	usemarker = False
 	oldfreq = 0
 	oldmode = 0
 
@@ -306,7 +308,7 @@ class MainWindow(QtWidgets.QMainWindow):
 			c = conn.cursor()
 			sql_table = """ CREATE TABLE IF NOT EXISTS contacts (id INTEGER PRIMARY KEY, callsign text NOT NULL, class text NOT NULL, section text NOT NULL, date_time text NOT NULL, band text NOT NULL, mode text NOT NULL, power INTEGER NOT NULL, grid text NOT NULL, opname text NOT NULL); """
 			c.execute(sql_table)
-			sql_table = """ CREATE TABLE IF NOT EXISTS preferences (id INTEGER, mycallsign TEXT DEFAULT '', myclass TEXT DEFAULT '', mysection TEXT DEFAULT '', power TEXT DEFAULT '0', altpower INTEGER DEFAULT 0, outdoors INTEGER DEFAULT 0, notathome INTEGER DEFAULT 0, satellite INTEGER DEFAULT 0, qrzusername TEXT DEFAULT 'w1aw', qrzpassword TEXT default 'secret', qrzurl TEXT DEFAULT 'http://xmldata.qrz.com/xml/',cloudlogapi TEXT DEFAULT 'cl12345678901234567890', cloudlogurl TEXT DEFAULT 'http://www.yoururl.com/Cloudlog/index.php/api/qso', useqrz INTEGER DEFAULT 0, usecloudlog INTEGER DEFAULT 0, userigcontrol INTEGER DEFAULT 0, rigcontrolip TEXT DEFAULT '127.0.0.1', rigcontrolport TEXT DEFAULT '4532'); """
+			sql_table = """ CREATE TABLE IF NOT EXISTS preferences (id INTEGER PRIMARY KEY, mycallsign TEXT DEFAULT '', myclass TEXT DEFAULT '', mysection TEXT DEFAULT '', power TEXT DEFAULT '0', altpower INTEGER DEFAULT 0, outdoors INTEGER DEFAULT 0, notathome INTEGER DEFAULT 0, satellite INTEGER DEFAULT 0, qrzusername TEXT DEFAULT 'w1aw', qrzpassword TEXT default 'secret', qrzurl TEXT DEFAULT 'http://xmldata.qrz.com/xml/',cloudlogapi TEXT DEFAULT 'cl12345678901234567890', cloudlogurl TEXT DEFAULT 'http://www.yoururl.com/Cloudlog/index.php/api/qso', useqrz INTEGER DEFAULT 0, usecloudlog INTEGER DEFAULT 0, userigcontrol INTEGER DEFAULT 0, rigcontrolip TEXT DEFAULT '127.0.0.1', rigcontrolport TEXT DEFAULT '4532',markerfile TEXT default 'secret', usemarker INTEGER DEFAULT 0); """
 			c.execute(sql_table)
 			conn.commit()
 			conn.close()
@@ -327,7 +329,7 @@ class MainWindow(QtWidgets.QMainWindow):
 			pref = c.fetchall()
 			if len(pref) > 0:
 				for x in pref:
-					_, self.mycall, self.myclass, self.mysection, self.power, self.altpower, self.outdoors, self.notathome, self.satellite, self.qrzname, self.qrzpass, self.qrzurl, self.cloudlogapi, self.cloudlogurl, useqrz, usecloudlog, userigcontrol, self.rigctrlhost, self.rigctrlport = x
+					_, self.mycall, self.myclass, self.mysection, self.power, self.altpower, self.outdoors, self.notathome, self.satellite, self.qrzname, self.qrzpass, self.qrzurl, self.cloudlogapi, self.cloudlogurl, useqrz, usecloudlog, userigcontrol, self.rigctrlhost, self.rigctrlport, self.markerfile, self.usemarker = x
 					self.altpower = bool(self.altpower)
 					self.altpowerButton.setStyleSheet(self.highlighted(self.altpower))
 					self.outdoors = bool(self.outdoors)
@@ -343,8 +345,9 @@ class MainWindow(QtWidgets.QMainWindow):
 					self.usecloudlog = bool(usecloudlog)
 					self.useqrz = bool(useqrz)
 					self.userigctl = bool(userigcontrol)
+					self.usemarker = bool(self.usemarker)
 			else:
-				sql = f"INSERT INTO preferences(id, mycallsign, myclass, mysection, power, altpower, outdoors, notathome, satellite) VALUES(1,'{self.mycall}','{self.myclass}','{self.mysection}','{self.power}',{int(self.altpower)},{int(self.outdoors)},{int(self.notathome)},{int(self.satellite)})"
+				sql = f"INSERT INTO preferences(id, mycallsign, myclass, mysection, power, altpower, outdoors, notathome, satellite, markerfile, usemarker) VALUES(1,'{self.mycall}','{self.myclass}','{self.mysection}','{self.power}',{int(self.altpower)},{int(self.outdoors)},{int(self.notathome)},{int(self.satellite)},'{self.markerfile}',{int(self.usemarker)})"
 				c.execute(sql)
 				conn.commit()
 			conn.close()
@@ -354,7 +357,7 @@ class MainWindow(QtWidgets.QMainWindow):
 	def writepreferences(self):
 		try:
 			conn = sqlite3.connect(self.database)
-			sql = f"UPDATE preferences SET mycallsign = '{self.mycall}', myclass = '{self.myclass}', mysection = '{self.mysection}', power = '{self.power_selector.value()}', altpower = {int(self.altpower)}, outdoors = {int(self.outdoors)}, notathome = {int(self.notathome)}, satellite = {int(self.satellite)} WHERE id = 1"
+			sql = f"UPDATE preferences SET mycallsign = '{self.mycall}', myclass = '{self.myclass}', mysection = '{self.mysection}', power = '{self.power_selector.value()}', altpower = {int(self.altpower)}, outdoors = {int(self.outdoors)}, notathome = {int(self.notathome)}, satellite = {int(self.satellite)}, markerfile = '{self.markerfile}', usemarker = {int(self.usemarker)} WHERE id = 1"
 			cur = conn.cursor()
 			cur.execute(sql)
 			conn.commit()
@@ -377,7 +380,7 @@ class MainWindow(QtWidgets.QMainWindow):
 			print(e)
 		self.sections()
 		self.stats()
-		#self.updatemarker(self.callsign_entry.text())
+		self.updatemarker()
 		self.logwindow()
 		self.clearinputs()
 		self.postcloudlog()
@@ -756,24 +759,20 @@ class MainWindow(QtWidgets.QMainWindow):
 
 		return lat, lon
 
-#	def updatemarker(self, call):
-#		return
-#		print(f"looking up call {call}")
-#		markerfile = "/.xplanet/markers/wfd"
-#		grid = False
-#		try:
-#			if self.qrzsession and self.useqrz:
-#				payload = {'s':self.qrzsession, 'callsign':call}
-#				r=requests.get(self.qrzurl,params=payload, timeout=3.0)
-#				if r.status_code == 200:
-#					if r.text.find('<grid>') > 0:
-#						grid = r.text[r.text.find('<grid>')+6:r.text.find('</grid>')]
-#		except:
-#			pass
-#
-#		if grid:
-#			lat, lon = self.gridtolatlon(grid)
-#			print(f'{lat} {lon} "{call}"', end='\r\n', file=open(str(Path.home())+markerfile, "a"))
+	def updatemarker(self):
+		if self.usemarker:
+			filename = str(Path.home())+"/"+self.markerfile
+			print("", file=open(filename, "w"))
+			conn = sqlite3.connect(self.database)
+			c = conn.cursor()
+			c.execute("select DISTINCT grid from contacts")
+			x=c.fetchall()
+			if x:
+				for count in x:
+					grid = count[0]
+					if len(grid) > 1:
+						lat, lon = self.gridtolatlon(grid)
+						print(f'{lat} {lon} ""', end='\r\n', file=open(filename, "a"))
 
 	def qrzlookup(self, call):
 		grid = False
@@ -1017,7 +1016,7 @@ class settings(QtWidgets.QDialog):
 			pref = c.fetchall()
 			if len(pref) > 0:
 				for x in pref:
-					_, _, _, _, _, _, _, _, _, qrzname, qrzpass, qrzurl, cloudlogapi, cloudlogurl, useqrz, usecloudlog, userigcontrol, rigctrlhost, rigctrlport = x
+					_, _, _, _, _, _, _, _, _, qrzname, qrzpass, qrzurl, cloudlogapi, cloudlogurl, useqrz, usecloudlog, userigcontrol, rigctrlhost, rigctrlport, markerfile, usemarker = x
 					self.qrzname_field.setText(qrzname)
 					self.qrzpass_field.setText(qrzpass)
 					self.qrzurl_field.setText(qrzurl)
@@ -1028,13 +1027,16 @@ class settings(QtWidgets.QDialog):
 					self.usecloudlog_checkBox.setChecked(bool(usecloudlog))
 					self.useqrz_checkBox.setChecked(bool(useqrz))
 					self.userigcontrol_checkBox.setChecked(bool(userigcontrol))
+					self.markerfile_field.setText(markerfile)
+					self.generatemarker_checkbox.setChecked(bool(usemarker))
+
 		except Error as e:
 			print(e)
 
 	def saveChanges(self):
 		try:
 			conn = sqlite3.connect(window.database)
-			sql = f"UPDATE preferences SET qrzusername = '{self.qrzname_field.text()}', qrzpassword = '{self.qrzpass_field.text()}', qrzurl = '{self.qrzurl_field.text()}', cloudlogapi = '{self.cloudlogapi_field.text()}', cloudlogurl = '{self.cloudlogurl_field.text()}', rigcontrolip = '{self.rigcontrolip_field.text()}', rigcontrolport = '{self.rigcontrolport_field.text()}', useqrz = '{int(self.useqrz_checkBox.isChecked())}', usecloudlog = '{int(self.usecloudlog_checkBox.isChecked())}', userigcontrol = '{int(self.userigcontrol_checkBox.isChecked())}'  where id=1;"
+			sql = f"UPDATE preferences SET qrzusername = '{self.qrzname_field.text()}', qrzpassword = '{self.qrzpass_field.text()}', qrzurl = '{self.qrzurl_field.text()}', cloudlogapi = '{self.cloudlogapi_field.text()}', cloudlogurl = '{self.cloudlogurl_field.text()}', rigcontrolip = '{self.rigcontrolip_field.text()}', rigcontrolport = '{self.rigcontrolport_field.text()}', useqrz = '{int(self.useqrz_checkBox.isChecked())}', usecloudlog = '{int(self.usecloudlog_checkBox.isChecked())}', userigcontrol = '{int(self.userigcontrol_checkBox.isChecked())}', markerfile = '{self.markerfile_field.text()}', usemarker = '{int(self.generatemarker_checkbox.isChecked())}'  where id=1;"
 			cur = conn.cursor()
 			cur.execute(sql)
 			conn.commit()

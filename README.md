@@ -43,6 +43,8 @@ If you use either Cloudlog logging or QRZ lookup you can click the gear icon to 
 
 The QRZ lookup is only used to get the name and gridsquare for the call. Mainly because when a Q is pushed to CloudLog it will not show as a pin on the map unless it has a gridsquare. So this is a scratch my own itch feature.
 
+#### XPlanet marker file
+If you use QRZ lookups you can also generate an XPlanet markerfile
 
 #### Editing an existing contact
 Double click a contact in the upper left of the screen to edit or delete it.

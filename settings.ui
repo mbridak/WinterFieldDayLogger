@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>599</width>
-    <height>507</height>
+    <height>610</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -21,7 +21,7 @@ color: rgb(211, 215, 207);</string>
    <property name="geometry">
     <rect>
      <x>140</x>
-     <y>460</y>
+     <y>570</y>
      <width>341</width>
      <height>32</height>
     </rect>
@@ -448,7 +448,7 @@ color: rgb(211, 215, 207);</string>
     <rect>
      <x>27</x>
      <y>171</y>
-     <width>541</width>
+     <width>551</width>
      <height>20</height>
     </rect>
    </property>
@@ -469,7 +469,7 @@ color: rgb(211, 215, 207);</string>
     <rect>
      <x>20</x>
      <y>310</y>
-     <width>541</width>
+     <width>561</width>
      <height>16</height>
     </rect>
    </property>
@@ -483,6 +483,61 @@ color: rgb(211, 215, 207);</string>
    </property>
    <property name="orientation">
     <enum>Qt::Horizontal</enum>
+   </property>
+  </widget>
+  <widget class="Line" name="line_3">
+   <property name="geometry">
+    <rect>
+     <x>17</x>
+     <y>460</y>
+     <width>561</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="orientation">
+    <enum>Qt::Horizontal</enum>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_8">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>490</y>
+     <width>137</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>XPlanet Marker File:</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="markerfile_field">
+   <property name="geometry">
+    <rect>
+     <x>170</x>
+     <y>486</y>
+     <width>391</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string notr="true">.xplanet/markers/ham</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="generatemarker_checkbox">
+   <property name="geometry">
+    <rect>
+     <x>230</x>
+     <y>530</y>
+     <width>140</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">border: 1px solid red;</string>
+   </property>
+   <property name="text">
+    <string>Generate Marker</string>
    </property>
   </widget>
  </widget>
