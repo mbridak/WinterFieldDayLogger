@@ -1,6 +1,9 @@
-## K6GTE Winter Field Day logger (PyQt5)
+## K6GTE Winter Field Day logger (PyQt5) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)  [![](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/) [![](https://img.shields.io/badge/Made%20with-PyQt5-red)](https://pypi.org/project/PyQt5/)
 
-The logger is written in Python 3, and uses the PyQT5 lib. Qt5 is cross platform so it might work on everything. I have tested it on Linux and Windows.
+[Winter Field Day](https://www.winterfieldday.com/)
+is a once a year 24hr emergency preparidness event for radio amateurs (Hams). During the event, we try and make as many radio contacts with other Hams in a 24 hour period. Bonus points are awarded for operating outside or using alternate power sources, such as battery/solar/wind. You can find out more about amateur radio by visiting the [ARRL](https://www.arrl.org/).
+
+The logger is written in Python 3, and uses the PyQT5 lib. Qt5 is cross platform so it might work on everything. I have tested it on Linux. This code is based off of a logger I had done earlier using Python and the curses library wich can be found [here](https://github.com/mbridak/wfd_py_logger) and one written for ARRL Field Day [here](https://github.com/mbridak/FieldDayLogger). 
 
 The log is stored in an sqlite3 database file 'WFD.db'. If you need to wipe everything and start clean, just delete this file and re-run wfdlogger.py 
 
@@ -17,7 +20,17 @@ Install Python 3, then two required libs via pip.
 
 pip install PyQt5
 
+and
+
 pip install requests
+
+or you may have to type:
+
+python3 -m pip install PyQt5
+
+and
+
+python3 -m pip install requests
 
 Just make wfdlogger.py executable and run it within the same folder, or type:
 
