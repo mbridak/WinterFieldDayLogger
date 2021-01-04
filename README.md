@@ -20,7 +20,17 @@ Install Python 3, then two required libs via pip.
 
 pip install PyQt5
 
+and
+
 pip install requests
+
+or you may have to type:
+
+python3 -m pip install PyQt5
+
+and
+
+python3 -m pip install requests
 
 Just make wfdlogger.py executable and run it within the same folder, or type:
 
