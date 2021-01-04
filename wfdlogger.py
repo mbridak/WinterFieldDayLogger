@@ -9,6 +9,7 @@ import sys
 import time
 import sqlite3
 import socket
+import os
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5 import uic
@@ -65,7 +66,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
-		uic.loadUi("main.ui", self)
+		uic.loadUi(self.relpath("main.ui"), self)
 		self.listWidget.itemDoubleClicked.connect(self.qsoclicked)
 		self.altpowerButton.clicked.connect(self.claimAltPower)
 		self.outdoorsButton.clicked.connect(self.claimOutdoors)
@@ -93,6 +94,13 @@ class MainWindow(QtWidgets.QMainWindow):
 		self.radiochecktimer = QtCore.QTimer()
 		self.radiochecktimer.timeout.connect(self.Radio)
 		self.radiochecktimer.start(1000)
+
+	def relpath(self, filename):
+		try:
+			base_path = sys._MEIPASS
+		except:
+			base_path = os.path.abspath(".")
+		return os.path.join(base_path, filename)
 		
 	def settingspressed(self):
 		settingsdialog = settings(self)
@@ -476,7 +484,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
 	def readSections(self):
 		try:
-			fd = open("arrl_sect.dat", "r")  # read section data
+			fd = open(self.relpath("arrl_sect.dat"), "r")  # read section data
 			while 1:
 				ln = fd.readline().strip()  # read a line and put in db
 				if not ln: break
@@ -505,7 +513,7 @@ class MainWindow(QtWidgets.QMainWindow):
 			self.infobox.insertPlainText(self.secName[xxx]+"\n")
 
 	def readSCP(self):
-		f = open("MASTER.SCP")
+		f = open(self.relpath("MASTER.SCP"))
 		self.scp = f.readlines()
 		f.close()
 		self.scp = list(map(lambda x: x.strip(), self.scp))
@@ -961,7 +969,7 @@ class editQSODialog(QtWidgets.QDialog):
 
 	def __init__(self, parent=None):
 		super().__init__(parent)
-		uic.loadUi("dialog.ui", self)
+		uic.loadUi(self.relpath("dialog.ui"), self)
 		self.theitem, thecall, theclass, thesection, thedate, thetime, theband, themode, thepower = window.linetopass.split()
 		self.editCallsign.setText(thecall)
 		self.editClass.setText(theclass)
@@ -974,6 +982,13 @@ class editQSODialog(QtWidgets.QDialog):
 		self.editDateTime.setDateTime(now)
 		self.deleteButton.clicked.connect(self.delete_contact)
 		self.buttonBox.accepted.connect(self.saveChanges)
+
+	def relpath(self, filename):
+		try:
+			base_path = sys._MEIPASS
+		except:
+			base_path = os.path.abspath(".")
+		return os.path.join(base_path, filename)
 
 	def saveChanges(self):
 		try:
@@ -1007,7 +1022,7 @@ class editQSODialog(QtWidgets.QDialog):
 class settings(QtWidgets.QDialog):
 	def __init__(self, parent=None):
 		super().__init__(parent)
-		uic.loadUi("settings.ui", self)
+		uic.loadUi(self.relpath("settings.ui"), self)
 		self.buttonBox.accepted.connect(self.saveChanges)
 		try:
 			conn = sqlite3.connect(window.database)
@@ -1032,6 +1047,13 @@ class settings(QtWidgets.QDialog):
 
 		except Error as e:
 			print(e)
+
+	def relpath(self, filename):
+		try:
+			base_path = sys._MEIPASS
+		except:
+			base_path = os.path.abspath(".")
+		return os.path.join(base_path, filename)
 
 	def saveChanges(self):
 		try:
