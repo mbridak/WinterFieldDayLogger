@@ -52,6 +52,7 @@ class MainWindow(QtWidgets.QMainWindow):
 	qrzpass = ""
 	qrzname = ""
 	useqrz = False
+	usehamdb = False
 	qrzsession = False
 	rigctrlsocket = ""
 	rigctrlhost = ""
@@ -316,7 +317,7 @@ class MainWindow(QtWidgets.QMainWindow):
 			c = conn.cursor()
 			sql_table = """ CREATE TABLE IF NOT EXISTS contacts (id INTEGER PRIMARY KEY, callsign text NOT NULL, class text NOT NULL, section text NOT NULL, date_time text NOT NULL, band text NOT NULL, mode text NOT NULL, power INTEGER NOT NULL, grid text NOT NULL, opname text NOT NULL); """
 			c.execute(sql_table)
-			sql_table = """ CREATE TABLE IF NOT EXISTS preferences (id INTEGER PRIMARY KEY, mycallsign TEXT DEFAULT '', myclass TEXT DEFAULT '', mysection TEXT DEFAULT '', power TEXT DEFAULT '0', altpower INTEGER DEFAULT 0, outdoors INTEGER DEFAULT 0, notathome INTEGER DEFAULT 0, satellite INTEGER DEFAULT 0, qrzusername TEXT DEFAULT 'w1aw', qrzpassword TEXT default 'secret', qrzurl TEXT DEFAULT 'http://xmldata.qrz.com/xml/',cloudlogapi TEXT DEFAULT 'cl12345678901234567890', cloudlogurl TEXT DEFAULT 'http://www.yoururl.com/Cloudlog/index.php/api/qso', useqrz INTEGER DEFAULT 0, usecloudlog INTEGER DEFAULT 0, userigcontrol INTEGER DEFAULT 0, rigcontrolip TEXT DEFAULT '127.0.0.1', rigcontrolport TEXT DEFAULT '4532',markerfile TEXT default 'secret', usemarker INTEGER DEFAULT 0); """
+			sql_table = """ CREATE TABLE IF NOT EXISTS preferences (id INTEGER PRIMARY KEY, mycallsign TEXT DEFAULT '', myclass TEXT DEFAULT '', mysection TEXT DEFAULT '', power TEXT DEFAULT '0', altpower INTEGER DEFAULT 0, outdoors INTEGER DEFAULT 0, notathome INTEGER DEFAULT 0, satellite INTEGER DEFAULT 0, qrzusername TEXT DEFAULT 'w1aw', qrzpassword TEXT default 'secret', qrzurl TEXT DEFAULT 'http://xmldata.qrz.com/xml/',cloudlogapi TEXT DEFAULT 'cl12345678901234567890', cloudlogurl TEXT DEFAULT 'http://www.yoururl.com/Cloudlog/index.php/api/qso', useqrz INTEGER DEFAULT 0, usecloudlog INTEGER DEFAULT 0, userigcontrol INTEGER DEFAULT 0, rigcontrolip TEXT DEFAULT '127.0.0.1', rigcontrolport TEXT DEFAULT '4532',markerfile TEXT default 'secret', usemarker INTEGER DEFAULT 0, usehamdb INTEGER DEFAULT 0); """
 			c.execute(sql_table)
 			conn.commit()
 			conn.close()
@@ -337,7 +338,7 @@ class MainWindow(QtWidgets.QMainWindow):
 			pref = c.fetchall()
 			if len(pref) > 0:
 				for x in pref:
-					_, self.mycall, self.myclass, self.mysection, self.power, self.altpower, self.outdoors, self.notathome, self.satellite, self.qrzname, self.qrzpass, self.qrzurl, self.cloudlogapi, self.cloudlogurl, useqrz, usecloudlog, userigcontrol, self.rigctrlhost, self.rigctrlport, self.markerfile, self.usemarker = x
+					_, self.mycall, self.myclass, self.mysection, self.power, self.altpower, self.outdoors, self.notathome, self.satellite, self.qrzname, self.qrzpass, self.qrzurl, self.cloudlogapi, self.cloudlogurl, useqrz, usecloudlog, userigcontrol, self.rigctrlhost, self.rigctrlport, self.markerfile, self.usemarker, self.usehamdb = x
 					self.altpower = bool(self.altpower)
 					self.altpowerButton.setStyleSheet(self.highlighted(self.altpower))
 					self.outdoors = bool(self.outdoors)
@@ -354,8 +355,9 @@ class MainWindow(QtWidgets.QMainWindow):
 					self.useqrz = bool(useqrz)
 					self.userigctl = bool(userigcontrol)
 					self.usemarker = bool(self.usemarker)
+					self.usehamdb = bool(self.usehamdb)
 			else:
-				sql = f"INSERT INTO preferences(id, mycallsign, myclass, mysection, power, altpower, outdoors, notathome, satellite, markerfile, usemarker) VALUES(1,'{self.mycall}','{self.myclass}','{self.mysection}','{self.power}',{int(self.altpower)},{int(self.outdoors)},{int(self.notathome)},{int(self.satellite)},'{self.markerfile}',{int(self.usemarker)})"
+				sql = f"INSERT INTO preferences(id, mycallsign, myclass, mysection, power, altpower, outdoors, notathome, satellite, markerfile, usemarker, usehamdb) VALUES(1,'{self.mycall}','{self.myclass}','{self.mysection}','{self.power}',{int(self.altpower)},{int(self.outdoors)},{int(self.notathome)},{int(self.satellite)},'{self.markerfile}',{int(self.usemarker)},{int(self.usehamdb)})"
 				c.execute(sql)
 				conn.commit()
 			conn.close()
@@ -365,7 +367,7 @@ class MainWindow(QtWidgets.QMainWindow):
 	def writepreferences(self):
 		try:
 			conn = sqlite3.connect(self.database)
-			sql = f"UPDATE preferences SET mycallsign = '{self.mycall}', myclass = '{self.myclass}', mysection = '{self.mysection}', power = '{self.power_selector.value()}', altpower = {int(self.altpower)}, outdoors = {int(self.outdoors)}, notathome = {int(self.notathome)}, satellite = {int(self.satellite)}, markerfile = '{self.markerfile}', usemarker = {int(self.usemarker)} WHERE id = 1"
+			sql = f"UPDATE preferences SET mycallsign = '{self.mycall}', myclass = '{self.myclass}', mysection = '{self.mysection}', power = '{self.power_selector.value()}', altpower = {int(self.altpower)}, outdoors = {int(self.outdoors)}, notathome = {int(self.notathome)}, satellite = {int(self.satellite)}, markerfile = '{self.markerfile}', usemarker = {int(self.usemarker)}, usehamdb = {int(self.usehamdb)} WHERE id = 1"
 			cur = conn.cursor()
 			cur.execute(sql)
 			conn.commit()
@@ -789,20 +791,21 @@ class MainWindow(QtWidgets.QMainWindow):
 			if self.qrzsession and self.useqrz:
 				payload = {'s':self.qrzsession, 'callsign':call}
 				r=requests.get(self.qrzurl,params=payload, timeout=3.0)
-				if r.status_code == 200:
-					if r.text.find('<grid>') > 0:
-						grid = r.text[r.text.find('<grid>')+6:r.text.find('</grid>')]
-					if r.text.find('<fname>') > 0:
-						name = r.text[r.text.find('<fname>')+7:r.text.find('</fname>')]
-					if r.text.find('<name>') > 0:
-						if not name:
-							name = r.text[r.text.find('<name>')+6:r.text.find('</name>')]
-						else:
-							name += " " + r.text[r.text.find('<name>')+6:r.text.find('</name>')]
+			elif self.usehamdb:
+				r=requests.get(f"http://api.hamdb.org/v1/{call}/xml/k6gtewfdlogger",timeout=3.0)
+			if r.status_code == 200:
+				if r.text.find('<grid>') > 0:
+					grid = r.text[r.text.find('<grid>')+6:r.text.find('</grid>')]
+				if r.text.find('<fname>') > 0:
+					name = r.text[r.text.find('<fname>')+7:r.text.find('</fname>')]
+				if r.text.find('<name>') > 0:
+					if not name:
+						name = r.text[r.text.find('<name>')+6:r.text.find('</name>')]
+					else:
+						name += " " + r.text[r.text.find('<name>')+6:r.text.find('</name>')]
 		except:
 			pass
 		return grid, name
-
 
 	def adif(self):
 		logname = "WFD.adi"
@@ -1031,7 +1034,7 @@ class settings(QtWidgets.QDialog):
 			pref = c.fetchall()
 			if len(pref) > 0:
 				for x in pref:
-					_, _, _, _, _, _, _, _, _, qrzname, qrzpass, qrzurl, cloudlogapi, cloudlogurl, useqrz, usecloudlog, userigcontrol, rigctrlhost, rigctrlport, markerfile, usemarker = x
+					_, _, _, _, _, _, _, _, _, qrzname, qrzpass, qrzurl, cloudlogapi, cloudlogurl, useqrz, usecloudlog, userigcontrol, rigctrlhost, rigctrlport, markerfile, usemarker, usehamdb = x
 					self.qrzname_field.setText(qrzname)
 					self.qrzpass_field.setText(qrzpass)
 					self.qrzurl_field.setText(qrzurl)
@@ -1044,6 +1047,7 @@ class settings(QtWidgets.QDialog):
 					self.userigcontrol_checkBox.setChecked(bool(userigcontrol))
 					self.markerfile_field.setText(markerfile)
 					self.generatemarker_checkbox.setChecked(bool(usemarker))
+					self.usehamdb_checkBox.setChecked(bool(usehamdb))
 
 		except Error as e:
 			print(e)
@@ -1058,7 +1062,7 @@ class settings(QtWidgets.QDialog):
 	def saveChanges(self):
 		try:
 			conn = sqlite3.connect(window.database)
-			sql = f"UPDATE preferences SET qrzusername = '{self.qrzname_field.text()}', qrzpassword = '{self.qrzpass_field.text()}', qrzurl = '{self.qrzurl_field.text()}', cloudlogapi = '{self.cloudlogapi_field.text()}', cloudlogurl = '{self.cloudlogurl_field.text()}', rigcontrolip = '{self.rigcontrolip_field.text()}', rigcontrolport = '{self.rigcontrolport_field.text()}', useqrz = '{int(self.useqrz_checkBox.isChecked())}', usecloudlog = '{int(self.usecloudlog_checkBox.isChecked())}', userigcontrol = '{int(self.userigcontrol_checkBox.isChecked())}', markerfile = '{self.markerfile_field.text()}', usemarker = '{int(self.generatemarker_checkbox.isChecked())}'  where id=1;"
+			sql = f"UPDATE preferences SET qrzusername = '{self.qrzname_field.text()}', qrzpassword = '{self.qrzpass_field.text()}', qrzurl = '{self.qrzurl_field.text()}', cloudlogapi = '{self.cloudlogapi_field.text()}', cloudlogurl = '{self.cloudlogurl_field.text()}', rigcontrolip = '{self.rigcontrolip_field.text()}', rigcontrolport = '{self.rigcontrolport_field.text()}', useqrz = '{int(self.useqrz_checkBox.isChecked())}', usecloudlog = '{int(self.usecloudlog_checkBox.isChecked())}', userigcontrol = '{int(self.userigcontrol_checkBox.isChecked())}', markerfile = '{self.markerfile_field.text()}', usemarker = '{int(self.generatemarker_checkbox.isChecked())}', usehamdb = '{int(self.usehamdb_checkBox.isChecked())}'  where id=1;"
 			cur = conn.cursor()
 			cur.execute(sql)
 			conn.commit()
