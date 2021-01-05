@@ -40,6 +40,8 @@ Just make wfdlogger.py executable and run it within the same folder, or type:
 
 python3 wfdlogger.py
 
+## What to do first
+
 When run for the first time, you will need to set your callsign, class, section, band, mode and power used for the contacts. This can be found at the bottom of the screen.
 
 ![Alt text](https://github.com/mbridak/pyqtwfdlogger/blob/main/pics/yourstuff.png)
@@ -55,10 +57,11 @@ If you run rigctld a computer connected to the radio, it can be polled for band/
 
 ![Alt text](https://github.com/mbridak/pyqtwfdlogger/blob/main/pics/loggerSettingsDialog.png)
 
-#### Cloudlog and QRZ API's
-If you use either Cloudlog logging or QRZ lookup you can click the gear icon to enter your credentials. Q's are pushed to CloudLog as soon as they are logged.
+#### Cloudlog, QRZ, HamDB useage
+If you use either Cloudlog logging or QRZ/HamDB lookup you can click the gear icon to enter your credentials. Q's are pushed to CloudLog as soon as they are logged.
 
-The QRZ lookup is only used to get the name and gridsquare for the call. Mainly because when a Q is pushed to CloudLog it will not show as a pin on the map unless it has a gridsquare. So this is a scratch my own itch feature.
+The QRZ/HamDB lookup is only used to get the name and gridsquare for the call. Mainly because when a Q is pushed to CloudLog it will not show as a pin on the map unless it has a gridsquare. So this is a scratch my own itch feature. Just place a check in either box to use them. If both are checked it will it will use QRZ.
+If you have no internet connection leave these unchecked since it might cause a delayafter posting your Q.
 
 #### XPlanet marker file
 If you use QRZ lookups you can also generate an XPlanet markerfile
