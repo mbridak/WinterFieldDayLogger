@@ -224,7 +224,7 @@ color: rgb(211, 215, 207);</string>
   <widget class="QCheckBox" name="useqrz_checkBox">
    <property name="geometry">
     <rect>
-     <x>240</x>
+     <x>200</x>
      <y>140</y>
      <width>86</width>
      <height>21</height>
@@ -538,6 +538,22 @@ color: rgb(211, 215, 207);</string>
    </property>
    <property name="text">
     <string>Generate Marker</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="usehamdb_checkBox">
+   <property name="geometry">
+    <rect>
+     <x>320</x>
+     <y>140</y>
+     <width>111</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">border: 1px solid red;</string>
+   </property>
+   <property name="text">
+    <string>Use HamDB</string>
    </property>
   </widget>
  </widget>
