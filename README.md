@@ -40,6 +40,8 @@ Just make wfdlogger.py executable and run it within the same folder, or type:
 
 python3 wfdlogger.py
 
+## What to do first
+
 When run for the first time, you will need to set your callsign, class, section, band, mode and power used for the contacts. This can be found at the bottom of the screen.
 
 ![Alt text](https://github.com/mbridak/pyqtwfdlogger/blob/main/pics/yourstuff.png)
