@@ -64,7 +64,14 @@ The QRZ/HamDB lookup is only used to get the name and gridsquare for the call. M
 If you have no internet connection leave these unchecked since it might cause a delayafter posting your Q.
 
 #### XPlanet marker file
-If you use QRZ lookups you can also generate an XPlanet markerfile
+If you use QRZ/HamdDB lookups you can also generate an [XPlanet](http://xplanet.sourceforge.net/) markerfile which will show little pips on the map as contacts are logged.
+
+![Alt text](https://github.com/mbridak/pyqtwfdlogger/blob/main/pics/xplanet.png)
+
+The above launched with an example command:
+```bash
+xplanet -body earth -window -longitude -117 -latitude 38 -config Default -projection azmithal -radius 200 -wait 5
+```
 
 #### Editing an existing contact
 Double click a contact in the upper left of the screen to edit or delete it.
