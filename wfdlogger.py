@@ -87,8 +87,8 @@ class MainWindow(QtWidgets.QMainWindow):
 		self.callsign_entry.editingFinished.connect(self.dupCheck)
 		self.section_entry.textEdited.connect(self.sectionCheck)
 		self.genLogButton.clicked.connect(self.generateLogs)
-		self.radio_icon.setPixmap(QtGui.QPixmap('icon/radio_grey.png'))
-		self.cloudlog_icon.setPixmap(QtGui.QPixmap('icon/cloud_grey.png'))
+		self.radio_icon.setPixmap(QtGui.QPixmap(self.relpath('icon/radio_grey.png')))
+		self.cloudlog_icon.setPixmap(QtGui.QPixmap(self.relpath('icon/cloud_grey.png')))
 		self.QRZ_icon.setStyleSheet("color: rgb(136, 138, 133);")
 		self.settingsbutton.clicked.connect(self.settingspressed)
 		self.radiochecktimer = QtCore.QTimer()
@@ -127,16 +127,16 @@ class MainWindow(QtWidgets.QMainWindow):
 			self.qrzsession = False
 
 	def cloudlogauth(self):
-		self.cloudlog_icon.setPixmap(QtGui.QPixmap('icon/cloud_grey.png'))
+		self.cloudlog_icon.setPixmap(QtGui.QPixmap(self.relpath('icon/cloud_grey.png')))
 		self.cloudlogauthenticated = False
 		if self.usecloudlog:
-			self.cloudlog_icon.setPixmap(QtGui.QPixmap('icon/cloud_red.png'))
+			self.cloudlog_icon.setPixmap(QtGui.QPixmap(self.relpath('icon/cloud_red.png')))
 			test = self.cloudlogurl[:-3]+"auth/"+self.cloudlogapi
 			r=requests.get(test,params={}, timeout=1.0)
 			if r.status_code == 200 and r.text.find('<status>') > 0:
 				if r.text[r.text.find('<status>')+8:r.text.find('</status>')] == "Valid":
 					self.cloudlogauthenticated = True
-					self.cloudlog_icon.setPixmap(QtGui.QPixmap('icon/cloud_green.png'))
+					self.cloudlog_icon.setPixmap(QtGui.QPixmap(self.relpath('icon/cloud_green.png')))
 
 	def getband(self, freq):
 		if freq.isnumeric():
@@ -191,7 +191,7 @@ class MainWindow(QtWidgets.QMainWindow):
 				newfreq = self.rigctrlsocket.recv(1024).decode().strip()
 				self.rigctrlsocket.send(b'm\n')
 				newmode = self.rigctrlsocket.recv(1024).decode().strip().split()[0]
-				self.radio_icon.setPixmap(QtGui.QPixmap('icon/radio_green.png'))
+				self.radio_icon.setPixmap(QtGui.QPixmap(self.relpath('icon/radio_green.png')))
 				if newfreq != self.oldfreq or newmode != self.oldmode:
 					self.oldfreq = newfreq
 					self.oldmode = newmode
@@ -199,7 +199,7 @@ class MainWindow(QtWidgets.QMainWindow):
 					self.setmode(str(self.getmode(newmode)))
 			except:
 				self.rigonline = False
-				self.radio_icon.setPixmap(QtGui.QPixmap('icon/radio_red.png'))
+				self.radio_icon.setPixmap(QtGui.QPixmap(self.relpath('icon/radio_red.png')))
 
 	def checkRadio(self):
 		if self.userigctl:
@@ -208,10 +208,10 @@ class MainWindow(QtWidgets.QMainWindow):
 			self.rigonline = True
 			try:
 				self.rigctrlsocket.connect((self.rigctrlhost, int(self.rigctrlport)))
-				self.radio_icon.setPixmap(QtGui.QPixmap('icon/radio_red.png'))
+				self.radio_icon.setPixmap(QtGui.QPixmap(self.relpath('icon/radio_red.png')))
 			except:
 				self.rigonline = False
-				self.radio_icon.setPixmap(QtGui.QPixmap('icon/radio_grey.png'))
+				self.radio_icon.setPixmap(QtGui.QPixmap(self.relpath('icon/radio_grey.png')))
 		else:
 			self.rigonline = False
 
