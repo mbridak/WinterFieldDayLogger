@@ -772,7 +772,7 @@ class MainWindow(QtWidgets.QMainWindow):
 	def updatemarker(self):
 		if self.usemarker:
 			filename = str(Path.home())+"/"+self.markerfile
-			print("", file=open(filename, "w"))
+			print("", file=open(filename, "w", encoding='ascii'))
 			conn = sqlite3.connect(self.database)
 			c = conn.cursor()
 			c.execute("select DISTINCT grid from contacts")
@@ -782,7 +782,7 @@ class MainWindow(QtWidgets.QMainWindow):
 					grid = count[0]
 					if len(grid) > 1:
 						lat, lon = self.gridtolatlon(grid)
-						print(f'{lat} {lon} ""', end='\r\n', file=open(filename, "a"))
+						print(f'{lat} {lon} ""', end='\r\n', file=open(filename, "a", encoding='ascii'))
 
 	def qrzlookup(self, call):
 		grid = False
@@ -819,8 +819,8 @@ class MainWindow(QtWidgets.QMainWindow):
 		conn.close()
 		grid = False
 		opname = False
-		print("<ADIF_VER:5>2.2.0", end='\r\n', file=open(logname, "w"))
-		print("<EOH>", end='\r\n', file=open(logname, "a"))
+		print("<ADIF_VER:5>2.2.0", end='\r\n', file=open(logname, "w", encoding='ascii'))
+		print("<EOH>", end='\r\n', file=open(logname, "a", encoding='ascii'))
 		for x in log:
 			_, hiscall, hisclass, hissection, datetime, band, mode, _, grid, opname = x
 			if mode == "DI": mode = "RTTY"
@@ -831,29 +831,29 @@ class MainWindow(QtWidgets.QMainWindow):
 				rst = "59"
 			loggeddate = datetime[:10]
 			loggedtime = datetime[11:13] + datetime[14:16]
-			print(f"<QSO_DATE:{len(''.join(loggeddate.split('-')))}:d>{''.join(loggeddate.split('-'))}", end='\r\n', file=open(logname, 'a'))
-			print(f"<TIME_ON:{len(loggedtime)}>{loggedtime}", end='\r\n', file=open(logname, 'a'))
-			print(f"<CALL:{len(hiscall)}>{hiscall}", end='\r\n', file=open(logname, 'a'))
-			print(f"<MODE:{len(mode)}>{mode}", end='\r\n', file=open(logname, 'a'))
-			print(f"<BAND:{len(band + 'M')}>{band + 'M'}", end='\r\n', file=open(logname, 'a'))
+			print(f"<QSO_DATE:{len(''.join(loggeddate.split('-')))}:d>{''.join(loggeddate.split('-'))}", end='\r\n', file=open(logname, 'a', encoding='ascii'))
+			print(f"<TIME_ON:{len(loggedtime)}>{loggedtime}", end='\r\n', file=open(logname, 'a', encoding='ascii'))
+			print(f"<CALL:{len(hiscall)}>{hiscall}", end='\r\n', file=open(logname, 'a', encoding='ascii'))
+			print(f"<MODE:{len(mode)}>{mode}", end='\r\n', file=open(logname, 'a', encoding='ascii'))
+			print(f"<BAND:{len(band + 'M')}>{band + 'M'}", end='\r\n', file=open(logname, 'a', encoding='ascii'))
 			try:
-				print(f"<FREQ:{len(self.dfreq[band])}>{self.dfreq[band]}", end='\r\n', file=open(logname, 'a'))
+				print(f"<FREQ:{len(self.dfreq[band])}>{self.dfreq[band]}", end='\r\n', file=open(logname, 'a', encoding='ascii'))
 			except:
 				pass
-			print(f"<RST_SENT:{len(rst)}>{rst}", end='\r\n', file=open(logname, 'a'))
-			print(f"<RST_RCVD:{len(rst)}>{rst}", end='\r\n', file=open(logname, 'a'))
-			print(f"<STX_STRING:{len(self.myclass + ' ' + self.mysection)}>{self.myclass + ' ' + self.mysection}", end='\r\n', file=open(logname, 'a'))
-			print(f"<SRX_STRING:{len(hisclass + ' ' + hissection)}>{hisclass + ' ' + hissection}", end='\r\n', file=open(logname, 'a'))
-			print(f"<ARRL_SECT:{len(hissection)}>{hissection}", end='\r\n', file=open(logname, 'a'))
-			print(f"<CLASS:{len(hisclass)}>{hisclass}", end='\r\n', file=open(logname, 'a'))
+			print(f"<RST_SENT:{len(rst)}>{rst}", end='\r\n', file=open(logname, 'a', encoding='ascii'))
+			print(f"<RST_RCVD:{len(rst)}>{rst}", end='\r\n', file=open(logname, 'a', encoding='ascii'))
+			print(f"<STX_STRING:{len(self.myclass + ' ' + self.mysection)}>{self.myclass + ' ' + self.mysection}", end='\r\n', file=open(logname, 'a', encoding='ascii'))
+			print(f"<SRX_STRING:{len(hisclass + ' ' + hissection)}>{hisclass + ' ' + hissection}", end='\r\n', file=open(logname, 'a', encoding='ascii'))
+			print(f"<ARRL_SECT:{len(hissection)}>{hissection}", end='\r\n', file=open(logname, 'a', encoding='ascii'))
+			print(f"<CLASS:{len(hisclass)}>{hisclass}", end='\r\n', file=open(logname, 'a', encoding='ascii'))
 			state = self.getState(hissection)
-			if state: print(f"<STATE:{len(state)}>{state}", end='\r\n', file=open(logname, 'a'))
-			if len(grid) > 1: print(f"<GRIDSQUARE:{len(grid)}>{grid}", end='\r\n', file=open(logname, 'a'))
-			if len(opname) > 1: print(f"<NAME:{len(opname)}>{opname}", end='\r\n', file=open(logname, 'a'))
+			if state: print(f"<STATE:{len(state)}>{state}", end='\r\n', file=open(logname, 'a', encoding='ascii'))
+			if len(grid) > 1: print(f"<GRIDSQUARE:{len(grid)}>{grid}", end='\r\n', file=open(logname, 'a', encoding='ascii'))
+			if len(opname) > 1: print(f"<NAME:{len(opname)}>{opname}", end='\r\n', file=open(logname, 'a', encoding='ascii'))
 			comment = "WINTER-FIELD-DAY"
-			print(f"<COMMENT:{len(comment)}>{comment}", end='\r\n', file=open(logname, 'a'))
-			print("<EOR>", end='\r\n', file=open(logname, 'a'))
-			print("", end='\r\n', file=open(logname, 'a'))
+			print(f"<COMMENT:{len(comment)}>{comment}", end='\r\n', file=open(logname, 'a', encoding='ascii'))
+			print("<EOR>", end='\r\n', file=open(logname, 'a', encoding='ascii'))
+			print("", end='\r\n', file=open(logname, 'a', encoding='ascii'))
 		self.infobox.insertPlainText("Done\n\n")
 		app.processEvents()
 
@@ -921,42 +921,42 @@ class MainWindow(QtWidgets.QMainWindow):
 		else:
 			catpower = "LOW"
 		
-		print("START-OF-LOG: 3.0", end='\r\n', file=open(filename, "w"))
-		print("CREATED-BY: K6GTE Winter Field Day Logger", end='\r\n', file=open(filename, "a"))
-		print("CONTEST: WFD", end='\r\n', file=open(filename, "a"))
-		print(f"CALLSIGN: {self.mycall}", end='\r\n', file=open(filename, "a"))
-		print("LOCATION:", end='\r\n', file=open(filename, "a"))
-		print(f"ARRL-SECTION: {self.mysection}", end='\r\n', file=open(filename, "a"))
-		print(f"CATEGORY: {self.myclass}", end='\r\n', file=open(filename, "a"))
-		print(f"CATEGORY-POWER: {catpower}", end='\r\n', file=open(filename, "a"))
+		print("START-OF-LOG: 3.0", end='\r\n', file=open(filename, "w", encoding='ascii'))
+		print("CREATED-BY: K6GTE Winter Field Day Logger", end='\r\n', file=open(filename, "a", encoding='ascii'))
+		print("CONTEST: WFD", end='\r\n', file=open(filename, "a", encoding='ascii'))
+		print(f"CALLSIGN: {self.mycall}", end='\r\n', file=open(filename, "a", encoding='ascii'))
+		print("LOCATION:", end='\r\n', file=open(filename, "a", encoding='ascii'))
+		print(f"ARRL-SECTION: {self.mysection}", end='\r\n', file=open(filename, "a", encoding='ascii'))
+		print(f"CATEGORY: {self.myclass}", end='\r\n', file=open(filename, "a", encoding='ascii'))
+		print(f"CATEGORY-POWER: {catpower}", end='\r\n', file=open(filename, "a", encoding='ascii'))
 		if self.altpower:
-			print("SOAPBOX: 1,500 points for not using commercial power", end='\r\n', file=open(filename, "a"))
+			print("SOAPBOX: 1,500 points for not using commercial power", end='\r\n', file=open(filename, "a", encoding='ascii'))
 			bonuses = bonuses + 1500
 		if self.outdoors:
-			print("SOAPBOX: 1,500 points for setting up outdoors", end='\r\n', file=open(filename, "a"))
+			print("SOAPBOX: 1,500 points for setting up outdoors", end='\r\n', file=open(filename, "a", encoding='ascii'))
 			bonuses = bonuses + 1500
 		if self.notathome:
-			print("SOAPBOX: 1,500 points for setting up away from home", end='\r\n', file=open(filename, "a"))
+			print("SOAPBOX: 1,500 points for setting up away from home", end='\r\n', file=open(filename, "a", encoding='ascii'))
 			bonuses = bonuses + 1500
 		if self.satellite:
-			print("SOAPBOX: 1,500 points for working satellite", end='\r\n', file=open(filename, "a"))
+			print("SOAPBOX: 1,500 points for working satellite", end='\r\n', file=open(filename, "a", encoding='ascii'))
 			bonuses = bonuses + 1500
-		print(f"SOAPBOX: BONUS Total {bonuses}", end='\r\n', file=open(filename, "a"))
-		print(f"CLAIMED-SCORE: {self.calcscore()}", end='\r\n', file=open(filename, "a"))
-		print(f"OPERATORS:{self.mycall}", end='\r\n', file=open(filename, "a"))
-		print("NAME: ", end='\r\n', file=open(filename, "a"))
-		print("ADDRESS: ", end='\r\n', file=open(filename, "a"))
-		print("ADDRESS-CITY: ", end='\r\n', file=open(filename, "a"))
-		print("ADDRESS-STATE: ", end='\r\n', file=open(filename, "a"))
-		print("ADDRESS-POSTALCODE: ", end='\r\n', file=open(filename, "a"))
-		print("ADDRESS-COUNTRY: ", end='\r\n', file=open(filename, "a"))
-		print("EMAIL: ", end='\r\n', file=open(filename, "a"))
+		print(f"SOAPBOX: BONUS Total {bonuses}", end='\r\n', file=open(filename, "a", encoding='ascii'))
+		print(f"CLAIMED-SCORE: {self.calcscore()}", end='\r\n', file=open(filename, "a", encoding='ascii'))
+		print(f"OPERATORS:{self.mycall}", end='\r\n', file=open(filename, "a", encoding='ascii'))
+		print("NAME: ", end='\r\n', file=open(filename, "a", encoding='ascii'))
+		print("ADDRESS: ", end='\r\n', file=open(filename, "a", encoding='ascii'))
+		print("ADDRESS-CITY: ", end='\r\n', file=open(filename, "a", encoding='ascii'))
+		print("ADDRESS-STATE: ", end='\r\n', file=open(filename, "a", encoding='ascii'))
+		print("ADDRESS-POSTALCODE: ", end='\r\n', file=open(filename, "a", encoding='ascii'))
+		print("ADDRESS-COUNTRY: ", end='\r\n', file=open(filename, "a", encoding='ascii'))
+		print("EMAIL: ", end='\r\n', file=open(filename, "a", encoding='ascii'))
 		for x in log:
 			_, hiscall, hisclass, hissection, datetime, band, mode, _, _, _ = x
 			loggeddate = datetime[:10]
 			loggedtime = datetime[11:13] + datetime[14:16]
-			print(f"QSO: {band}M {mode} {loggeddate} {loggedtime} {self.mycall} {self.myclass} {self.mysection} {hiscall} {hisclass} {hissection}", end='\r\n', file=open(filename, "a"))
-		print("END-OF-LOG:", end='\r\n', file=open(filename, "a"))
+			print(f"QSO: {band}M {mode} {loggeddate} {loggedtime} {self.mycall} {self.myclass} {self.mysection} {hiscall} {hisclass} {hissection}", end='\r\n', file=open(filename, "a", encoding='ascii'))
+		print("END-OF-LOG:", end='\r\n', file=open(filename, "a", encoding='ascii'))
 		self.infobox.insertPlainText(" Done\n\n")
 		app.processEvents()
 
