@@ -16,31 +16,31 @@ This is a simple logger ment for single op, it's not usable for clubs.
 WFD only has a generic digital mode designator 'DI', which gets exported to the cabrillo file. But ADIF and CloudLog needed something else, So I Chose RTTY. Feel free to change it to what ever you will use. Just search for the two places in the code 'RTTY' is used and Bob's your dads brother. 
 
 ## Running the binary
-In the dist directory is the latest binary for Linux. You can copy it to a folder in your PATH /usr/local/bin or ~/bin . Or you can follow the steps below to run it from source.
+In the dist directory is the latest binary for Linux. You can copy it to a folder in your PATH `/usr/local/bin` or `~/bin` . Or you can follow the steps below to run it from source.
 
 ## Installing an icon
-If you wish you can install a desktop/menu icon launcher by going to the install_icon folder and running the install.sh script. and to remove the hideous icon later, run the uninstall.sh script
+If you wish you can install a desktop/menu icon launcher by going to the install_icon folder and running the `install.sh` script. and to remove the hideous icon later, run the `uninstall.sh` script
 
 ## Running from source
 Install Python 3, then two required libs via pip.
 
-pip install PyQt5
+`pip install PyQt5`
 
 and
 
-pip install requests
+`pip install requests`
 
 or you may have to type:
 
-python3 -m pip install PyQt5
+`python3 -m pip install PyQt5`
 
 and
 
-python3 -m pip install requests
+`python3 -m pip install requests`
 
 Just make wfdlogger.py executable and run it within the same folder, or type:
 
-python3 wfdlogger.py
+`python3 wfdlogger.py`
 
 ## What to do first
 
