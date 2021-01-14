@@ -4,9 +4,9 @@
 
 [Winter Field Day](https://www.winterfieldday.com/) is a once a year 24hr emergency preparidness event for radio amateurs (Hams). During the event, we try and make as many radio contacts with other Hams in a 24 hour period. Bonus points are awarded for operating outside or using alternate power sources, such as battery/solar/wind. You can find out more about amateur radio by visiting the [ARRL](https://www.arrl.org/).
 
-The logger is written in Python 3, and uses the PyQT5 lib. Qt5 is cross platform so it might work on everything. I have tested it on Linux. This code is based off of a logger I had done earlier using Python and the curses library wich can be found [here](https://github.com/mbridak/wfd_py_logger) and one written for ARRL Field Day [here](https://github.com/mbridak/FieldDayLogger).
+The logger is written in Python 3, and uses the PyQT5 lib. Qt5 is cross platform so it might work on everything. I have tested it on Linux and Windows 10. This code is based off of a logger I had done earlier using Python and the curses library wich can be found [here](https://github.com/mbridak/wfd_py_logger) and one written for ARRL Field Day [here](https://github.com/mbridak/FieldDayLogger).
 
-The log is stored in an sqlite3 database file 'WFD.db'. If you need to wipe everything and start clean, just delete this file and re-run wfdlogger.py
+The log is stored in an sqlite3 database file 'WFD.db'. If you need to wipe everything and start clean, just delete this file and re-run wfdlogger
 
 The logger will generate a cabrillo for submission, An ADIF file so you can merge contacts into your normal Log, and a Statistics file with a band mode breakdown.
 
@@ -19,11 +19,11 @@ WFD only has a generic digital mode designator 'DI', which gets exported to the 
 
 ## Running the binary
 
-In the dist directory is the latest binary for Linux. You can copy it to a folder in your PATH `/usr/local/bin` or `~/bin` . Or you can follow the steps below to run it from source.
+In the dist directory is the latest binary for Linux `wfdlogger` and Windows 10 `wfdlogger.exe`. You can copy it to a folder in your Linux PATH `/usr/local/bin` or `~/bin` or on either platform just run it where ever it happens to be. Or you can follow the steps below to run it from source.
 
 ## Installing an icon
 
-If you wish you can install a desktop/menu icon launcher by going to the install_icon folder and running the `install.sh` script. and to remove the hideous icon later, run the `uninstall.sh` script
+If you wish you can install a Linux desktop/menu icon launcher by going to the install_icon folder and running the `install.sh` script. and to remove the hideous icon later, run the `uninstall.sh` script
 
 ## Running from source
 
