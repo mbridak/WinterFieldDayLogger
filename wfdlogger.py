@@ -1072,6 +1072,7 @@ class settings(QtWidgets.QDialog):
 
 
 app = QtWidgets.QApplication(sys.argv)
+app.setStyle('Fusion')
 window = MainWindow()
 window.show()
 window.create_DB()
