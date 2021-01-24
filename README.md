@@ -66,7 +66,7 @@ Okay you've made a contact. Enter the call in the call field. As you type it in,
 
 If you run rigctld a computer connected to the radio, it can be polled for band/mode updates automatically. Click the gear icon at the bottom of the screen to set the IP and port for rigctld. There is a radio icon at the bottom of the logging window to indicate polling status.
 
-![Alt text](https://github.com/mbridak/WinterFielsDayLogger/raw/main/pics/loggerSettingsDialog.png)
+![Alt text](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/loggerSettingsDialog.png)
 
 ## Cloudlog, QRZ, HamDB useage
 
