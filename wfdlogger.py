@@ -106,23 +106,27 @@ class MainWindow(QtWidgets.QMainWindow):
 	def settingspressed(self):
 		settingsdialog = settings(self)
 		settingsdialog.exec()
+		self.infobox.clear()
 		self.readpreferences()
 		self.qrzauth()
 		self.cloudlogauth()
 
 	def qrzauth(self):
 		if self.useqrz:
-			payload = {'username':self.qrzname, 'password':self.qrzpass}
-			r=requests.get(self.qrzurl,params=payload, timeout=1.0)
-			if r.status_code == 200 and r.text.find('<Key>') > 0:
-				self.qrzsession=r.text[r.text.find('<Key>')+5:r.text.find('</Key>')]
-				self.QRZ_icon.setStyleSheet("color: rgb(128, 128, 0);")
-			else:
-				self.qrzsession = False
-				self.QRZ_icon.setStyleSheet("color: rgb(136, 138, 133);")
-			if r.status_code == 200 and r.text.find('<Error>') > 0:
-				errorText = r.text[r.text.find('<Error>')+7:r.text.find('</Error>')]
-				self.infobox.insertPlainText("\nQRZ Error: "+ errorText + "\n")
+			try:
+				payload = {'username':self.qrzname, 'password':self.qrzpass}
+				r=requests.get(self.qrzurl,params=payload, timeout=1.0)
+				if r.status_code == 200 and r.text.find('<Key>') > 0:
+					self.qrzsession=r.text[r.text.find('<Key>')+5:r.text.find('</Key>')]
+					self.QRZ_icon.setStyleSheet("color: rgb(128, 128, 0);")
+				else:
+					self.qrzsession = False
+					self.QRZ_icon.setStyleSheet("color: rgb(136, 138, 133);")
+				if r.status_code == 200 and r.text.find('<Error>') > 0:
+					errorText = r.text[r.text.find('<Error>')+7:r.text.find('</Error>')]
+					self.infobox.insertPlainText("\nQRZ Error: "+ errorText + "\n")
+			except requests.exceptions.RequestException as e:
+				self.infobox.insertPlainText(f"****QRZ Error****\n{e}\n")
 		else:
 			self.QRZ_icon.setStyleSheet("color: rgb(26, 26, 26);")
 			self.qrzsession = False
@@ -131,13 +135,17 @@ class MainWindow(QtWidgets.QMainWindow):
 		self.cloudlog_icon.setPixmap(QtGui.QPixmap(self.relpath('icon/cloud_grey.png')))
 		self.cloudlogauthenticated = False
 		if self.usecloudlog:
-			self.cloudlog_icon.setPixmap(QtGui.QPixmap(self.relpath('icon/cloud_red.png')))
-			test = self.cloudlogurl[:-3]+"auth/"+self.cloudlogapi
-			r=requests.get(test,params={}, timeout=1.0)
-			if r.status_code == 200 and r.text.find('<status>') > 0:
-				if r.text[r.text.find('<status>')+8:r.text.find('</status>')] == "Valid":
-					self.cloudlogauthenticated = True
-					self.cloudlog_icon.setPixmap(QtGui.QPixmap(self.relpath('icon/cloud_green.png')))
+			try:
+				self.cloudlog_icon.setPixmap(QtGui.QPixmap(self.relpath('icon/cloud_red.png')))
+				test = self.cloudlogurl[:-3]+"auth/"+self.cloudlogapi
+				r=requests.get(test,params={}, timeout=2.0)
+				if r.status_code == 200 and r.text.find('<status>') > 0:
+					if r.text[r.text.find('<status>')+8:r.text.find('</status>')] == "Valid":
+						self.cloudlogauthenticated = True
+						self.cloudlog_icon.setPixmap(QtGui.QPixmap(self.relpath('icon/cloud_green.png')))
+			except requests.exceptions.RequestException as e:
+				self.infobox.insertPlainText(f"****Cloudlog Auth Error:****\n{e}\n")
+
 
 	def getband(self, freq):
 		if freq.isnumeric():
