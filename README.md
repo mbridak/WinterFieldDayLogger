@@ -97,7 +97,7 @@ Double click a contact in the upper left of the screen to edit or delete it.
 
 If you type more than two characters in the callsign field the program will filter the input through a "Super Check Partial" routine and show you possible matches to known contesting call signs. Is this useful? Doubt it.
 
-![Alt text](https://github.com/mbridak/WinterFieldDayLogger/blob/main/pics/scp.png)
+![Alt text](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/scp.png)
 
 ## Section partial check
 
