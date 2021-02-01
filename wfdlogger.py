@@ -43,7 +43,7 @@ class MainWindow(QtWidgets.QMainWindow):
 	wrkdsections=[]
 	linetopass=""
 	bands = ('160', '80', '60','40', '20', '15', '10', '6', '2')
-	dfreq = {'160':"1.800", '80':"3.500", '60':"53.300", '40':"7.000", '20':"14.000", '15':"21.000", '10':"28.000", '6':"50.000", '2':"144.000", '222':"222.000", '432':"432.000", 'SAT':"0.0"}
+	dfreq = {'160':"1.830", '80':"3.530", '60':"53.300", '40':"7.030", '20':"14.030", '15':"21.030", '10':"28.030", '6':"50.030", '2':"144.030", '222':"222.030", '432':"432.030", 'SAT':"0.0"}
 	cloudlogapi = ""
 	cloudlogurl = ""
 	cloudlogauthenticated = False
@@ -63,6 +63,8 @@ class MainWindow(QtWidgets.QMainWindow):
 	usemarker = False
 	oldfreq = 0
 	oldmode = 0
+	basescore = 0
+	powermult = 0
 
 
 	def __init__(self, *args, **kwargs):
@@ -435,9 +437,13 @@ class MainWindow(QtWidgets.QMainWindow):
 		self.bandmodemult = len(c.fetchall())
 		conn.close()
 		self.score = (int(cw) * 2) + int(ph) + (int(di) * 2)
+		self.basescore = self.score
+		self.powermult = 1
 		if self.qrp:
+			self.powermult = 4
 			self.score = self.score * 4
 		elif not (self.highpower):
+			self.powermult = 2
 			self.score = self.score * 2
 		self.score = self.score * self.bandmodemult
 		self.score = self.score + (1500 * self.altpower) + (1500 * self.outdoors) + (1500 * self.notathome) + (1500 * self.satellite)
@@ -937,6 +943,9 @@ class MainWindow(QtWidgets.QMainWindow):
 		print(f"ARRL-SECTION: {self.mysection}", end='\r\n', file=open(filename, "a", encoding='ascii'))
 		print(f"CATEGORY: {self.myclass}", end='\r\n', file=open(filename, "a", encoding='ascii'))
 		print(f"CATEGORY-POWER: {catpower}", end='\r\n', file=open(filename, "a", encoding='ascii'))
+		print(f"SOAPBOX: QSO Points {self.basescore}", end='\r\n', file=open(filename, "a", encoding='ascii'))
+		print(f"SOAPBOX: Power Output Multiplier {self.powermult}", end='\r\n', file=open(filename, "a", encoding='ascii'))
+		print(f"SOAPBOX: Band/mode multiplier {self.bandmodemult}", end='\r\n', file=open(filename, "a", encoding='ascii'))
 		if self.altpower:
 			print("SOAPBOX: 1,500 points for not using commercial power", end='\r\n', file=open(filename, "a", encoding='ascii'))
 			bonuses = bonuses + 1500
@@ -951,7 +960,7 @@ class MainWindow(QtWidgets.QMainWindow):
 			bonuses = bonuses + 1500
 		print(f"SOAPBOX: BONUS Total {bonuses}", end='\r\n', file=open(filename, "a", encoding='ascii'))
 		print(f"CLAIMED-SCORE: {self.calcscore()}", end='\r\n', file=open(filename, "a", encoding='ascii'))
-		print(f"OPERATORS:{self.mycall}", end='\r\n', file=open(filename, "a", encoding='ascii'))
+		print(f"OPERATORS: {self.mycall}", end='\r\n', file=open(filename, "a", encoding='ascii'))
 		print("NAME: ", end='\r\n', file=open(filename, "a", encoding='ascii'))
 		print("ADDRESS: ", end='\r\n', file=open(filename, "a", encoding='ascii'))
 		print("ADDRESS-CITY: ", end='\r\n', file=open(filename, "a", encoding='ascii'))
@@ -963,7 +972,7 @@ class MainWindow(QtWidgets.QMainWindow):
 			_, hiscall, hisclass, hissection, datetime, band, mode, _, _, _ = x
 			loggeddate = datetime[:10]
 			loggedtime = datetime[11:13] + datetime[14:16]
-			print(f"QSO: {band}M {mode} {loggeddate} {loggedtime} {self.mycall} {self.myclass} {self.mysection} {hiscall} {hisclass} {hissection}", end='\r\n', file=open(filename, "a", encoding='ascii'))
+			print(f"QSO: {self.dfreq[band].replace('.','')} {mode} {loggeddate} {loggedtime} {self.mycall} {self.myclass} {self.mysection} {hiscall} {hisclass} {hissection}", end='\r\n', file=open(filename, "a", encoding='ascii'))
 		print("END-OF-LOG:", end='\r\n', file=open(filename, "a", encoding='ascii'))
 		self.infobox.insertPlainText(" Done\n\n")
 		app.processEvents()
