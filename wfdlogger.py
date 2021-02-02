@@ -100,7 +100,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
 	def relpath(self, filename):
 		try:
-			base_path = sys._MEIPASS
+			base_path = sys._MEIPASS # pylint: disable=no-member
 		except:
 			base_path = os.path.abspath(".")
 		return os.path.join(base_path, filename)
@@ -1005,7 +1005,7 @@ class editQSODialog(QtWidgets.QDialog):
 
 	def relpath(self, filename):
 		try:
-			base_path = sys._MEIPASS
+			base_path = sys._MEIPASS # pylint: disable=no-member
 		except:
 			base_path = os.path.abspath(".")
 		return os.path.join(base_path, filename)
@@ -1071,7 +1071,7 @@ class settings(QtWidgets.QDialog):
 
 	def relpath(self, filename):
 		try:
-			base_path = sys._MEIPASS
+			base_path = sys._MEIPASS # pylint: disable=no-member
 		except:
 			base_path = os.path.abspath(".")
 		return os.path.join(base_path, filename)
