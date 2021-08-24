@@ -113,8 +113,16 @@ class MainWindow(QtWidgets.QMainWindow):
 		self.qrzauth()
 		self.cloudlogauth()
 
+	def has_internet(self):
+		try:
+			socket.create_connection(("1.1.1.1", 53))
+			return True
+		except OSError:
+			pass
+		return False
+
 	def qrzauth(self):
-		if self.useqrz:
+		if self.useqrz and self.has_internet():
 			try:
 				payload = {'username':self.qrzname, 'password':self.qrzpass}
 				r=requests.get(self.qrzurl,params=payload, timeout=1.0)
@@ -197,7 +205,7 @@ class MainWindow(QtWidgets.QMainWindow):
 	def pollRadio(self):
 		if self.rigonline:
 			try:
-				#rigctrlsocket.settimeout(0.5)
+				self.rigctrlsocket.settimeout(0.5)
 				self.rigctrlsocket.send(b'f\n')
 				newfreq = self.rigctrlsocket.recv(1024).decode().strip()
 				self.rigctrlsocket.send(b'm\n')
@@ -265,6 +273,10 @@ class MainWindow(QtWidgets.QMainWindow):
 				cleaned = ''.join(ch for ch in text if ch.isalnum() or ch=='/').upper()
 				self.mycallEntry.setText(cleaned)
 		self.mycall = self.mycallEntry.text()
+		if self.mycall !="":
+			self.mycallEntry.setStyleSheet("border: 1px solid green;")
+		else:
+			self.mycallEntry.setStyleSheet("border: 1px solid red;")
 		self.writepreferences()
 
 	def changemyclass(self):
@@ -276,6 +288,10 @@ class MainWindow(QtWidgets.QMainWindow):
 				cleaned = ''.join(ch for ch in text if ch.isalnum() or ch=='/').upper()
 				self.myclassEntry.setText(cleaned)
 		self.myclass = self.myclassEntry.text()
+		if self.myclass != "":
+			self.myclassEntry.setStyleSheet("border: 1px solid green;")
+		else:
+			self.myclassEntry.setStyleSheet("border: 1px solid red;")
 		self.writepreferences()
 
 	def changemysection(self):
@@ -287,6 +303,10 @@ class MainWindow(QtWidgets.QMainWindow):
 				cleaned = ''.join(ch for ch in text if ch.isalpha() or ch=='/').upper()
 				self.mysectionEntry.setText(cleaned)
 		self.mysection = self.mysectionEntry.text()
+		if self.mysection != "":
+			self.mysectionEntry.setStyleSheet("border: 1px solid green;")
+		else:
+			self.mysectionEntry.setStyleSheet("border: 1px solid red;")
 		self.writepreferences()
 
 	def calltest(self):
@@ -397,6 +417,7 @@ class MainWindow(QtWidgets.QMainWindow):
 			conn.commit()
 			conn.close()
 		except Error as e:
+			print("Log Contact: ")
 			print(e)
 		self.sections()
 		self.stats()
@@ -786,28 +807,51 @@ class MainWindow(QtWidgets.QMainWindow):
 	def updatemarker(self):
 		if self.usemarker:
 			filename = str(Path.home())+"/"+self.markerfile
-			print("", file=open(filename, "w", encoding='ascii'))
-			conn = sqlite3.connect(self.database)
-			c = conn.cursor()
-			c.execute("select DISTINCT grid from contacts")
-			x=c.fetchall()
-			if x:
-				for count in x:
-					grid = count[0]
-					if len(grid) > 1:
-						lat, lon = self.gridtolatlon(grid)
-						print(f'{lat} {lon} ""', end='\r\n', file=open(filename, "a", encoding='ascii'))
+			try:
+				print("", file=open(filename, "w", encoding='ascii'))
+				conn = sqlite3.connect(self.database)
+				c = conn.cursor()
+				c.execute("select DISTINCT grid from contacts")
+				x=c.fetchall()
+				if x:
+					for count in x:
+						grid = count[0]
+						if len(grid) > 1:
+							lat, lon = self.gridtolatlon(grid)
+							print(f'{lat} {lon} ""', end='\r\n', file=open(filename, "a", encoding='ascii'))
+			except:
+				self.infobox.setTextColor(QtGui.QColor(245, 121, 0))
+				self.infobox.insertPlainText(f"Unable to write to {filename}\n")
 
 	def qrzlookup(self, call):
 		grid = False
 		name = False
+		internet_good = self.has_internet()
 		try:
-			if self.qrzsession and self.useqrz:
+			if self.qrzsession and self.useqrz and internet_good:
 				payload = {'s':self.qrzsession, 'callsign':call}
 				r=requests.get(self.qrzurl,params=payload, timeout=3.0)
-			elif self.usehamdb:
+				if not r.text.find('<Key>'): #key expired get a new one
+					self.qrzauth()
+					if self.qrzsession:
+						payload = {'s':self.qrzsession, 'callsign':call}
+						r=requests.get(self.qrzurl,params=payload, timeout=3.0)
+				grid, name = self.parseLookup(r)
+			elif self.usehamdb and internet_good:
 				r=requests.get(f"http://api.hamdb.org/v1/{call}/xml/k6gtewfdlogger",timeout=3.0)
+				grid, name = self.parseLookup(r)
+		except:
+			self.infobox.insertPlainText(f"Something Smells...\n")
+		return grid, name
+
+	def parseLookup(self,r):
+		grid=False
+		name=False
+		try:
 			if r.status_code == 200:
+				if r.text.find('<Error>') > 0:
+					errorText = r.text[r.text.find('<Error>')+7:r.text.find('</Error>')]
+					self.infobox.insertPlainText(f"\nQRZ/HamDB Error: {errorText}\n")
 				if r.text.find('<grid>') > 0:
 					grid = r.text[r.text.find('<grid>')+6:r.text.find('</grid>')]
 				if r.text.find('<fname>') > 0:
@@ -818,7 +862,7 @@ class MainWindow(QtWidgets.QMainWindow):
 					else:
 						name += " " + r.text[r.text.find('<name>')+6:r.text.find('</name>')]
 		except:
-			pass
+			self.infobox.insertPlainText(f"Lookup Failed...\n")
 		return grid, name
 
 	def adif(self):
