@@ -105,6 +105,12 @@ class MainWindow(QtWidgets.QMainWindow):
 			base_path = os.path.abspath(".")
 		return os.path.join(base_path, filename)
 		
+	def updateTime(self):
+		now = datetime.now().isoformat(' ')[5:19].replace('-', '/')
+		utcnow = datetime.utcnow().isoformat(' ')[5:19].replace('-', '/')
+		window.localtime.setText(now)
+		window.utctime.setText(utcnow)
+
 	def settingspressed(self):
 		settingsdialog = settings(self)
 		settingsdialog.exec()
@@ -1149,16 +1155,8 @@ window.logwindow()
 window.sections()
 window.callsign_entry.setFocus()
 
-def updatetime():
-	now = datetime.now().isoformat(' ')[5:19].replace('-', '/')
-	utcnow = datetime.utcnow().isoformat(' ')[5:19].replace('-', '/')
-	window.localtime.setText(now)
-	window.utctime.setText(utcnow)
-
-
 timer = QtCore.QTimer()
-timer.timeout.connect(updatetime)
+timer.timeout.connect(window.updateTime)
 timer.start(1000)
-
 
 app.exec()
