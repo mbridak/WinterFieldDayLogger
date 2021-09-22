@@ -169,7 +169,6 @@ class MainWindow(QtWidgets.QMainWindow):
 			except requests.exceptions.RequestException as e:
 				self.infobox.insertPlainText(f"****Cloudlog Auth Error:****\n{e}\n")
 
-
 	def getband(self, freq):
 		if freq.isnumeric():
 			frequency = int(float(freq))
@@ -1158,6 +1157,48 @@ class settings(QtWidgets.QDialog):
 		except Error as e:
 			print(e)
 
+class startup(QtWidgets.QDialog):
+	def __init__(self, parent=None):
+		super().__init__(parent)
+		uic.loadUi(self.relpath("startup.ui"), self)
+		self.continue_pushButton.clicked.connect(self.store)
+
+	def relpath(self, filename):
+		try:
+			base_path = sys._MEIPASS # pylint: disable=no-member
+		except:
+			base_path = os.path.abspath(".")
+		return os.path.join(base_path, filename)
+
+	def setCallSign(self, callsign):
+		self.dialog_callsign.setText(callsign)
+
+	def setClass(self, myclass):
+		self.dialog_class.setText(myclass)
+
+	def setSection(self, mysection):
+		self.dialog_section.setText(mysection)
+
+	def getCallSign(self):
+		return self.dialog_callsign.text()
+
+	def getClass(self):
+		return self.dialog_class.text()
+
+	def getSection(self):
+		return self.dialog_section.text()
+
+	def store(self):
+		self.accept()
+
+def startupDialogFinished():
+	window.mycallEntry.setText(startupdialog.getCallSign())
+	window.changemycall()
+	window.myclassEntry.setText(startupdialog.getClass())
+	window.changemyclass()
+	window.mysectionEntry.setText(startupdialog.getSection())
+	window.changemysection()
+	startupdialog.close()
 
 app = QtWidgets.QApplication(sys.argv)
 app.setStyle('Fusion')
@@ -1167,6 +1208,13 @@ window.create_DB()
 window.changeband()
 window.changemode()
 window.readpreferences()
+if window.mycall == '' or window.myclass == '' or window.mysection == '':
+	startupdialog = startup()
+	startupdialog.accepted.connect(startupDialogFinished)
+	startupdialog.open()
+	startupdialog.setCallSign(window.mycall)
+	startupdialog.setClass(window.myclass)
+	startupdialog.setSection(window.mysection)
 window.qrzauth()
 window.cloudlogauth()
 window.stats()
