@@ -69,6 +69,7 @@ class MainWindow(QtWidgets.QMainWindow):
 	usemarker = False
 	oldfreq = 0
 	oldmode = 0
+	oldrfpower  = 0
 	basescore = 0
 	powermult = 0
 
@@ -114,8 +115,8 @@ class MainWindow(QtWidgets.QMainWindow):
 	def updateTime(self):
 		now = datetime.now().isoformat(' ')[5:19].replace('-', '/')
 		utcnow = datetime.utcnow().isoformat(' ')[5:19].replace('-', '/')
-		window.localtime.setText(now)
-		window.utctime.setText(utcnow)
+		self.localtime.setText(now)
+		self.utctime.setText(utcnow)
 
 	def settingspressed(self):
 		settingsdialog = settings(self)
@@ -222,10 +223,15 @@ class MainWindow(QtWidgets.QMainWindow):
 				newfreq = self.rigctrlsocket.recv(1024).decode().strip()
 				self.rigctrlsocket.send(b'm\n')
 				newmode = self.rigctrlsocket.recv(1024).decode().strip().split()[0]
+				self.rigctrlsocket.send(b'l RFPOWER\n')
+				newrfpower = self.rigctrlsocket.recv(1024).decode().strip()
 				self.radio_icon.setPixmap(QtGui.QPixmap(self.relpath('icon/radio_green.png')))
-				if newfreq != self.oldfreq or newmode != self.oldmode:
+				if newfreq != self.oldfreq or newmode != self.oldmode or newrfpower != self.oldrfpower:
 					self.oldfreq = newfreq
 					self.oldmode = newmode
+					self.oldrfpower = newrfpower
+					self.power_selector.setValue(int(float(newrfpower) * 100))
+					self.changepower()
 					self.setband(str(self.getband(newfreq)))
 					self.setmode(str(self.getmode(newmode)))
 			except:
@@ -274,6 +280,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
 	def changepower(self):
 		self.power = str(self.power_selector.value())
+		self.oldrfpower = self.power
 		self.writepreferences()
 
 	def changemycall(self):
