@@ -106,6 +106,9 @@ class MainWindow(QtWidgets.QMainWindow):
 		self.radiochecktimer.start(1000)
 
 	def relpath(self, filename):
+		"""
+		If the program is packaged with pyinstaller, this is needed since all files will be in a temp folder during execution.
+		"""
 		try:
 			base_path = sys._MEIPASS # pylint: disable=no-member
 		except:
@@ -113,13 +116,19 @@ class MainWindow(QtWidgets.QMainWindow):
 		return os.path.join(base_path, filename)
 
 	def updateTime(self):
+		"""
+		Update local and UTC time on screen.
+		"""
 		now = datetime.now().isoformat(' ')[5:19].replace('-', '/')
 		utcnow = datetime.utcnow().isoformat(' ')[5:19].replace('-', '/')
 		self.localtime.setText(now)
 		self.utctime.setText(utcnow)
 
 	def settingspressed(self):
-		settingsdialog = settings(self)
+		"""
+		Get settings changes, Authorize to QRZ and Cloudlog if needed.
+		"""
+		settingsdialog = Settings(self)
 		settingsdialog.setup(self.database)
 		settingsdialog.exec()
 		self.infobox.clear()
@@ -128,6 +137,9 @@ class MainWindow(QtWidgets.QMainWindow):
 		self.cloudlogauth()
 
 	def has_internet(self):
+		"""
+		Connect to a main DNS server to check connectivity.
+		"""
 		try:
 			socket.create_connection(("1.1.1.1", 53))
 			return True
@@ -136,6 +148,9 @@ class MainWindow(QtWidgets.QMainWindow):
 		return False
 
 	def qrzauth(self):
+		"""
+		Get QRZ session key.
+		"""
 		if self.useqrz and self.has_internet():
 			try:
 				payload = {'username':self.qrzname, 'password':self.qrzpass}
@@ -156,6 +171,9 @@ class MainWindow(QtWidgets.QMainWindow):
 			self.qrzsession = False
 
 	def cloudlogauth(self):
+		"""
+		Check if user has valid Cloudlog API key.
+		"""
 		self.cloudlog_icon.setPixmap(QtGui.QPixmap(self.relpath('icon/cloud_grey.png')))
 		self.cloudlogauthenticated = False
 		if self.usecloudlog:
@@ -171,6 +189,11 @@ class MainWindow(QtWidgets.QMainWindow):
 				self.infobox.insertPlainText(f"****Cloudlog Auth Error:****\n{e}\n")
 
 	def getband(self, freq):
+		"""
+		Convert a (float) frequency into a (string) band.
+		Returns a (string) band.
+		Returns a "0" if frequency is out of band.
+		"""
 		if freq.isnumeric():
 			frequency = int(float(freq))
 			if frequency > 1800000 and frequency < 2000000:
@@ -201,6 +224,9 @@ class MainWindow(QtWidgets.QMainWindow):
 			return "0"
 
 	def getmode(self, rigmode):
+		"""
+		Change what rigctld returned for the mode to the cabrillo mode for logging.
+		"""
 		if rigmode == "CW" or rigmode == 'CWR':
 			return "CW"
 		if rigmode == "USB" or rigmode == "LSB" or rigmode == "FM" or rigmode == "AM":
@@ -216,15 +242,20 @@ class MainWindow(QtWidgets.QMainWindow):
 		self.changemode()
 
 	def pollRadio(self):
+		"""
+		Poll rigctld to get power band and mode of the radio.
+		"""
 		if self.rigonline:
 			try:
 				self.rigctrlsocket.settimeout(0.5)
+				self.rigctrlsocket.send(b'l RFPOWER\n')
+				newrfpower = self.rigctrlsocket.recv(1024).decode().strip()
 				self.rigctrlsocket.send(b'f\n')
 				newfreq = self.rigctrlsocket.recv(1024).decode().strip()
 				self.rigctrlsocket.send(b'm\n')
 				newmode = self.rigctrlsocket.recv(1024).decode().strip().split()[0]
-				self.rigctrlsocket.send(b'l RFPOWER\n')
-				newrfpower = self.rigctrlsocket.recv(1024).decode().strip()
+				self.rigctrlsocket.close()
+				
 				self.radio_icon.setPixmap(QtGui.QPixmap(self.relpath('icon/radio_green.png')))
 				if newfreq != self.oldfreq or newmode != self.oldmode or newrfpower != self.oldrfpower:
 					self.oldfreq = newfreq
@@ -239,6 +270,9 @@ class MainWindow(QtWidgets.QMainWindow):
 				self.radio_icon.setPixmap(QtGui.QPixmap(self.relpath('icon/radio_red.png')))
 
 	def checkRadio(self):
+		"""
+		Checks to see if rigctld daemon is running.
+		"""
 		if self.userigctl:
 			self.rigctrlsocket=socket.socket()
 			self.rigctrlsocket.settimeout(0.1)
@@ -253,10 +287,16 @@ class MainWindow(QtWidgets.QMainWindow):
 			self.rigonline = False
 
 	def Radio(self):
+		"""
+		Check for connection to rigctld. if it's there, poll it for radio status.
+		"""
 		self.checkRadio()
 		self.pollRadio()
 
 	def flash(self):
+		"""
+		Flash the screen to give visual indication of a dupe.
+		"""
 		self.setStyleSheet("background-color: rgb(245, 121, 0);\ncolor: rgb(211, 215, 207);")
 		app.processEvents()
 		self.setStyleSheet("background-color: rgb(42, 42, 42);\ncolor: rgb(211, 215, 207);")
@@ -273,12 +313,21 @@ class MainWindow(QtWidgets.QMainWindow):
 		self.callsign_entry.setFocus()
 
 	def changeband(self):
+		"""
+		Sets the internal band used for logging to the onscreen dropdown value.
+		"""
 		self.band = self.band_selector.currentText()
 
 	def changemode(self):
+		"""
+		Sets the internal mode used for logging to the onscreen dropdown value.
+		"""
 		self.mode = self.mode_selector.currentText()
 
 	def changepower(self):
+		"""
+		Sets the internal power level used for logging to the onscreen dropdown value.
+		"""
 		self.power = str(self.power_selector.value())
 		self.oldrfpower = self.power
 		self.writepreferences()
@@ -329,6 +378,9 @@ class MainWindow(QtWidgets.QMainWindow):
 		self.writepreferences()
 
 	def calltest(self):
+		"""
+		Cleans callsign of spaces and strips non alphanumeric or '/' characters.
+		"""
 		text = self.callsign_entry.text()
 		if(len(text)):
 			if text[-1] == " ":
@@ -340,6 +392,9 @@ class MainWindow(QtWidgets.QMainWindow):
 				self.superCheck()
 
 	def classtest(self):
+		"""
+		Strips class of spaces and non alphanumerics, converts to uppercase.
+		"""
 		text = self.class_entry.text()
 		if(len(text)):
 			if text[-1] == " ":
@@ -350,6 +405,9 @@ class MainWindow(QtWidgets.QMainWindow):
 				self.class_entry.setText(cleaned)
 
 	def sectiontest(self):
+		"""
+		Strips section of spaces and non alpha characters, converts to uppercase.
+		"""
 		text = self.section_entry.text()
 		if(len(text)):
 			if text[-1] == " ":
@@ -1111,15 +1169,17 @@ class editQSODialog(QtWidgets.QDialog):
 		self.change.lineChanged.emit()
 		self.close()
 
-class settings(QtWidgets.QDialog):
-
-	database=""
+class Settings(QtWidgets.QDialog):
+	"""
+	Setup settings dialog. Reads and stores settings to an sqlite db.
+	Call setup() with filename of db.
+	"""
 
 	def __init__(self, parent=None):
 		super().__init__(parent)
 		uic.loadUi(self.relpath("settings.ui"), self)
 		self.buttonBox.accepted.connect(self.saveChanges)
-
+ 
 	def setup(self, thedatabase):
 		self.database = thedatabase
 		try:
@@ -1164,7 +1224,10 @@ class settings(QtWidgets.QDialog):
 		except Error as e:
 			print(e)
 
-class startup(QtWidgets.QDialog):
+class Startup(QtWidgets.QDialog):
+	"""
+	Show splash screen, get Op call, class, section
+	"""
 	def __init__(self, parent=None):
 		super().__init__(parent)
 		uic.loadUi(self.relpath("startup.ui"), self)
@@ -1199,6 +1262,9 @@ class startup(QtWidgets.QDialog):
 		self.accept()
 
 def startupDialogFinished():
+	"""
+	Store call, class, section enteries and close dialog
+	"""
 	window.mycallEntry.setText(startupdialog.getCallSign())
 	window.changemycall()
 	window.myclassEntry.setText(startupdialog.getClass())
@@ -1216,7 +1282,7 @@ window.changeband()
 window.changemode()
 window.readpreferences()
 if window.mycall == '' or window.myclass == '' or window.mysection == '':
-	startupdialog = startup()
+	startupdialog = Startup()
 	startupdialog.accepted.connect(startupDialogFinished)
 	startupdialog.open()
 	startupdialog.setCallSign(window.mycall)
