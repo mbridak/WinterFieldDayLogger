@@ -541,6 +541,9 @@ color: rgb(211, 215, 207);</string>
    </property>
   </widget>
   <widget class="QCheckBox" name="usehamdb_checkBox">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
    <property name="geometry">
     <rect>
      <x>320</x>
@@ -554,6 +557,9 @@ color: rgb(211, 215, 207);</string>
    </property>
    <property name="text">
     <string>Use HamDB</string>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
    </property>
   </widget>
  </widget>

@@ -58,7 +58,7 @@ class MainWindow(QtWidgets.QMainWindow):
 	qrzpass = ""
 	qrzname = ""
 	useqrz = False
-	usehamdb = False
+	usehamdb = True
 	qrzsession = False
 	rigctrlsocket = ""
 	rigctrlhost = ""
@@ -898,12 +898,18 @@ class MainWindow(QtWidgets.QMainWindow):
 				c = conn.cursor()
 				c.execute("select DISTINCT grid from contacts")
 				x=c.fetchall()
+				islast = 0
+				lastcolor = ""
 				if x:
 					for count in x:
+						islast += 1
+						if len(x) == islast:
+							lastcolor = "color=Orange"
+						print(f"{len(x)}")
 						grid = count[0]
 						if len(grid) > 1:
 							lat, lon = self.gridtolatlon(grid)
-							print(f'{lat} {lon} ""', end='\r\n', file=open(filename, "a", encoding='ascii'))
+							print(f'{lat} {lon} "" {lastcolor}', end='\r\n', file=open(filename, "a", encoding='ascii'))
 			except:
 				self.infobox.setTextColor(QtGui.QColor(245, 121, 0))
 				self.infobox.insertPlainText(f"Unable to write to {filename}\n")
@@ -923,7 +929,7 @@ class MainWindow(QtWidgets.QMainWindow):
 						r=requests.get(self.qrzurl,params=payload, timeout=3.0)
 				grid, name = self.parseLookup(r)
 			elif self.usehamdb and internet_good:
-				r=requests.get(f"http://api.hamdb.org/v1/{call}/xml/k6gtewfdlogger",timeout=3.0)
+				r=requests.get(f"http://api.hamdb.org/{call}/xml/k6gtewfdlogger",timeout=3.0)
 				grid, name = self.parseLookup(r)
 		except:
 			self.infobox.insertPlainText(f"Something Smells...\n")
