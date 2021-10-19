@@ -4,7 +4,7 @@ block_cipher = None
 
 
 a = Analysis(['wfdlogger.py'],
-             pathex=['/home/mbridak/Nextcloud/dev/WinterFieldDayLogger'],
+             pathex=['.'],
              binaries=[('icon/*.png','icon')],
              datas=[('main.ui','.'),
              ('MASTER.SCP','.'),
