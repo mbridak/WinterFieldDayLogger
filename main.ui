@@ -3073,7 +3073,17 @@ color: rgb(0, 0, 0);</string>
     </item>
     <item>
      <property name="text">
+      <string>60</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
       <string>40</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>30</string>
      </property>
     </item>
     <item>
@@ -3083,7 +3093,17 @@ color: rgb(0, 0, 0);</string>
     </item>
     <item>
      <property name="text">
+      <string>17</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
       <string>15</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>12</string>
      </property>
     </item>
     <item>

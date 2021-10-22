@@ -49,7 +49,7 @@ class MainWindow(QtWidgets.QMainWindow):
 	wrkdsections=[]
 	linetopass=""
 	bands = ('160', '80', '60','40', '20', '15', '10', '6', '2')
-	dfreq = {'160':"1.830", '80':"3.530", '60':"53.300", '40':"7.030", '20':"14.030", '15':"21.030", '10':"28.030", '6':"50.030", '2':"144.030", '222':"222.030", '432':"432.030", 'SAT':"0.0"}
+	dfreq = {'160':"1.830", '80':"3.530", '60':"5.340", '40':"7.030", '20':"14.030", '15':"21.030", '10':"28.030", '6':"50.030", '2':"144.030", '222':"222.030", '432':"432.030", 'SAT':"0.0"}
 	cloudlogapi = ""
 	cloudlogurl = ""
 	cloudlogauthenticated = False
@@ -248,8 +248,8 @@ class MainWindow(QtWidgets.QMainWindow):
 		if self.rigonline:
 			try:
 				self.rigctrlsocket.settimeout(0.5)
-				self.rigctrlsocket.send(b'l RFPOWER\n')
-				newrfpower = self.rigctrlsocket.recv(1024).decode().strip()
+				#self.rigctrlsocket.send(b'l RFPOWER\n')
+				#newrfpower = self.rigctrlsocket.recv(1024).decode().strip()
 				self.rigctrlsocket.send(b'f\n')
 				newfreq = self.rigctrlsocket.recv(1024).decode().strip()
 				self.rigctrlsocket.send(b'm\n')
@@ -258,12 +258,12 @@ class MainWindow(QtWidgets.QMainWindow):
 				self.rigctrlsocket.close()
 				
 				self.radio_icon.setPixmap(QtGui.QPixmap(self.relpath('icon/radio_green.png')))
-				if newfreq != self.oldfreq or newmode != self.oldmode or newrfpower != self.oldrfpower:
+				if newfreq != self.oldfreq or newmode != self.oldmode: # or newrfpower != self.oldrfpower:
 					self.oldfreq = newfreq
 					self.oldmode = newmode
-					self.oldrfpower = newrfpower
-					self.power_selector.setValue(int(float(newrfpower) * 100))
-					self.changepower()
+					#self.oldrfpower = newrfpower
+					#self.power_selector.setValue(int(float(newrfpower) * 100))
+					#self.changepower()
 					self.setband(str(self.getband(newfreq)))
 					self.setmode(str(self.getmode(newmode)))
 			except:
