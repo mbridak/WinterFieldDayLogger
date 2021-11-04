@@ -21,7 +21,7 @@ WFD only has a generic digital mode designator 'DI', which gets exported to the 
 
 ## Running the binary
 
-In the dist directory is the latest binary for Linux [wfdlogger](https://github.com/mbridak/WinterFieldDayLogger/raw/main/dist/wfdlogger), Raspberry Pi [wfdlogger_pi](https://github.com/mbridak/WinterFieldDayLogger/raw/main/dist/wfdlogger_pi) and Windows 10 [wfdlogger.exe](https://github.com/mbridak/WinterFieldDayLogger/raw/main/dist/wfdlogger.exe). You can copy it to a folder in your Linux PATH `/usr/local/bin` or `~/bin` or on either platform just run it where ever it happens to be. Or you can follow the steps below to run it from source.
+Latest stable binary for Linux [wfdlogger](https://github.com/mbridak/WinterFieldDayLogger/releases/download/v21.11.4/wfdlogger), Raspberry Pi [wfdlogger_pi](https://github.com/mbridak/WinterFieldDayLogger/releases/download/v21.11.4/wfdlogger_pi) and Windows 10 [wfdlogger.exe](https://github.com/mbridak/WinterFieldDayLogger/releases/download/v21.11.4/wfdlogger.exe). You can copy it to a folder in your Linux PATH `/usr/local/bin` or `~/bin` or on either platform just run it where ever it happens to be. Or you can follow the steps below to run it from source.
 
 ## Installing an icon
 
