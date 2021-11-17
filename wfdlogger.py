@@ -3,15 +3,15 @@
 #Nothing to see here move along.
 #xplanet -body earth -window -longitude -117 -latitude 38 -config Default -projection azmithal -radius 200 -wait 5
 
-import json
+
 import requests
 import sys
 import sqlite3
 import socket
 import os
 
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5 import uic
+from json import dumps
+from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from datetime import datetime
 from sqlite3 import Error
 from pathlib import Path
@@ -846,15 +846,17 @@ class MainWindow(QtWidgets.QMainWindow):
 	def generateBandModeTally(self):
 		blist = self.getbands()
 		bmtfn = "Statistics.txt"
-		print("\t\tCW\tPWR\tDI\tPWR\tPH\tPWR", end='\r\n', file=open(bmtfn, "w"))
-		print("-"*60, end='\r\n', file=open(bmtfn, "a"))
-		for b in self.bands:
-			if b in blist:
-				cwt = self.getBandModeTally(b,"CW")
-				dit = self.getBandModeTally(b,"DI")
-				pht = self.getBandModeTally(b,"PH")
-				print(f"Band:\t{b}\t{cwt[0]}\t{cwt[1]}\t{dit[0]}\t{dit[1]}\t{pht[0]}\t{pht[1]}", end='\r\n', file=open(bmtfn, "a"))
-				print("-"*60, end='\r\n', file=open(bmtfn, "a"))
+		with open(bmtfn, "w") as f:
+			print("\t\tCW\tPWR\tDI\tPWR\tPH\tPWR", end='\r\n', file=f)
+		with open(bmtfn, "a") as f:
+			print("-"*60, end='\r\n', file=f)
+			for b in self.bands:
+				if b in blist:
+					cwt = self.getBandModeTally(b,"CW")
+					dit = self.getBandModeTally(b,"DI")
+					pht = self.getBandModeTally(b,"PH")
+					print(f"Band:\t{b}\t{cwt[0]}\t{cwt[1]}\t{dit[0]}\t{dit[1]}\t{pht[0]}\t{pht[1]}", end='\r\n', file=f)
+					print("-"*60, end='\r\n', file=f)
 
 	def getState(self, section):
 		try:
@@ -893,24 +895,23 @@ class MainWindow(QtWidgets.QMainWindow):
 		if self.usemarker:
 			filename = str(Path.home())+"/"+self.markerfile
 			try:
-				print("", file=open(filename, "w", encoding='ascii'))
+				with open(filename, "w", encoding='ascii') as f:	
+					print("", file=f)
 				conn = sqlite3.connect(self.database)
 				c = conn.cursor()
 				c.execute("select DISTINCT grid from contacts")
 				x=c.fetchall()
-				islast = 0
-				lastcolor = ""
 				if x:
-					for count in x:
-						islast += 1
-						if len(x) == islast:
-							lastcolor = "color=Orange"
-						print(f"{len(x)}")
-						grid = count[0]
-						if len(grid) > 1:
-							lat, lon = self.gridtolatlon(grid)
-							print(f'{lat} {lon} "" {lastcolor}', end='\r\n', file=open(filename, "a", encoding='ascii'))
-			except:
+					lastcolor = ""
+					with open(filename, "a", encoding='ascii') as f:
+						islast = len(x)-1
+						for count, grid in enumerate(x):
+							if count == islast:
+								lastcolor = "color=Orange"
+							if len(grid[0]) > 1:
+								lat, lon = self.gridtolatlon(grid[0])
+								print(f'{lat} {lon} "" {lastcolor}', end='\r\n', file=f)
+			except EnvironmentError:
 				self.infobox.setTextColor(QtGui.QColor(245, 121, 0))
 				self.infobox.insertPlainText(f"Unable to write to {filename}\n")
 
@@ -1048,7 +1049,7 @@ class MainWindow(QtWidgets.QMainWindow):
 			"type":"adif",
 			"string":adifq
 		}
-		jsonData = json.dumps(payloadDict)
+		jsonData = dumps(payloadDict)
 		_ = requests.post(self.cloudlogurl, jsonData)
 
 	def cabrillo(self):
