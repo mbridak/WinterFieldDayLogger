@@ -969,42 +969,44 @@ class MainWindow(QtWidgets.QMainWindow):
 		conn.close()
 		grid = False
 		opname = False
-		print("<ADIF_VER:5>2.2.0", end='\r\n', file=open(logname, "w", encoding='ascii'))
-		print("<EOH>", end='\r\n', file=open(logname, "a", encoding='ascii'))
-		for x in log:
-			_, hiscall, hisclass, hissection, datetime, band, mode, _, grid, opname = x
-			if mode == "DI": mode = "RTTY"
-			if mode == "PH": mode = "SSB"
-			if mode == "CW":
-				rst = "599"
-			else:
-				rst = "59"
-			loggeddate = datetime[:10]
-			loggedtime = datetime[11:13] + datetime[14:16]
-			print(f"<QSO_DATE:{len(''.join(loggeddate.split('-')))}:d>{''.join(loggeddate.split('-'))}", end='\r\n', file=open(logname, 'a', encoding='ascii'))
-			print(f"<TIME_ON:{len(loggedtime)}>{loggedtime}", end='\r\n', file=open(logname, 'a', encoding='ascii'))
-			print(f"<CALL:{len(hiscall)}>{hiscall}", end='\r\n', file=open(logname, 'a', encoding='ascii'))
-			print(f"<MODE:{len(mode)}>{mode}", end='\r\n', file=open(logname, 'a', encoding='ascii'))
-			print(f"<BAND:{len(band + 'M')}>{band + 'M'}", end='\r\n', file=open(logname, 'a', encoding='ascii'))
-			try:
-				print(f"<FREQ:{len(self.dfreq[band])}>{self.dfreq[band]}", end='\r\n', file=open(logname, 'a', encoding='ascii'))
-			except:
-				pass
-			print(f"<RST_SENT:{len(rst)}>{rst}", end='\r\n', file=open(logname, 'a', encoding='ascii'))
-			print(f"<RST_RCVD:{len(rst)}>{rst}", end='\r\n', file=open(logname, 'a', encoding='ascii'))
-			print(f"<STX_STRING:{len(self.myclass + ' ' + self.mysection)}>{self.myclass + ' ' + self.mysection}", end='\r\n', file=open(logname, 'a', encoding='ascii'))
-			print(f"<SRX_STRING:{len(hisclass + ' ' + hissection)}>{hisclass + ' ' + hissection}", end='\r\n', file=open(logname, 'a', encoding='ascii'))
-			print(f"<ARRL_SECT:{len(hissection)}>{hissection}", end='\r\n', file=open(logname, 'a', encoding='ascii'))
-			print(f"<CLASS:{len(hisclass)}>{hisclass}", end='\r\n', file=open(logname, 'a', encoding='ascii'))
-			state = self.getState(hissection)
-			if state: print(f"<STATE:{len(state)}>{state}", end='\r\n', file=open(logname, 'a', encoding='ascii'))
-			if len(grid) > 1: print(f"<GRIDSQUARE:{len(grid)}>{grid}", end='\r\n', file=open(logname, 'a', encoding='ascii'))
-			if len(opname) > 1: print(f"<NAME:{len(opname)}>{opname}", end='\r\n', file=open(logname, 'a', encoding='ascii'))
-			comment = "WINTER-FIELD-DAY"
-			print(f"<COMMENT:{len(comment)}>{comment}", end='\r\n', file=open(logname, 'a', encoding='ascii'))
-			print("<EOR>", end='\r\n', file=open(logname, 'a', encoding='ascii'))
-			print("", end='\r\n', file=open(logname, 'a', encoding='ascii'))
-		self.infobox.insertPlainText("Done\n\n")
+		with open(logname, "w", encoding='ascii') as f:
+			print("<ADIF_VER:5>2.2.0", end='\r\n', file=f)
+		with open(logname, "a", encoding='ascii') as f:
+			print("<EOH>", end='\r\n', file=f)
+			for x in log:
+				_, hiscall, hisclass, hissection, datetime, band, mode, _, grid, opname = x
+				if mode == "DI": mode = "RTTY"
+				if mode == "PH": mode = "SSB"
+				if mode == "CW":
+					rst = "599"
+				else:
+					rst = "59"
+				loggeddate = datetime[:10]
+				loggedtime = datetime[11:13] + datetime[14:16]
+				print(f"<QSO_DATE:{len(''.join(loggeddate.split('-')))}:d>{''.join(loggeddate.split('-'))}", end='\r\n', file=f)
+				print(f"<TIME_ON:{len(loggedtime)}>{loggedtime}", end='\r\n', file=f)
+				print(f"<CALL:{len(hiscall)}>{hiscall}", end='\r\n', file=f)
+				print(f"<MODE:{len(mode)}>{mode}", end='\r\n', file=f)
+				print(f"<BAND:{len(band + 'M')}>{band + 'M'}", end='\r\n', file=f)
+				try:
+					print(f"<FREQ:{len(self.dfreq[band])}>{self.dfreq[band]}", end='\r\n', file=f)
+				except:
+					pass # This is bad form... I can't remember why this is in a try block
+				print(f"<RST_SENT:{len(rst)}>{rst}", end='\r\n', file=f)
+				print(f"<RST_RCVD:{len(rst)}>{rst}", end='\r\n', file=f)
+				print(f"<STX_STRING:{len(self.myclass + ' ' + self.mysection)}>{self.myclass + ' ' + self.mysection}", end='\r\n', file=f)
+				print(f"<SRX_STRING:{len(hisclass + ' ' + hissection)}>{hisclass + ' ' + hissection}", end='\r\n', file=f)
+				print(f"<ARRL_SECT:{len(hissection)}>{hissection}", end='\r\n', file=f)
+				print(f"<CLASS:{len(hisclass)}>{hisclass}", end='\r\n', file=f)
+				state = self.getState(hissection)
+				if state: print(f"<STATE:{len(state)}>{state}", end='\r\n', file=f)
+				if len(grid) > 1: print(f"<GRIDSQUARE:{len(grid)}>{grid}", end='\r\n', file=f)
+				if len(opname) > 1: print(f"<NAME:{len(opname)}>{opname}", end='\r\n', file=f)
+				comment = "WINTER-FIELD-DAY"
+				print(f"<COMMENT:{len(comment)}>{comment}", end='\r\n', file=f)
+				print("<EOR>", end='\r\n', file=f)
+				print("", end='\r\n', file=f)
+			self.infobox.insertPlainText("Done\n\n")
 		app.processEvents()
 
 	def postcloudlog(self):
