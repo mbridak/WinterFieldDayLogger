@@ -1072,46 +1072,47 @@ class MainWindow(QtWidgets.QMainWindow):
 			catpower = "HIGH"
 		else:
 			catpower = "LOW"
-		
-		print("START-OF-LOG: 3.0", end='\r\n', file=open(filename, "w", encoding='ascii'))
-		print("CREATED-BY: K6GTE Winter Field Day Logger", end='\r\n', file=open(filename, "a", encoding='ascii'))
-		print("CONTEST: WFD", end='\r\n', file=open(filename, "a", encoding='ascii'))
-		print(f"CALLSIGN: {self.mycall}", end='\r\n', file=open(filename, "a", encoding='ascii'))
-		print("LOCATION:", end='\r\n', file=open(filename, "a", encoding='ascii'))
-		print(f"ARRL-SECTION: {self.mysection}", end='\r\n', file=open(filename, "a", encoding='ascii'))
-		print(f"CATEGORY: {self.myclass}", end='\r\n', file=open(filename, "a", encoding='ascii'))
-		print(f"CATEGORY-POWER: {catpower}", end='\r\n', file=open(filename, "a", encoding='ascii'))
-		print(f"SOAPBOX: QSO Points {self.basescore}", end='\r\n', file=open(filename, "a", encoding='ascii'))
-		print(f"SOAPBOX: Power Output Multiplier {self.powermult}", end='\r\n', file=open(filename, "a", encoding='ascii'))
-		print(f"SOAPBOX: Band/mode multiplier {self.bandmodemult}", end='\r\n', file=open(filename, "a", encoding='ascii'))
-		if self.altpower:
-			print("SOAPBOX: 1,500 points for not using commercial power", end='\r\n', file=open(filename, "a", encoding='ascii'))
-			bonuses = bonuses + 1500
-		if self.outdoors:
-			print("SOAPBOX: 1,500 points for setting up outdoors", end='\r\n', file=open(filename, "a", encoding='ascii'))
-			bonuses = bonuses + 1500
-		if self.notathome:
-			print("SOAPBOX: 1,500 points for setting up away from home", end='\r\n', file=open(filename, "a", encoding='ascii'))
-			bonuses = bonuses + 1500
-		if self.satellite:
-			print("SOAPBOX: 1,500 points for working satellite", end='\r\n', file=open(filename, "a", encoding='ascii'))
-			bonuses = bonuses + 1500
-		print(f"SOAPBOX: BONUS Total {bonuses}", end='\r\n', file=open(filename, "a", encoding='ascii'))
-		print(f"CLAIMED-SCORE: {self.calcscore()}", end='\r\n', file=open(filename, "a", encoding='ascii'))
-		print(f"OPERATORS: {self.mycall}", end='\r\n', file=open(filename, "a", encoding='ascii'))
-		print("NAME: ", end='\r\n', file=open(filename, "a", encoding='ascii'))
-		print("ADDRESS: ", end='\r\n', file=open(filename, "a", encoding='ascii'))
-		print("ADDRESS-CITY: ", end='\r\n', file=open(filename, "a", encoding='ascii'))
-		print("ADDRESS-STATE: ", end='\r\n', file=open(filename, "a", encoding='ascii'))
-		print("ADDRESS-POSTALCODE: ", end='\r\n', file=open(filename, "a", encoding='ascii'))
-		print("ADDRESS-COUNTRY: ", end='\r\n', file=open(filename, "a", encoding='ascii'))
-		print("EMAIL: ", end='\r\n', file=open(filename, "a", encoding='ascii'))
-		for x in log:
-			_, hiscall, hisclass, hissection, datetime, band, mode, _, _, _ = x
-			loggeddate = datetime[:10]
-			loggedtime = datetime[11:13] + datetime[14:16]
-			print(f"QSO: {self.dfreq[band].replace('.','')} {mode} {loggeddate} {loggedtime} {self.mycall} {self.myclass} {self.mysection} {hiscall} {hisclass} {hissection}", end='\r\n', file=open(filename, "a", encoding='ascii'))
-		print("END-OF-LOG:", end='\r\n', file=open(filename, "a", encoding='ascii'))
+		with open(filename, "w", encoding='ascii') as f:
+			print("START-OF-LOG: 3.0", end='\r\n', file=f)
+		with open(filename, "a", encoding='ascii') as f:
+			print("CREATED-BY: K6GTE Winter Field Day Logger", end='\r\n', file=f)
+			print("CONTEST: WFD", end='\r\n', file=f)
+			print(f"CALLSIGN: {self.mycall}", end='\r\n', file=f)
+			print("LOCATION:", end='\r\n', file=f)
+			print(f"ARRL-SECTION: {self.mysection}", end='\r\n', file=f)
+			print(f"CATEGORY: {self.myclass}", end='\r\n', file=f)
+			print(f"CATEGORY-POWER: {catpower}", end='\r\n', file=f)
+			print(f"SOAPBOX: QSO Points {self.basescore}", end='\r\n', file=f)
+			print(f"SOAPBOX: Power Output Multiplier {self.powermult}", end='\r\n', file=f)
+			print(f"SOAPBOX: Band/mode multiplier {self.bandmodemult}", end='\r\n', file=f)
+			if self.altpower:
+				print("SOAPBOX: 1,500 points for not using commercial power", end='\r\n', file=f)
+				bonuses = bonuses + 1500
+			if self.outdoors:
+				print("SOAPBOX: 1,500 points for setting up outdoors", end='\r\n', file=f)
+				bonuses = bonuses + 1500
+			if self.notathome:
+				print("SOAPBOX: 1,500 points for setting up away from home", end='\r\n', file=f)
+				bonuses = bonuses + 1500
+			if self.satellite:
+				print("SOAPBOX: 1,500 points for working satellite", end='\r\n', file=f)
+				bonuses = bonuses + 1500
+			print(f"SOAPBOX: BONUS Total {bonuses}", end='\r\n', file=f)
+			print(f"CLAIMED-SCORE: {self.calcscore()}", end='\r\n', file=f)
+			print(f"OPERATORS: {self.mycall}", end='\r\n', file=f)
+			print("NAME: ", end='\r\n', file=f)
+			print("ADDRESS: ", end='\r\n', file=f)
+			print("ADDRESS-CITY: ", end='\r\n', file=f)
+			print("ADDRESS-STATE: ", end='\r\n', file=f)
+			print("ADDRESS-POSTALCODE: ", end='\r\n', file=f)
+			print("ADDRESS-COUNTRY: ", end='\r\n', file=f)
+			print("EMAIL: ", end='\r\n', file=f)
+			for x in log:
+				_, hiscall, hisclass, hissection, datetime, band, mode, _, _, _ = x
+				loggeddate = datetime[:10]
+				loggedtime = datetime[11:13] + datetime[14:16]
+				print(f"QSO: {self.dfreq[band].replace('.','')} {mode} {loggeddate} {loggedtime} {self.mycall} {self.myclass} {self.mysection} {hiscall} {hisclass} {hissection}", end='\r\n', file=f)
+			print("END-OF-LOG:", end='\r\n', file=f)
 		self.infobox.insertPlainText(" Done\n\n")
 		app.processEvents()
 
