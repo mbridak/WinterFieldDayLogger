@@ -354,7 +354,7 @@ class MainWindow(QtWidgets.QMainWindow):
 			if text[-1] == " ":
 				self.myclassEntry.setText(text.strip())
 			else:
-				cleaned = ''.join(ch for ch in text if ch.isalnum() or ch=='/').upper()
+				cleaned = ''.join(ch for ch in text if ch.isalnum()).upper()
 				self.myclassEntry.setText(cleaned)
 		self.myclass = self.myclassEntry.text()
 		if self.myclass != "":
@@ -369,7 +369,7 @@ class MainWindow(QtWidgets.QMainWindow):
 			if text[-1] == " ":
 				self.mysectionEntry.setText(text.strip())
 			else:
-				cleaned = ''.join(ch for ch in text if ch.isalpha() or ch=='/').upper()
+				cleaned = ''.join(ch for ch in text if ch.isalpha()).upper()
 				self.mysectionEntry.setText(cleaned)
 		self.mysection = self.mysectionEntry.text()
 		if self.mysection != "":
@@ -606,21 +606,20 @@ class MainWindow(QtWidgets.QMainWindow):
 
 	def readSections(self):
 		try:
-			fd = open(self.relpath("arrl_sect.dat"), "r")  # read section data
-			while 1:
-				ln = fd.readline().strip()  # read a line and put in db
-				if not ln: break
-				if ln[0] == '#': continue
-				try:
-					_, st, canum, abbrev, name = str.split(ln, None, 4)
-					self.secName[abbrev] = abbrev + ' ' + name + ' ' + canum
-					self.secState[abbrev] = st
-					for i in range(len(abbrev) - 1):
-						p = abbrev[:-i - 1]
-						self.secPartial[p] = 1
-				except ValueError as e:
-					print("rd arrl sec dat err, itm skpd: ", e)
-			fd.close()
+			with open(self.relpath("arrl_sect.dat"), "r") as fd:  # read section data
+				while 1:
+					ln = fd.readline().strip()  # read a line and put in db
+					if not ln: break
+					if ln[0] == '#': continue
+					try:
+						_, st, canum, abbrev, name = str.split(ln, None, 4)
+						self.secName[abbrev] = abbrev + ' ' + name + ' ' + canum
+						self.secState[abbrev] = st
+						for i in range(len(abbrev) - 1):
+							p = abbrev[:-i - 1]
+							self.secPartial[p] = 1
+					except ValueError as e:
+						print("rd arrl sec dat err, itm skpd: ", e)
 		except IOError as e:
 			print("read error during readSections", e)
 	
@@ -635,10 +634,9 @@ class MainWindow(QtWidgets.QMainWindow):
 			self.infobox.insertPlainText(self.secName[xxx]+"\n")
 
 	def readSCP(self):
-		f = open(self.relpath("MASTER.SCP"))
-		self.scp = f.readlines()
-		f.close()
-		self.scp = list(map(lambda x: x.strip(), self.scp))
+		with open(self.relpath("MASTER.SCP"), 'r') as f:
+			self.scp = f.readlines()
+			self.scp = list(map(lambda x: x.strip(), self.scp))
 
 	def superCheck(self):
 		self.infobox.clear()
@@ -836,26 +834,24 @@ class MainWindow(QtWidgets.QMainWindow):
 		conn = sqlite3.connect(self.database)
 		c = conn.cursor()
 		c.execute("select DISTINCT band from contacts")
-		x=c.fetchall()
-		if x:
-			for count in x:
-				bandlist.append(count[0])
+		result=c.fetchall()
+		if result:
+			for returnedBand in result:
+				bandlist.append(returnedBand[0])
 			return bandlist
 		return []
 
 	def generateBandModeTally(self):
-		blist = self.getbands()
-		bmtfn = "Statistics.txt"
-		with open(bmtfn, "w") as f:
+		bandlist = self.getbands()
+		with open("Statistics.txt", "w") as f:
 			print("\t\tCW\tPWR\tDI\tPWR\tPH\tPWR", end='\r\n', file=f)
-		with open(bmtfn, "a") as f:
 			print("-"*60, end='\r\n', file=f)
-			for b in self.bands:
-				if b in blist:
-					cwt = self.getBandModeTally(b,"CW")
-					dit = self.getBandModeTally(b,"DI")
-					pht = self.getBandModeTally(b,"PH")
-					print(f"Band:\t{b}\t{cwt[0]}\t{cwt[1]}\t{dit[0]}\t{dit[1]}\t{pht[0]}\t{pht[1]}", end='\r\n', file=f)
+			for band in self.bands:
+				if band in bandlist:
+					cwt = self.getBandModeTally(band,"CW")
+					dit = self.getBandModeTally(band,"DI")
+					pht = self.getBandModeTally(band,"PH")
+					print(f"Band:\t{band}\t{cwt[0]}\t{cwt[1]}\t{dit[0]}\t{dit[1]}\t{pht[0]}\t{pht[1]}", end='\r\n', file=f)
 					print("-"*60, end='\r\n', file=f)
 
 	def getState(self, section):
@@ -868,6 +864,9 @@ class MainWindow(QtWidgets.QMainWindow):
 		return False
 
 	def gridtolatlon(self, maiden):
+		"""
+		Converts a maidenhead gridsquare to a latitude longitude pair.
+		"""
 		maiden = str(maiden).strip().upper()
 
 		N = len(maiden)
@@ -895,15 +894,13 @@ class MainWindow(QtWidgets.QMainWindow):
 		if self.usemarker:
 			filename = str(Path.home())+"/"+self.markerfile
 			try:
-				with open(filename, "w", encoding='ascii') as f:	
-					print("", file=f)
 				conn = sqlite3.connect(self.database)
 				c = conn.cursor()
 				c.execute("select DISTINCT grid from contacts")
 				x=c.fetchall()
 				if x:
 					lastcolor = ""
-					with open(filename, "a", encoding='ascii') as f:
+					with open(filename, "w", encoding='ascii') as f:
 						islast = len(x)-1
 						for count, grid in enumerate(x):
 							if count == islast:
@@ -960,7 +957,7 @@ class MainWindow(QtWidgets.QMainWindow):
 	def adif(self):
 		logname = "WFD.adi"
 		self.infobox.setTextColor(QtGui.QColor(211, 215, 207))
-		self.infobox.insertPlainText("Saving ADIF to: "+logname+"\n")
+		self.infobox.insertPlainText(f"Saving ADIF to: {logname}\n")
 		app.processEvents()
 		conn = sqlite3.connect(self.database)
 		c = conn.cursor()
@@ -971,7 +968,6 @@ class MainWindow(QtWidgets.QMainWindow):
 		opname = False
 		with open(logname, "w", encoding='ascii') as f:
 			print("<ADIF_VER:5>2.2.0", end='\r\n', file=f)
-		with open(logname, "a", encoding='ascii') as f:
 			print("<EOH>", end='\r\n', file=f)
 			for x in log:
 				_, hiscall, hisclass, hissection, datetime, band, mode, _, grid, opname = x
@@ -1055,7 +1051,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		_ = requests.post(self.cloudlogurl, jsonData)
 
 	def cabrillo(self):
-		filename = self.mycall.upper()+".log"
+		filename = f"{self.mycall.upper()}.log"
 		self.infobox.setTextColor(QtGui.QColor(211, 215, 207))
 		self.infobox.insertPlainText(f"Saving cabrillo to: {filename}")
 		app.processEvents()
@@ -1074,7 +1070,6 @@ class MainWindow(QtWidgets.QMainWindow):
 			catpower = "LOW"
 		with open(filename, "w", encoding='ascii') as f:
 			print("START-OF-LOG: 3.0", end='\r\n', file=f)
-		with open(filename, "a", encoding='ascii') as f:
 			print("CREATED-BY: K6GTE Winter Field Day Logger", end='\r\n', file=f)
 			print("CONTEST: WFD", end='\r\n', file=f)
 			print(f"CALLSIGN: {self.mycall}", end='\r\n', file=f)
