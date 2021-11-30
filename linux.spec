@@ -5,7 +5,8 @@ block_cipher = None
 
 a = Analysis(['wfdlogger.py'],
              pathex=['.'],
-             binaries=[('icon/*.png','icon')],
+             binaries=[('icon/*.png','icon'),
+             ('font/*.ttf','font')],
              datas=[('main.ui','.'),
              ('MASTER.SCP','.'),
              ('arrl_sect.dat','.'),

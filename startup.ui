@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>423</width>
-    <height>385</height>
+    <height>394</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -40,13 +40,15 @@ color: rgb(211, 215, 207);</string>
    <property name="geometry">
     <rect>
      <x>20</x>
-     <y>300</y>
+     <y>313</y>
      <width>113</width>
      <height>23</height>
     </rect>
    </property>
    <property name="font">
     <font>
+     <family>JetBrains Mono</family>
+     <pointsize>12</pointsize>
      <weight>50</weight>
      <bold>false</bold>
     </font>
@@ -62,10 +64,16 @@ color: rgb(211, 215, 207);</string>
    <property name="geometry">
     <rect>
      <x>160</x>
-     <y>300</y>
+     <y>313</y>
      <width>113</width>
      <height>23</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>JetBrains Mono</family>
+     <pointsize>12</pointsize>
+    </font>
    </property>
    <property name="toolTip">
     <string>Input your Field Day operating class.</string>
@@ -78,10 +86,16 @@ color: rgb(211, 215, 207);</string>
    <property name="geometry">
     <rect>
      <x>290</x>
-     <y>300</y>
+     <y>313</y>
      <width>113</width>
      <height>23</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>JetBrains Mono</family>
+     <pointsize>12</pointsize>
+    </font>
    </property>
    <property name="toolTip">
     <string>Input your ARRL section.</string>
@@ -93,11 +107,17 @@ color: rgb(211, 215, 207);</string>
   <widget class="QPushButton" name="continue_pushButton">
    <property name="geometry">
     <rect>
-     <x>170</x>
-     <y>340</y>
-     <width>80</width>
+     <x>165</x>
+     <y>353</y>
+     <width>101</width>
      <height>26</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>JetBrains Mono</family>
+     <pointsize>12</pointsize>
+    </font>
    </property>
    <property name="styleSheet">
     <string notr="true">background-color: green;</string>
@@ -121,11 +141,12 @@ color: rgb(211, 215, 207);</string>
      <x>30</x>
      <y>210</y>
      <width>361</width>
-     <height>71</height>
+     <height>91</height>
     </rect>
    </property>
    <property name="font">
     <font>
+     <family>JetBrains Mono</family>
      <pointsize>12</pointsize>
     </font>
    </property>
