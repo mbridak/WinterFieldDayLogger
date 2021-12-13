@@ -303,7 +303,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		Checks to see if rigctld daemon is running.
 		"""
 		if self.userigctl:
-			self.rigctrlsocket=socket.socket()
+			self.rigctrlsocket=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 			self.rigctrlsocket.settimeout(0.1)
 			self.rigonline = True
 			try:
@@ -583,7 +583,7 @@ class MainWindow(QtWidgets.QMainWindow):
 			return 0
 		self.score = (int(cw) * 2) + int(ph) + (int(di) * 2)
 		self.basescore = self.score
-		self.powermult = 1
+		self.powermult = 0 #2022 rules, no highpower allowed
 		if self.qrp:
 			self.powermult = 4
 			self.score = self.score * 4
@@ -591,7 +591,7 @@ class MainWindow(QtWidgets.QMainWindow):
 			self.powermult = 2
 			self.score = self.score * 2
 		self.score = self.score * self.bandmodemult
-		self.score = self.score + (1500 * self.altpower) + (1500 * self.outdoors) + (1500 * self.notathome) + (1500 * self.satellite)
+		self.score = self.score + (500 * self.altpower) + (500 * self.outdoors) + (500 * self.notathome) + (500 * self.satellite) #2022 rules, bonuses down from 1500 to 500 each.
 		return self.score
 
 	def qrpcheck(self):
@@ -1210,17 +1210,17 @@ class MainWindow(QtWidgets.QMainWindow):
 				print(f"SOAPBOX: Power Output Multiplier {self.powermult}", end='\r\n', file=f)
 				print(f"SOAPBOX: Band/mode multiplier {self.bandmodemult}", end='\r\n', file=f)
 				if self.altpower:
-					print("SOAPBOX: 1,500 points for not using commercial power", end='\r\n', file=f)
-					bonuses = bonuses + 1500
+					print("SOAPBOX: 500 points for not using commercial power", end='\r\n', file=f)
+					bonuses = bonuses + 500
 				if self.outdoors:
-					print("SOAPBOX: 1,500 points for setting up outdoors", end='\r\n', file=f)
-					bonuses = bonuses + 1500
+					print("SOAPBOX: 500 points for setting up outdoors", end='\r\n', file=f)
+					bonuses = bonuses + 500
 				if self.notathome:
-					print("SOAPBOX: 1,500 points for setting up away from home", end='\r\n', file=f)
-					bonuses = bonuses + 1500
+					print("SOAPBOX: 500 points for setting up away from home", end='\r\n', file=f)
+					bonuses = bonuses + 500
 				if self.satellite:
-					print("SOAPBOX: 1,500 points for working satellite", end='\r\n', file=f)
-					bonuses = bonuses + 1500
+					print("SOAPBOX: 500 points for working satellite", end='\r\n', file=f)
+					bonuses = bonuses + 500
 				print(f"SOAPBOX: BONUS Total {bonuses}", end='\r\n', file=f)
 				print(f"CLAIMED-SCORE: {self.calcscore()}", end='\r\n', file=f)
 				print(f"OPERATORS: {self.mycall}", end='\r\n', file=f)
