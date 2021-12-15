@@ -627,7 +627,7 @@ class MainWindow(QtWidgets.QMainWindow):
 			return
 		for x in log:
 			logid, hiscall, hisclass, hissection, datetime, band, mode, power, _, _ = x
-			logline = f"{str(logid).rjust(3,'0')} {hiscall.ljust(11)} {hisclass.rjust(3)} {hissection.rjust(3)} {datetime} {str(band).rjust(3)} {mode} {str(power).rjust(3)}"
+			logline = f"{str(logid).rjust(3,'0')} {hiscall.ljust(10)} {hisclass.rjust(3)} {hissection.rjust(3)} {datetime} {str(band).rjust(3)} {mode} {str(power).rjust(3)}"
 			self.listWidget.addItem(logline)
 	
 	def qsoedited(self):
