@@ -12,12 +12,18 @@ The logger will generate a cabrillo for submission, An ADIF file so you can merg
 
 ![Alt text](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/loggerscreenshot.png)
 
-
-
 ## Caveats
 
 This is a simple logger ment for single op, it's not usable for clubs.
 WFD only has a generic digital mode designator 'DI', which gets exported to the cabrillo file. But ADIF and CloudLog needed something else, So I Chose RTTY. Feel free to change it to what ever you will use. Just search for the two places in the code 'RTTY' is used and Bob's your dads brother.
+
+## Changes since 21.12.13 Little Pink Tutu
+
+I ditched using the rigctld daemon supplied by hamlib tools. Instead I'll be using the [flrig's](http://w1hkj.com/files/flrig/) XmlRPC interface. It's way simpler. It's available on all platforms.
+
+For Debian based Linux or Raspberry OS you can:
+
+`sudo apt install flrig`
 
 ## Running the binary
 
@@ -67,11 +73,9 @@ Okay you've made a contact. Enter the call in the call field. As you type it in,
 
 # Features
 
-## Radio Polling via rigctld
+## Radio Polling via flrig
 
-If you run rigctld a computer connected to the radio, it can be polled for band/mode updates automatically. Click the gear icon at the bottom of the screen to set the IP and port for rigctld. There is a radio icon at the bottom of the logging window to indicate polling status.
-~~Right now I'm adding polling of the radio for transmit power level. Seems it returns a value from 1.0 to 0.0. That was on an IC-7300. I'll bust out my 817 and see if the range is the same. If so I'll have to add a dialog entry for the radios max power out to scale the return value to.~~
-Decided not follow the rf power polling. :bomb: The FT-817 did not support this feature. I left the code in there, just commented out.
+If you run flrig on a computer connected to the radio, it can be polled for band/mode updates automatically. Click the gear icon at the bottom of the screen to set the IP and port for flrig. There is a radio icon at the bottom of the logging window to indicate polling status.
 
 ![Alt text](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/loggerSettingsDialog.png)
 
