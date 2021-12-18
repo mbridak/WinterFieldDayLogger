@@ -3,7 +3,7 @@
 #Nothing to see here move along.
 #xplanet -body earth -window -longitude -117 -latitude 38 -config Default -projection azmithal -radius 200 -wait 5
 
-
+import xmlrpc.client
 import requests
 import sys
 import sqlite3
@@ -117,6 +117,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		self.cloudlog_icon.setPixmap(QtGui.QPixmap(self.relpath('icon/cloud_grey.png')))
 		self.QRZ_icon.setStyleSheet("color: rgb(136, 138, 133);")
 		self.settingsbutton.clicked.connect(self.settingspressed)
+		self.server = xmlrpc.client.ServerProxy("http://localhost:12345")
 		self.radiochecktimer = QtCore.QTimer()
 		self.radiochecktimer.timeout.connect(self.Radio)
 		self.radiochecktimer.start(1000)
@@ -275,23 +276,12 @@ class MainWindow(QtWidgets.QMainWindow):
 		"""
 		if self.rigonline:
 			try:
-				self.rigctrlsocket.settimeout(0.5)
-				#self.rigctrlsocket.send(b'l RFPOWER\n')
-				#newrfpower = self.rigctrlsocket.recv(1024).decode().strip()
-				self.rigctrlsocket.send(b'f\n')
-				newfreq = self.rigctrlsocket.recv(1024).decode().strip()
-				self.rigctrlsocket.send(b'm\n')
-				newmode = self.rigctrlsocket.recv(1024).decode().strip().split()[0]
-				self.rigctrlsocket.shutdown(socket.SHUT_RDWR)
-				self.rigctrlsocket.close()
-				
+				newfreq = self.server.rig.get_vfo()
+				newmode = self.server.rig.get_mode()
 				self.radio_icon.setPixmap(QtGui.QPixmap(self.relpath('icon/radio_green.png')))
 				if newfreq != self.oldfreq or newmode != self.oldmode: # or newrfpower != self.oldrfpower:
 					self.oldfreq = newfreq
 					self.oldmode = newmode
-					#self.oldrfpower = newrfpower
-					#self.power_selector.setValue(int(float(newrfpower) * 100))
-					#self.changepower()
 					self.setband(str(self.getband(newfreq)))
 					self.setmode(str(self.getmode(newmode)))
 			except:
@@ -303,11 +293,9 @@ class MainWindow(QtWidgets.QMainWindow):
 		Checks to see if rigctld daemon is running.
 		"""
 		if self.userigctl:
-			self.rigctrlsocket=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-			self.rigctrlsocket.settimeout(0.1)
 			self.rigonline = True
 			try:
-				self.rigctrlsocket.connect((self.rigctrlhost, int(self.rigctrlport)))
+				self.server = xmlrpc.client.ServerProxy(f"http://{self.rigctrlhost}:{self.rigctrlport}")
 				self.radio_icon.setPixmap(QtGui.QPixmap(self.relpath('icon/radio_red.png')))
 			except:
 				self.rigonline = False
