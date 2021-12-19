@@ -419,7 +419,7 @@ color: rgb(211, 215, 207);</string>
     </font>
    </property>
    <property name="text">
-    <string>127.0.0.1</string>
+    <string>localhost</string>
    </property>
   </widget>
   <widget class="QLineEdit" name="rigcontrolport_field">
@@ -440,7 +440,7 @@ color: rgb(211, 215, 207);</string>
     </font>
    </property>
    <property name="text">
-    <string>4532</string>
+    <string>12345</string>
    </property>
   </widget>
   <widget class="Line" name="line">
