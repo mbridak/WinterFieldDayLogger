@@ -56,9 +56,9 @@ color: rgb(211, 215, 207);</string>
   <widget class="QLabel" name="label">
    <property name="geometry">
     <rect>
-     <x>56</x>
+     <x>70</x>
      <y>21</y>
-     <width>101</width>
+     <width>87</width>
      <height>22</height>
     </rect>
    </property>
@@ -80,9 +80,9 @@ color: rgb(211, 215, 207);</string>
   <widget class="QLabel" name="label_2">
    <property name="geometry">
     <rect>
-     <x>24</x>
+     <x>30</x>
      <y>60</y>
-     <width>131</width>
+     <width>125</width>
      <height>22</height>
     </rect>
    </property>
@@ -104,9 +104,9 @@ color: rgb(211, 215, 207);</string>
   <widget class="QLabel" name="label_3">
    <property name="geometry">
     <rect>
-     <x>66</x>
+     <x>80</x>
      <y>101</y>
-     <width>91</width>
+     <width>77</width>
      <height>22</height>
     </rect>
    </property>
@@ -128,9 +128,9 @@ color: rgb(211, 215, 207);</string>
   <widget class="QLabel" name="label_4">
    <property name="geometry">
     <rect>
-     <x>24</x>
+     <x>30</x>
      <y>201</y>
-     <width>131</width>
+     <width>125</width>
      <height>22</height>
     </rect>
    </property>
@@ -152,9 +152,9 @@ color: rgb(211, 215, 207);</string>
   <widget class="QLabel" name="label_5">
    <property name="geometry">
     <rect>
-     <x>24</x>
+     <x>30</x>
      <y>243</y>
-     <width>131</width>
+     <width>125</width>
      <height>22</height>
     </rect>
    </property>
@@ -176,9 +176,9 @@ color: rgb(211, 215, 207);</string>
   <widget class="QLabel" name="label_6">
    <property name="geometry">
     <rect>
-     <x>24</x>
+     <x>30</x>
      <y>340</y>
-     <width>141</width>
+     <width>135</width>
      <height>22</height>
     </rect>
    </property>
@@ -191,7 +191,7 @@ color: rgb(211, 215, 207);</string>
     </font>
    </property>
    <property name="text">
-    <string>RigControl IP:</string>
+    <string>XMLRPC IP:</string>
    </property>
    <property name="alignment">
     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -200,9 +200,9 @@ color: rgb(211, 215, 207);</string>
   <widget class="QLabel" name="label_7">
    <property name="geometry">
     <rect>
-     <x>3</x>
+     <x>103</x>
      <y>380</y>
-     <width>161</width>
+     <width>61</width>
      <height>22</height>
     </rect>
    </property>
@@ -215,7 +215,7 @@ color: rgb(211, 215, 207);</string>
     </font>
    </property>
    <property name="text">
-    <string>RigControl Port:</string>
+    <string>Port</string>
    </property>
    <property name="alignment">
     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -226,7 +226,7 @@ color: rgb(211, 215, 207);</string>
     <rect>
      <x>190</x>
      <y>140</y>
-     <width>101</width>
+     <width>91</width>
      <height>25</height>
     </rect>
    </property>
@@ -253,7 +253,7 @@ color: rgb(211, 215, 207);</string>
     <rect>
      <x>235</x>
      <y>280</y>
-     <width>141</width>
+     <width>139</width>
      <height>25</height>
     </rect>
    </property>
@@ -275,9 +275,9 @@ color: rgb(211, 215, 207);</string>
   <widget class="QCheckBox" name="userigcontrol_checkBox">
    <property name="geometry">
     <rect>
-     <x>234</x>
+     <x>250</x>
      <y>420</y>
-     <width>161</width>
+     <width>121</width>
      <height>25</height>
     </rect>
    </property>
@@ -293,7 +293,7 @@ color: rgb(211, 215, 207);</string>
     <string notr="true">border: 1px solid red;</string>
    </property>
    <property name="text">
-    <string>Use RigControl</string>
+    <string>Use FLRIG</string>
    </property>
   </widget>
   <widget class="QLineEdit" name="qrzname_field">
@@ -419,7 +419,7 @@ color: rgb(211, 215, 207);</string>
     </font>
    </property>
    <property name="text">
-    <string>127.0.0.1</string>
+    <string>localhost</string>
    </property>
   </widget>
   <widget class="QLineEdit" name="rigcontrolport_field">
@@ -440,7 +440,7 @@ color: rgb(211, 215, 207);</string>
     </font>
    </property>
    <property name="text">
-    <string>4532</string>
+    <string>12345</string>
    </property>
   </widget>
   <widget class="Line" name="line">
@@ -541,7 +541,7 @@ color: rgb(211, 215, 207);</string>
     <rect>
      <x>230</x>
      <y>530</y>
-     <width>171</width>
+     <width>167</width>
      <height>25</height>
     </rect>
    </property>
@@ -566,7 +566,7 @@ color: rgb(211, 215, 207);</string>
     <rect>
      <x>310</x>
      <y>140</y>
-     <width>111</width>
+     <width>110</width>
      <height>25</height>
     </rect>
    </property>
