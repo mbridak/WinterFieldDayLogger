@@ -56,9 +56,9 @@ color: rgb(211, 215, 207);</string>
   <widget class="QLabel" name="label">
    <property name="geometry">
     <rect>
-     <x>70</x>
+     <x>66</x>
      <y>21</y>
-     <width>87</width>
+     <width>91</width>
      <height>22</height>
     </rect>
    </property>
@@ -80,9 +80,9 @@ color: rgb(211, 215, 207);</string>
   <widget class="QLabel" name="label_2">
    <property name="geometry">
     <rect>
-     <x>30</x>
+     <x>24</x>
      <y>60</y>
-     <width>125</width>
+     <width>131</width>
      <height>22</height>
     </rect>
    </property>
@@ -104,9 +104,9 @@ color: rgb(211, 215, 207);</string>
   <widget class="QLabel" name="label_3">
    <property name="geometry">
     <rect>
-     <x>80</x>
+     <x>76</x>
      <y>101</y>
-     <width>77</width>
+     <width>81</width>
      <height>22</height>
     </rect>
    </property>
@@ -128,9 +128,9 @@ color: rgb(211, 215, 207);</string>
   <widget class="QLabel" name="label_4">
    <property name="geometry">
     <rect>
-     <x>30</x>
+     <x>24</x>
      <y>201</y>
-     <width>125</width>
+     <width>131</width>
      <height>22</height>
     </rect>
    </property>
@@ -152,9 +152,9 @@ color: rgb(211, 215, 207);</string>
   <widget class="QLabel" name="label_5">
    <property name="geometry">
     <rect>
-     <x>30</x>
+     <x>24</x>
      <y>243</y>
-     <width>125</width>
+     <width>131</width>
      <height>22</height>
     </rect>
    </property>
@@ -215,7 +215,7 @@ color: rgb(211, 215, 207);</string>
     </font>
    </property>
    <property name="text">
-    <string>Port</string>
+    <string>Port:</string>
    </property>
    <property name="alignment">
     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -224,9 +224,9 @@ color: rgb(211, 215, 207);</string>
   <widget class="QCheckBox" name="useqrz_checkBox">
    <property name="geometry">
     <rect>
-     <x>190</x>
+     <x>180</x>
      <y>140</y>
-     <width>91</width>
+     <width>101</width>
      <height>25</height>
     </rect>
    </property>
@@ -251,9 +251,9 @@ color: rgb(211, 215, 207);</string>
   <widget class="QCheckBox" name="usecloudlog_checkBox">
    <property name="geometry">
     <rect>
-     <x>235</x>
+     <x>223</x>
      <y>280</y>
-     <width>139</width>
+     <width>151</width>
      <height>25</height>
     </rect>
    </property>
@@ -501,9 +501,9 @@ color: rgb(211, 215, 207);</string>
   <widget class="QLabel" name="label_8">
    <property name="geometry">
     <rect>
-     <x>20</x>
+     <x>11</x>
      <y>490</y>
-     <width>192</width>
+     <width>201</width>
      <height>22</height>
     </rect>
    </property>
@@ -515,6 +515,9 @@ color: rgb(211, 215, 207);</string>
    </property>
    <property name="text">
     <string>XPlanet Marker File:</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
    </property>
   </widget>
   <widget class="QLineEdit" name="markerfile_field">
@@ -539,9 +542,9 @@ color: rgb(211, 215, 207);</string>
   <widget class="QCheckBox" name="generatemarker_checkbox">
    <property name="geometry">
     <rect>
-     <x>230</x>
+     <x>226</x>
      <y>530</y>
-     <width>167</width>
+     <width>171</width>
      <height>25</height>
     </rect>
    </property>
@@ -564,9 +567,9 @@ color: rgb(211, 215, 207);</string>
    </property>
    <property name="geometry">
     <rect>
-     <x>310</x>
+     <x>299</x>
      <y>140</y>
-     <width>110</width>
+     <width>121</width>
      <height>25</height>
     </rect>
    </property>
