@@ -19,11 +19,13 @@ WFD only has a generic digital mode designator 'DI', which gets exported to the 
 
 ## Changes since 21.12.13 Little Pink Tutu
 
-I ditched using the rigctld daemon supplied by hamlib tools. Instead I'll be using the [flrig's](http://w1hkj.com/files/flrig/) XmlRPC interface. It's way simpler. It's available on all platforms.
+* I ditched using the rigctld daemon supplied by hamlib tools. Instead I'll be using the [flrig's](http://w1hkj.com/files/flrig/) XmlRPC interface. It's way simpler. It's available on all platforms.
 
 For Debian based Linux or Raspberry OS you can:
 
 `sudo apt install flrig`
+
+* Updated the UI files to be more windows friendly.
 
 ## Running the binary
 
