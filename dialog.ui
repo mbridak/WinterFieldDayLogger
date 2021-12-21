@@ -132,7 +132,7 @@ color: rgb(211, 215, 207);</string>
    </property>
    <property name="dateTime">
     <datetime>
-     <hour>0</hour>
+     <hour>8</hour>
      <minute>0</minute>
      <second>6</second>
      <year>2000</year>
@@ -298,9 +298,9 @@ color: rgb(255, 255, 255);</string>
   <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
-     <x>25</x>
+     <x>12</x>
      <y>21</y>
-     <width>98</width>
+     <width>111</width>
      <height>211</height>
     </rect>
    </property>

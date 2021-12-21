@@ -57,7 +57,7 @@ border-top-color: rgb(255, 255, 255);</string>
       <rect>
        <x>6</x>
        <y>7</y>
-       <width>87</width>
+       <width>91</width>
        <height>19</height>
       </rect>
      </property>
@@ -79,7 +79,7 @@ border-top-color: rgb(255, 255, 255);</string>
       <rect>
        <x>6</x>
        <y>28</y>
-       <width>116</width>
+       <width>121</width>
        <height>19</height>
       </rect>
      </property>
@@ -100,7 +100,7 @@ border-top-color: rgb(255, 255, 255);</string>
       <rect>
        <x>6</x>
        <y>49</y>
-       <width>135</width>
+       <width>141</width>
        <height>19</height>
       </rect>
      </property>
@@ -121,7 +121,7 @@ border-top-color: rgb(255, 255, 255);</string>
       <rect>
        <x>6</x>
        <y>71</y>
-       <width>106</width>
+       <width>111</width>
        <height>19</height>
       </rect>
      </property>
@@ -142,7 +142,7 @@ border-top-color: rgb(255, 255, 255);</string>
       <rect>
        <x>6</x>
        <y>93</y>
-       <width>135</width>
+       <width>141</width>
        <height>19</height>
       </rect>
      </property>
@@ -163,7 +163,7 @@ border-top-color: rgb(255, 255, 255);</string>
       <rect>
        <x>6</x>
        <y>116</y>
-       <width>154</width>
+       <width>161</width>
        <height>19</height>
       </rect>
      </property>
@@ -359,7 +359,7 @@ border-top-color: rgb(255, 255, 255);</string>
      <property name="font">
       <font>
        <family>JetBrains Mono</family>
-       <pointsize>12</pointsize>
+       <pointsize>11</pointsize>
        <weight>50</weight>
        <bold>false</bold>
       </font>
@@ -3249,7 +3249,7 @@ color: rgb(0, 0, 0);</string>
      <rect>
       <x>681</x>
       <y>480</y>
-      <width>110</width>
+      <width>111</width>
       <height>16</height>
      </rect>
     </property>
@@ -3270,7 +3270,7 @@ color: rgb(0, 0, 0);</string>
      <rect>
       <x>681</x>
       <y>505</y>
-      <width>110</width>
+      <width>111</width>
       <height>16</height>
      </rect>
     </property>
