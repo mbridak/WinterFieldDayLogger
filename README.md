@@ -55,11 +55,11 @@ Build the binary.
 
 For Linux and Raspberry PI:
 
-'pyinstaller -F linux.spec'
+`pyinstaller -F linux.spec`
 
 For Windows:
 
-'pyinstaller -F windows.spec'
+`pyinstaller -F windows.spec`
 
 You will find the binary in the newly created dist directory.
 
