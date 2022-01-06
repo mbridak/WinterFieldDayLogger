@@ -243,7 +243,6 @@ def addSpot(conn, callsign, freq, band):
         sql = "INSERT INTO spots(callsign, date_time, frequency, band) VALUES(?,datetime('now'),?,?)"
         c.execute(sql, spot)
         conn.commit()
-        console.print(f"addSpot: Insert: {sql}")
         showspots(conn)
     else:
         sql = f"update spots set frequency='{freq}', date_time = datetime('now'), band='{band}' where callsign='{callsign}';"
@@ -272,7 +271,7 @@ def showspots(conn):
     """
     global vfo
     console.clear()
-    console.rule(f"[bold red]Spots")
+    console.rule(f"[bold red]Spots VFO: {vfo}")
     updatecontactlist()
     c=conn.cursor()
     sql="select *, Cast ((JulianDay(datetime('now')) - JulianDay(date_time)) * 24 * 60 * 60 As Integer) from spots order by frequency asc"
@@ -329,7 +328,7 @@ with sqlite3.connect(":memory:") as conn:
         tn.read_until(b'sign:', timeout=1.0)
         #tn.write("w1aw\r\n".encode('ascii'))
         while True:
-            line=tn.read_until(b'\r\n', timeout=1.0)
+            line=tn.read_until(b'\r\n', timeout=0.25)
             if line != b'':
                 spot = line.decode().split()
                 if not spot[2] in localspotters:
