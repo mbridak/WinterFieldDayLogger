@@ -32,21 +32,22 @@ from bs4 import BeautifulSoup as bs
 from math import radians, sin, cos, atan2, sqrt
 
 server = xmlrpc.client.ServerProxy("http://localhost:12345")
-#skimmer.skccgroup.com 7000
+# skimmer.skccgroup.com 7000
 #'dxc.nc7j.com', 23
-rbn = 'skimmer.skccgroup.com'
+rbn = "skimmer.skccgroup.com"
 rbnport = 7000
 maxspotterdistance = 500
 mygrid = "DM13AT"
-limitband = ('160','80','40','20','15','10','6')
-showoutofband = True #show out of general band.
-spottoold = 600 #10 minutes
+limitband = ("160", "80", "40", "20", "15", "10", "6")
+showoutofband = True  # show out of general band.
+spottoold = 600  # 10 minutes
 
 console = Console(width=38)
 localspotters = list()
 vfo = 0.0
 oldvfo = 0.0
 contactlist = dict()
+
 
 def updatecontactlist():
     """
@@ -58,11 +59,11 @@ def updatecontactlist():
     try:
         with sqlite3.connect("WFD.db") as wfd:
             c = wfd.cursor()
-            sql="select * from contacts where mode='CW'"
+            sql = "select * from contacts where mode='CW'"
             c.execute(sql)
             result = c.fetchall()
             for contact in result:
-                _, callsign, _, _, _, band, _, _, _ , _ = contact
+                _, callsign, _, _, _, band, _, _, _, _ = contact
                 if band in contactlist.keys():
                     contactlist[band].append(callsign)
                 else:
@@ -70,6 +71,7 @@ def updatecontactlist():
                     contactlist[band].append(callsign)
     except Error as e:
         console.print(e)
+
 
 def alreadyworked(callsign, band):
     """
@@ -80,6 +82,7 @@ def alreadyworked(callsign, band):
         return callsign in contactlist[str(band)]
     return False
 
+
 def getvfo():
     """
     Get the freq from the active VFO in khz.
@@ -89,6 +92,7 @@ def getvfo():
         vfo = float(server.rig.get_vfo()) / 1000
     except:
         vfo = 0.0
+
 
 def comparevfo(freq):
     """
@@ -104,6 +108,7 @@ def comparevfo(freq):
         difference = vfo - freq
     return difference
 
+
 def gridtolatlon(maiden):
     """
     Convert a 2,4,6 or 8 character maidenhead gridsquare to a latitude longitude pair.
@@ -112,14 +117,14 @@ def gridtolatlon(maiden):
 
     N = len(maiden)
     if not 8 >= N >= 2 and N % 2 == 0:
-        return 0,0
+        return 0, 0
 
     lon = (ord(maiden[0]) - 65) * 20 - 180
     lat = (ord(maiden[1]) - 65) * 10 - 90
 
     if N >= 4:
-        lon += (ord(maiden[2])-48) * 2
-        lat += (ord(maiden[3])-48)
+        lon += (ord(maiden[2]) - 48) * 2
+        lat += ord(maiden[3]) - 48
 
     if N >= 6:
         lon += (ord(maiden[4]) - 65) / 12 + 1 / 24
@@ -130,6 +135,7 @@ def gridtolatlon(maiden):
         lat += (ord(maiden[7])) * 2.5 / 600
 
     return lat, lon
+
 
 def getband(freq):
     """
@@ -168,11 +174,12 @@ def getband(freq):
 
     return "0"
 
+
 def calc_distance(grid1, grid2):
     """
     Takes two maidenhead gridsquares and returns the distance between the two in kilometers.
     """
-    R = 6371 #earh radius
+    R = 6371  # earh radius
     lat1, long1 = gridtolatlon(grid1)
     lat2, long2 = gridtolatlon(grid2)
 
@@ -184,11 +191,14 @@ def calc_distance(grid1, grid2):
     r_lat2 = radians(lat2)
     r_long2 = radians(long2)
 
-    a = sin(d_lat/2) * sin(d_lat/2) + cos(r_lat1) * cos(r_lat2) * sin(d_long/2) * sin(d_long/2)
-    c = 2 * atan2(sqrt(a), sqrt(1-a))
-    d = R * c #distance in km
+    a = sin(d_lat / 2) * sin(d_lat / 2) + cos(r_lat1) * cos(r_lat2) * sin(
+        d_long / 2
+    ) * sin(d_long / 2)
+    c = 2 * atan2(sqrt(a), sqrt(1 - a))
+    d = R * c  # distance in km
 
     return d
+
 
 def inband(freq):
     """
@@ -225,6 +235,7 @@ def inband(freq):
         ib = True
     return ib
 
+
 def addSpot(conn, callsign, freq, band):
     """
     Removes spots older than value stored in spottoold.
@@ -232,11 +243,11 @@ def addSpot(conn, callsign, freq, band):
     """
     global spottoold
     spot = (callsign, freq, band)
-    c=conn.cursor()
-    sql=f"delete from spots where Cast ((JulianDay(datetime('now')) - JulianDay(date_time)) * 24 * 60 * 60 As Integer) > {spottoold}"
+    c = conn.cursor()
+    sql = f"delete from spots where Cast ((JulianDay(datetime('now')) - JulianDay(date_time)) * 24 * 60 * 60 As Integer) > {spottoold}"
     c.execute(sql)
     conn.commit()
-    sql=f"select count(*) from spots where callsign='{callsign}'"
+    sql = f"select count(*) from spots where callsign='{callsign}'"
     c.execute(sql)
     result = c.fetchall()
     if result[0][0] == 0:
@@ -249,22 +260,24 @@ def addSpot(conn, callsign, freq, band):
         c.execute(sql)
         conn.commit()
 
+
 def pruneoldest(conn):
     """
     Removes the oldest spot.
     """
-    c=conn.cursor()
-    sql="select * from spots order by date_time asc"
+    c = conn.cursor()
+    sql = "select * from spots order by date_time asc"
     c.execute(sql)
     result = c.fetchone()
     id, _, _, _, _ = result
-    sql=f"delete from spots where id='{id}'"
+    sql = f"delete from spots where id='{id}'"
     c.execute(sql)
     conn.commit()
 
+
 def showspots(conn):
     """
-    Show spot list, sorted by frequency. 
+    Show spot list, sorted by frequency.
     Prune the list if it's longer than the window by removing the oldest spots.
     If tracking your VFO highlight those spots in/near your bandpass.
     Mark those already worked in red.
@@ -273,21 +286,21 @@ def showspots(conn):
     console.clear()
     console.rule(f"[bold red]Spots VFO: {vfo}")
     updatecontactlist()
-    c=conn.cursor()
-    sql="select *, Cast ((JulianDay(datetime('now')) - JulianDay(date_time)) * 24 * 60 * 60 As Integer) from spots order by frequency asc"
+    c = conn.cursor()
+    sql = "select *, Cast ((JulianDay(datetime('now')) - JulianDay(date_time)) * 24 * 60 * 60 As Integer) from spots order by frequency asc"
     c.execute(sql)
     result = c.fetchall()
     displayed = 2
     for x, spot in enumerate(result):
         _, callsign, date_time, frequency, band, delta = spot
         displayed += 1
-        if displayed > console.height: 
+        if displayed > console.height:
             pruneoldest(conn)
         else:
             if inband(frequency):
                 style = ""
             else:
-                style = "" #if in extra/advanced band
+                style = ""  # if in extra/advanced band
             if comparevfo(frequency) < 0.8:
                 style = "bold on color(237)"
             if comparevfo(frequency) < 0.5:
@@ -296,22 +309,29 @@ def showspots(conn):
                 style = "bold on blue"
             if alreadyworked(callsign, band):
                 style = "bold on color(88)"
-            console.print(f"{callsign.ljust(11)} {str(frequency).rjust(8)} {str(band).rjust(3)}M {date_time.split()[1]} {delta}", style=style, overflow="ellipsis")
+            console.print(
+                f"{callsign.ljust(11)} {str(frequency).rjust(8)} {str(band).rjust(3)}M {date_time.split()[1]} {delta}",
+                style=style,
+                overflow="ellipsis",
+            )
+
 
 console.clear()
 updatecontactlist()
 console.rule("[bold red]Finding Spotters")
-page = requests.get("http://reversebeacon.net/cont_includes/status.php?t=skt", timeout = 10.0)
-soup = bs(page.text, 'lxml')
-rows = soup.find_all('tr', {'class': "online"})
+page = requests.get(
+    "http://reversebeacon.net/cont_includes/status.php?t=skt", timeout=10.0
+)
+soup = bs(page.text, "lxml")
+rows = soup.find_all("tr", {"class": "online"})
 for row in rows:
-    datum = row.find_all('td')
+    datum = row.find_all("td")
     spotter = datum[0].a.contents[0].strip()
     bands = datum[1].contents[0].strip()
     grid = datum[2].contents[0]
-    distance = calc_distance(grid, mygrid)/1.609
+    distance = calc_distance(grid, mygrid) / 1.609
     if distance < maxspotterdistance:
-        #BandList = [int(x[:-1]) for x in bands.split(',') if x in '160m 80m 60m 40m 30m 20m 17m 15m 12m 10m 6m'.split()]
+        # BandList = [int(x[:-1]) for x in bands.split(',') if x in '160m 80m 60m 40m 30m 20m 17m 15m 12m 10m 6m'.split()]
         localspotters.append(f"{spotter}-#:")
 
 print(f"Spotters with in {maxspotterdistance} mi:")
@@ -323,13 +343,13 @@ with sqlite3.connect(":memory:") as conn:
     c.execute(sql_table)
     conn.commit()
     with Telnet(rbn, rbnport) as tn:
-        tn.read_until(b'ogin:', timeout=2.0)
-        tn.write("w1aw\r\n".encode('ascii'))
-        tn.read_until(b'sign:', timeout=1.0)
-        #tn.write("w1aw\r\n".encode('ascii'))
+        tn.read_until(b"ogin:", timeout=2.0)
+        tn.write("w1aw\r\n".encode("ascii"))
+        tn.read_until(b"sign:", timeout=1.0)
+        # tn.write("w1aw\r\n".encode('ascii'))
         while True:
-            line=tn.read_until(b'\r\n', timeout=0.25)
-            if line != b'':
+            line = tn.read_until(b"\r\n", timeout=0.25)
+            if line != b"":
                 spot = line.decode().split()
                 if not spot[2] in localspotters:
                     continue
@@ -350,4 +370,3 @@ with sqlite3.connect(":memory:") as conn:
             else:
                 getvfo()
                 showspots(conn)
-           
