@@ -21,9 +21,17 @@ No use in seeing spots you can respond to...
 
 """
 
+import logging
+
+logging.basicConfig(level=logging.CRITICAL)
+
 import xmlrpc.client
 import requests
 import sqlite3
+import re
+import time
+
+from threading import Thread, Lock
 from sqlite3 import Error
 from telnetlib import Telnet
 from rich.console import Console
@@ -41,12 +49,14 @@ mygrid = "DM13AT"
 limitband = ("160", "80", "40", "20", "15", "10", "6")
 showoutofband = True  # show out of general band.
 spottoold = 600  # 10 minutes
-
+conn = False
+lock = Lock()
 console = Console(width=38)
 localspotters = list()
 vfo = 0.0
 oldvfo = 0.0
 contactlist = dict()
+rbn_parse = r"^DX de ([A-Z\d\-\/]*)-#:\s+([\d.]*)\s+([A-Z\d\-\/]*)\s+([A-Z\d]*)\s+(\d*) dB.*\s+(\d{4}Z)"
 
 
 def updatecontactlist():
@@ -88,10 +98,12 @@ def getvfo():
     Get the freq from the active VFO in khz.
     """
     global vfo
-    try:
-        vfo = float(server.rig.get_vfo()) / 1000
-    except:
-        vfo = 0.0
+    while True:
+        try:
+            vfo = float(server.rig.get_vfo()) / 1000
+        except:
+            vfo = 0.0
+        time.sleep(0.25)
 
 
 def comparevfo(freq):
@@ -236,46 +248,47 @@ def inband(freq):
     return ib
 
 
-def addSpot(conn, callsign, freq, band):
+def addSpot(callsign, freq, band):
     """
     Removes spots older than value stored in spottoold.
     Inserts a new or updates existing spot.
     """
     global spottoold
-    spot = (callsign, freq, band)
-    c = conn.cursor()
-    sql = f"delete from spots where Cast ((JulianDay(datetime('now')) - JulianDay(date_time)) * 24 * 60 * 60 As Integer) > {spottoold}"
-    c.execute(sql)
-    conn.commit()
-    sql = f"select count(*) from spots where callsign='{callsign}'"
-    c.execute(sql)
-    result = c.fetchall()
-    if result[0][0] == 0:
-        sql = "INSERT INTO spots(callsign, date_time, frequency, band) VALUES(?,datetime('now'),?,?)"
-        c.execute(sql, spot)
+    with sqlite3.connect("spots.db") as conn:
+        spot = (callsign, freq, band)
+        c = conn.cursor()
+        sql = f"delete from spots where Cast ((JulianDay(datetime('now')) - JulianDay(date_time)) * 24 * 60 * 60 As Integer) > {spottoold}"
+        c.execute(sql)
         conn.commit()
-        showspots(conn)
-    else:
-        sql = f"update spots set frequency='{freq}', date_time = datetime('now'), band='{band}' where callsign='{callsign}';"
+        sql = f"select count(*) from spots where callsign='{callsign}'"
+        c.execute(sql)
+        result = c.fetchall()
+        if result[0][0] == 0:
+            sql = "INSERT INTO spots(callsign, date_time, frequency, band) VALUES(?,datetime('now'),?,?)"
+            c.execute(sql, spot)
+            conn.commit()
+        else:
+            sql = f"update spots set frequency='{freq}', date_time = datetime('now'), band='{band}' where callsign='{callsign}';"
+            c.execute(sql)
+            conn.commit()
+
+
+def pruneoldest():
+    """
+    Removes the oldest spot.
+    """
+    with sqlite3.connect("spots.db") as conn:
+        c = conn.cursor()
+        sql = "select * from spots order by date_time asc"
+        c.execute(sql)
+        result = c.fetchone()
+        id, _, _, _, _ = result
+        sql = f"delete from spots where id='{id}'"
         c.execute(sql)
         conn.commit()
 
 
-def pruneoldest(conn):
-    """
-    Removes the oldest spot.
-    """
-    c = conn.cursor()
-    sql = "select * from spots order by date_time asc"
-    c.execute(sql)
-    result = c.fetchone()
-    id, _, _, _, _ = result
-    sql = f"delete from spots where id='{id}'"
-    c.execute(sql)
-    conn.commit()
-
-
-def showspots(conn):
+def showspots(lock):
     """
     Show spot list, sorted by frequency.
     Prune the list if it's longer than the window by removing the oldest spots.
@@ -283,37 +296,76 @@ def showspots(conn):
     Mark those already worked in red.
     """
     global vfo
-    console.clear()
-    console.rule(f"[bold red]Spots VFO: {vfo}")
-    updatecontactlist()
-    c = conn.cursor()
-    sql = "select *, Cast ((JulianDay(datetime('now')) - JulianDay(date_time)) * 24 * 60 * 60 As Integer) from spots order by frequency asc"
-    c.execute(sql)
-    result = c.fetchall()
-    displayed = 2
-    for x, spot in enumerate(result):
-        _, callsign, date_time, frequency, band, delta = spot
-        displayed += 1
-        if displayed > console.height:
-            pruneoldest(conn)
-        else:
-            if inband(frequency):
-                style = ""
+    while True:
+        console.clear()
+        console.rule(f"[bold red]Spots VFO: {vfo}")
+        updatecontactlist()
+        with lock:
+            with sqlite3.connect("spots.db") as conn:
+                c = conn.cursor()
+                sql = "select *, Cast ((JulianDay(datetime('now')) - JulianDay(date_time)) * 24 * 60 * 60 As Integer) from spots order by frequency asc"
+                c.execute(sql)
+                result = c.fetchall()
+        displayed = 2
+        for x, spot in enumerate(result):
+            _, callsign, date_time, frequency, band, delta = spot
+            displayed += 1
+            if displayed > console.height:
+                with lock:
+                    pruneoldest()
             else:
-                style = ""  # if in extra/advanced band
-            if comparevfo(frequency) < 0.8:
-                style = "bold on color(237)"
-            if comparevfo(frequency) < 0.5:
-                style = "bold on color(240)"
-            if comparevfo(frequency) < 0.2:
-                style = "bold on blue"
-            if alreadyworked(callsign, band):
-                style = "bold on color(88)"
-            console.print(
-                f"{callsign.ljust(11)} {str(frequency).rjust(8)} {str(band).rjust(3)}M {date_time.split()[1]} {delta}",
-                style=style,
-                overflow="ellipsis",
-            )
+                if inband(frequency):
+                    style = ""
+                else:
+                    style = ""  # if in extra/advanced band
+                if comparevfo(frequency) < 0.8:
+                    style = "bold on color(237)"
+                if comparevfo(frequency) < 0.5:
+                    style = "bold on color(240)"
+                if comparevfo(frequency) < 0.2:
+                    style = "bold on blue"
+                if alreadyworked(callsign, band):
+                    style = "bold on color(88)"
+                console.print(
+                    f"{callsign.ljust(11)} {str(frequency).rjust(8)} {str(band).rjust(3)}M {date_time.split()[1]} {delta}",
+                    style=style,
+                    overflow="ellipsis",
+                )
+        time.sleep(1)
+
+
+def getrbn(lock):
+    with Telnet(rbn, rbnport) as tn:
+        while True:
+            stream = tn.read_until(b"\r\n", timeout=1.0)
+            if stream == b"":
+                continue
+            stream = stream.decode()
+            if "Please enter your call:" in stream:
+                tn.write("w1aw\r\n".encode("ascii"))
+                continue
+            data = stream.split("\r\n")
+            for entry in data:
+                if not entry:
+                    continue
+
+                parsed = list(re.findall(rbn_parse, entry.strip()))
+                if not parsed or len(parsed[0]) < 6:
+                    continue
+                spotter = parsed[0][0]
+                mode = parsed[0][3]
+                if not mode == "CW":
+                    continue
+                if not spotter in localspotters:
+                    continue
+                freq = float(parsed[0][1])
+                band = getband(freq)
+                callsign = parsed[0][2]
+                if not inband(float(freq)) and showoutofband == False:
+                    continue
+                if band in limitband:
+                    with lock:
+                        addSpot(callsign, freq, band)
 
 
 console.clear()
@@ -332,41 +384,29 @@ for row in rows:
     distance = calc_distance(grid, mygrid) / 1.609
     if distance < maxspotterdistance:
         # BandList = [int(x[:-1]) for x in bands.split(',') if x in '160m 80m 60m 40m 30m 20m 17m 15m 12m 10m 6m'.split()]
-        localspotters.append(f"{spotter}-#:")
+        localspotters.append(spotter)
 
 print(f"Spotters with in {maxspotterdistance} mi:")
 print(f"{localspotters}")
 
-with sqlite3.connect(":memory:") as conn:
+with sqlite3.connect("spots.db") as conn:
     c = conn.cursor()
     sql_table = """CREATE TABLE IF NOT EXISTS spots (id INTEGER PRIMARY KEY, callsign text, date_time text NOT NULL, frequency REAL NOT NULL, band INTEGER);"""
     c.execute(sql_table)
     conn.commit()
-    with Telnet(rbn, rbnport) as tn:
-        tn.read_until(b"ogin:", timeout=2.0)
-        tn.write("w1aw\r\n".encode("ascii"))
-        tn.read_until(b"sign:", timeout=1.0)
-        # tn.write("w1aw\r\n".encode('ascii'))
-        while True:
-            line = tn.read_until(b"\r\n", timeout=0.25)
-            if line != b"":
-                spot = line.decode().split()
-                if not spot[2] in localspotters:
-                    continue
-                callsign = spot[4]
-                try:
-                    freq = spot[3]
-                except:
-                    continue
-                band = getband(freq)
-                if not inband(float(freq)) and showoutofband == False:
-                    continue
-                if band in limitband:
-                    addSpot(conn, callsign, freq, band)
-                getvfo()
-                if vfo != oldvfo:
-                    oldvfo = vfo
-                    showspots(conn)
-            else:
-                getvfo()
-                showspots(conn)
+
+# Threading Oh my!
+t1 = Thread(target=getrbn, args=(lock,))
+t1.daemon = True
+t2 = Thread(target=showspots, args=(lock,))
+t2.daemon = True
+t3 = Thread(target=getvfo)
+t3.daemon = True
+
+t1.start()
+t2.start()
+t3.start()
+
+t1.join()
+t2.join()
+t3.join()
