@@ -40,6 +40,7 @@ class qsoEdit(QtCore.QObject):
     """
     Custom qt event signal used when qso edited or deleted.
     """
+
     lineChanged = QtCore.pyqtSignal()
 
 
@@ -68,9 +69,21 @@ class MainWindow(QtWidgets.QMainWindow):
     scp = []
     wrkdsections = []
     linetopass = ""
-    bands = ('160', '80', '60', '40', '20', '15', '10', '6', '2')
-    dfreq = {'160': "1.830", '80': "3.530", '60': "5.340", '40': "7.030", '20': "14.030", '15': "21.030",
-             '10': "28.030", '6': "50.030", '2': "144.030", '222': "222.030", '432': "432.030", 'SAT': "0.0"}
+    bands = ("160", "80", "60", "40", "20", "15", "10", "6", "2")
+    dfreq = {
+        "160": "1.830",
+        "80": "3.530",
+        "60": "5.340",
+        "40": "7.030",
+        "20": "14.030",
+        "15": "21.030",
+        "10": "28.030",
+        "6": "50.030",
+        "2": "144.030",
+        "222": "222.030",
+        "432": "432.030",
+        "SAT": "0.0",
+    }
     cloudlogapi = ""
     cloudlogurl = ""
     cloudlogauthenticated = False
@@ -117,10 +130,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.callsign_entry.editingFinished.connect(self.dupCheck)
         self.section_entry.textEdited.connect(self.sectionCheck)
         self.genLogButton.clicked.connect(self.generateLogs)
-        self.radio_icon.setPixmap(QtGui.QPixmap(
-            self.relpath('icon/radio_grey.png')))
-        self.cloudlog_icon.setPixmap(QtGui.QPixmap(
-            self.relpath('icon/cloud_grey.png')))
+        self.radio_icon.setPixmap(QtGui.QPixmap(self.relpath("icon/radio_grey.png")))
+        self.cloudlog_icon.setPixmap(QtGui.QPixmap(self.relpath("icon/cloud_grey.png")))
         self.QRZ_icon.setStyleSheet("color: rgb(136, 138, 133);")
         self.settingsbutton.clicked.connect(self.settingspressed)
         self.server = xmlrpc.client.ServerProxy("http://localhost:12345")
@@ -142,8 +153,8 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         Update local and UTC time on screen.
         """
-        now = datetime.now().isoformat(' ')[5:19].replace('-', '/')
-        utcnow = datetime.utcnow().isoformat(' ')[5:19].replace('-', '/')
+        now = datetime.now().isoformat(" ")[5:19].replace("-", "/")
+        utcnow = datetime.utcnow().isoformat(" ")[5:19].replace("-", "/")
         self.localtime.setText(now)
         self.utctime.setText(utcnow)
 
@@ -176,21 +187,22 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         if self.useqrz and self.has_internet():
             try:
-                payload = {'username': self.qrzname, 'password': self.qrzpass}
+                payload = {"username": self.qrzname, "password": self.qrzpass}
                 r = requests.get(self.qrzurl, params=payload, timeout=1.0)
-                if r.status_code == 200 and r.text.find('<Key>') > 0:
-                    self.qrzsession = r.text[r.text.find(
-                        '<Key>')+5:r.text.find('</Key>')]
+                if r.status_code == 200 and r.text.find("<Key>") > 0:
+                    self.qrzsession = r.text[
+                        r.text.find("<Key>") + 5 : r.text.find("</Key>")
+                    ]
                     self.QRZ_icon.setStyleSheet("color: rgb(128, 128, 0);")
                     logging.info("QRZ: Obtained session key.")
                 else:
                     self.qrzsession = False
                     self.QRZ_icon.setStyleSheet("color: rgb(136, 138, 133);")
-                if r.status_code == 200 and r.text.find('<Error>') > 0:
-                    errorText = r.text[r.text.find(
-                        '<Error>')+7:r.text.find('</Error>')]
-                    self.infobox.insertPlainText(
-                        "\nQRZ Error: " + errorText + "\n")
+                if r.status_code == 200 and r.text.find("<Error>") > 0:
+                    errorText = r.text[
+                        r.text.find("<Error>") + 7 : r.text.find("</Error>")
+                    ]
+                    self.infobox.insertPlainText("\nQRZ Error: " + errorText + "\n")
                     logging.warning(f"QRZ Error: {errorText}")
             except requests.exceptions.RequestException as e:
                 self.infobox.insertPlainText(f"****QRZ Error****\n{e}\n")
@@ -203,27 +215,31 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         Check if user has valid Cloudlog API key.
         """
-        self.cloudlog_icon.setPixmap(QtGui.QPixmap(
-            self.relpath('icon/cloud_grey.png')))
+        self.cloudlog_icon.setPixmap(QtGui.QPixmap(self.relpath("icon/cloud_grey.png")))
         self.cloudlogauthenticated = False
         if self.usecloudlog:
             try:
-                self.cloudlog_icon.setPixmap(QtGui.QPixmap(
-                    self.relpath('icon/cloud_red.png')))
-                test = self.cloudlogurl[:-3]+"auth/"+self.cloudlogapi
+                self.cloudlog_icon.setPixmap(
+                    QtGui.QPixmap(self.relpath("icon/cloud_red.png"))
+                )
+                test = self.cloudlogurl[:-3] + "auth/" + self.cloudlogapi
                 r = requests.get(test, params={}, timeout=2.0)
-                if r.status_code == 200 and r.text.find('<status>') > 0:
-                    if r.text[r.text.find('<status>')+8:r.text.find('</status>')] == "Valid":
+                if r.status_code == 200 and r.text.find("<status>") > 0:
+                    if (
+                        r.text[r.text.find("<status>") + 8 : r.text.find("</status>")]
+                        == "Valid"
+                    ):
                         self.cloudlogauthenticated = True
-                        self.cloudlog_icon.setPixmap(QtGui.QPixmap(
-                            self.relpath('icon/cloud_green.png')))
+                        self.cloudlog_icon.setPixmap(
+                            QtGui.QPixmap(self.relpath("icon/cloud_green.png"))
+                        )
                         logging.info("Cloudlog: Authenticated.")
                 else:
                     logging.warning(
-                        f"Cloudlog: {r.status_code} Unable to authenticate.")
+                        f"Cloudlog: {r.status_code} Unable to authenticate."
+                    )
             except requests.exceptions.RequestException as e:
-                self.infobox.insertPlainText(
-                    f"****Cloudlog Auth Error:****\n{e}\n")
+                self.infobox.insertPlainText(f"****Cloudlog Auth Error:****\n{e}\n")
                 logging.warning(f"Cloudlog: {e}")
 
     def getband(self, freq):
@@ -265,7 +281,7 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         Change what rigctld returned for the mode to the cabrillo mode for logging.
         """
-        if rigmode == "CW" or rigmode == 'CWR':
+        if rigmode == "CW" or rigmode == "CWR":
             return "CW"
         if rigmode == "USB" or rigmode == "LSB" or rigmode == "FM" or rigmode == "AM":
             return "PH"
@@ -275,16 +291,14 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         Takes a band in meters and programatically changes the onscreen dropdown to match.
         """
-        self.band_selector.setCurrentIndex(
-            self.band_selector.findText(theband))
+        self.band_selector.setCurrentIndex(self.band_selector.findText(theband))
         self.changeband()
 
     def setmode(self, themode):
         """
         Takes a string for the mode (CW, PH, DI) and programatically changes the onscreen dropdown.
         """
-        self.mode_selector.setCurrentIndex(
-            self.mode_selector.findText(themode))
+        self.mode_selector.setCurrentIndex(self.mode_selector.findText(themode))
         self.changemode()
 
     def pollRadio(self):
@@ -295,8 +309,9 @@ class MainWindow(QtWidgets.QMainWindow):
             try:
                 newfreq = self.server.rig.get_vfo()
                 newmode = self.server.rig.get_mode()
-                self.radio_icon.setPixmap(QtGui.QPixmap(
-                    self.relpath('icon/radio_green.png')))
+                self.radio_icon.setPixmap(
+                    QtGui.QPixmap(self.relpath("icon/radio_green.png"))
+                )
                 # or newrfpower != self.oldrfpower:
                 if newfreq != self.oldfreq or newmode != self.oldmode:
                     self.oldfreq = newfreq
@@ -305,8 +320,9 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.setmode(str(self.getmode(newmode)))
             except:
                 self.rigonline = False
-                self.radio_icon.setPixmap(QtGui.QPixmap(
-                    self.relpath('icon/radio_red.png')))
+                self.radio_icon.setPixmap(
+                    QtGui.QPixmap(self.relpath("icon/radio_red.png"))
+                )
 
     def checkRadio(self):
         """
@@ -316,13 +332,16 @@ class MainWindow(QtWidgets.QMainWindow):
             self.rigonline = True
             try:
                 self.server = xmlrpc.client.ServerProxy(
-                    f"http://{self.rigctrlhost}:{self.rigctrlport}")
-                self.radio_icon.setPixmap(QtGui.QPixmap(
-                    self.relpath('icon/radio_red.png')))
+                    f"http://{self.rigctrlhost}:{self.rigctrlport}"
+                )
+                self.radio_icon.setPixmap(
+                    QtGui.QPixmap(self.relpath("icon/radio_red.png"))
+                )
             except:
                 self.rigonline = False
-                self.radio_icon.setPixmap(QtGui.QPixmap(
-                    self.relpath('icon/radio_grey.png')))
+                self.radio_icon.setPixmap(
+                    QtGui.QPixmap(self.relpath("icon/radio_grey.png"))
+                )
         else:
             self.rigonline = False
 
@@ -338,14 +357,16 @@ class MainWindow(QtWidgets.QMainWindow):
         Flash the screen to give visual indication of a dupe.
         """
         self.setStyleSheet(
-            "background-color: rgb(245, 121, 0);\ncolor: rgb(211, 215, 207);")
+            "background-color: rgb(245, 121, 0);\ncolor: rgb(211, 215, 207);"
+        )
         app.processEvents()
         self.setStyleSheet(
-            "background-color: rgb(42, 42, 42);\ncolor: rgb(211, 215, 207);")
+            "background-color: rgb(42, 42, 42);\ncolor: rgb(211, 215, 207);"
+        )
         app.processEvents()
 
     def keyPressEvent(self, event):
-        if(event.key() == 16777216):  # ESC
+        if event.key() == 16777216:  # ESC
             self.clearinputs()
 
     def clearinputs(self):
@@ -376,12 +397,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def changemycall(self):
         text = self.mycallEntry.text()
-        if(len(text)):
+        if len(text):
             if text[-1] == " ":
                 self.mycallEntry.setText(text.strip())
             else:
-                cleaned = ''.join(
-                    ch for ch in text if ch.isalnum() or ch == '/').upper()
+                cleaned = "".join(
+                    ch for ch in text if ch.isalnum() or ch == "/"
+                ).upper()
                 self.mycallEntry.setText(cleaned)
         self.mycall = self.mycallEntry.text()
         if self.mycall != "":
@@ -392,11 +414,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def changemyclass(self):
         text = self.myclassEntry.text()
-        if(len(text)):
+        if len(text):
             if text[-1] == " ":
                 self.myclassEntry.setText(text.strip())
             else:
-                cleaned = ''.join(ch for ch in text if ch.isalnum()).upper()
+                cleaned = "".join(ch for ch in text if ch.isalnum()).upper()
                 self.myclassEntry.setText(cleaned)
         self.myclass = self.myclassEntry.text()
         if self.myclass != "":
@@ -407,11 +429,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def changemysection(self):
         text = self.mysectionEntry.text()
-        if(len(text)):
+        if len(text):
             if text[-1] == " ":
                 self.mysectionEntry.setText(text.strip())
             else:
-                cleaned = ''.join(ch for ch in text if ch.isalpha()).upper()
+                cleaned = "".join(ch for ch in text if ch.isalpha()).upper()
                 self.mysectionEntry.setText(cleaned)
         self.mysection = self.mysectionEntry.text()
         if self.mysection != "":
@@ -425,13 +447,14 @@ class MainWindow(QtWidgets.QMainWindow):
         Cleans callsign of spaces and strips non alphanumeric or '/' characters.
         """
         text = self.callsign_entry.text()
-        if(len(text)):
+        if len(text):
             if text[-1] == " ":
                 self.callsign_entry.setText(text.strip())
                 self.class_entry.setFocus()
             else:
-                cleaned = ''.join(
-                    ch for ch in text if ch.isalnum() or ch == '/').upper()
+                cleaned = "".join(
+                    ch for ch in text if ch.isalnum() or ch == "/"
+                ).upper()
                 self.callsign_entry.setText(cleaned)
                 self.superCheck()
 
@@ -440,12 +463,12 @@ class MainWindow(QtWidgets.QMainWindow):
         Strips class of spaces and non alphanumerics, converts to uppercase.
         """
         text = self.class_entry.text()
-        if(len(text)):
+        if len(text):
             if text[-1] == " ":
                 self.class_entry.setText(text.strip())
                 self.section_entry.setFocus()
             else:
-                cleaned = ''.join(ch for ch in text if ch.isalnum()).upper()
+                cleaned = "".join(ch for ch in text if ch.isalnum()).upper()
                 self.class_entry.setText(cleaned)
 
     def sectiontest(self):
@@ -453,16 +476,16 @@ class MainWindow(QtWidgets.QMainWindow):
         Strips section of spaces and non alpha characters, converts to uppercase.
         """
         text = self.section_entry.text()
-        if(len(text)):
+        if len(text):
             if text[-1] == " ":
                 self.section_entry.setText(text.strip())
                 self.callsign_entry.setFocus()
             else:
-                cleaned = ''.join(ch for ch in text if ch.isalpha()).upper()
+                cleaned = "".join(ch for ch in text if ch.isalpha()).upper()
                 self.section_entry.setText(cleaned)
 
     def create_DB(self):
-        """ create a database and table if it does not exist """
+        """create a database and table if it does not exist"""
         try:
             with sqlite3.connect(self.database) as conn:
                 c = conn.cursor()
@@ -495,19 +518,46 @@ class MainWindow(QtWidgets.QMainWindow):
                 pref = c.fetchall()
                 if len(pref) > 0:
                     for x in pref:
-                        _, self.mycall, self.myclass, self.mysection, self.power, self.altpower, self.outdoors, self.notathome, self.satellite, self.qrzname, self.qrzpass, self.qrzurl, self.cloudlogapi, self.cloudlogurl, useqrz, usecloudlog, userigcontrol, self.rigctrlhost, self.rigctrlport, self.markerfile, self.usemarker, self.usehamdb = x
+                        (
+                            _,
+                            self.mycall,
+                            self.myclass,
+                            self.mysection,
+                            self.power,
+                            self.altpower,
+                            self.outdoors,
+                            self.notathome,
+                            self.satellite,
+                            self.qrzname,
+                            self.qrzpass,
+                            self.qrzurl,
+                            self.cloudlogapi,
+                            self.cloudlogurl,
+                            useqrz,
+                            usecloudlog,
+                            userigcontrol,
+                            self.rigctrlhost,
+                            self.rigctrlport,
+                            self.markerfile,
+                            self.usemarker,
+                            self.usehamdb,
+                        ) = x
                         self.altpower = bool(self.altpower)
                         self.altpowerButton.setStyleSheet(
-                            self.highlighted(self.altpower))
+                            self.highlighted(self.altpower)
+                        )
                         self.outdoors = bool(self.outdoors)
                         self.outdoorsButton.setStyleSheet(
-                            self.highlighted(self.outdoors))
+                            self.highlighted(self.outdoors)
+                        )
                         self.notathome = bool(self.notathome)
                         self.notathomeButton.setStyleSheet(
-                            self.highlighted(self.notathome))
+                            self.highlighted(self.notathome)
+                        )
                         self.satellite = bool(self.satellite)
                         self.satelliteButton.setStyleSheet(
-                            self.highlighted(self.satellite))
+                            self.highlighted(self.satellite)
+                        )
                         self.mycallEntry.setText(self.mycall)
                         self.myclassEntry.setText(self.myclass)
                         self.mysectionEntry.setText(self.mysection)
@@ -539,11 +589,23 @@ class MainWindow(QtWidgets.QMainWindow):
             logging.critical(f"writepreferences: {e}")
 
     def log_contact(self):
-        if(len(self.callsign_entry.text()) == 0 or len(self.class_entry.text()) == 0 or len(self.section_entry.text()) == 0):
+        if (
+            len(self.callsign_entry.text()) == 0
+            or len(self.class_entry.text()) == 0
+            or len(self.section_entry.text()) == 0
+        ):
             return
         grid, opname = self.qrzlookup(self.callsign_entry.text())
-        contact = (self.callsign_entry.text(), self.class_entry.text(), self.section_entry.text(
-        ), self.band, self.mode, int(self.power_selector.value()), grid, opname)
+        contact = (
+            self.callsign_entry.text(),
+            self.class_entry.text(),
+            self.section_entry.text(),
+            self.band,
+            self.mode,
+            int(self.power_selector.value()),
+            grid,
+            opname,
+        )
         try:
             with sqlite3.connect(self.database) as conn:
                 sql = "INSERT INTO contacts(callsign, class, section, date_time, band, mode, power, grid, opname) VALUES(?,?,?,datetime('now'),?,?,?,?,?)"
@@ -576,10 +638,12 @@ class MainWindow(QtWidgets.QMainWindow):
                 c.execute("select distinct band, mode from contacts")
                 self.bandmodemult = len(c.fetchall())
                 c.execute(
-                    "SELECT count(*) FROM contacts where datetime(date_time) >=datetime('now', '-15 Minutes')")
+                    "SELECT count(*) FROM contacts where datetime(date_time) >=datetime('now', '-15 Minutes')"
+                )
                 self.QSO_Last15.setText(str(c.fetchone()[0]))
                 c.execute(
-                    "SELECT count(*) FROM contacts where datetime(date_time) >=datetime('now', '-1 Hours')")
+                    "SELECT count(*) FROM contacts where datetime(date_time) >=datetime('now', '-1 Hours')"
+                )
                 self.QSO_PerHour.setText(str(c.fetchone()[0]))
                 self.QSO_Points.setText(str(self.calcscore()))
         except Error as e:
@@ -587,20 +651,17 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def calcscore(self):
         """
-        Return our current score based on operating power, band / mode multipliers and types of contacts. 
+        Return our current score based on operating power, band / mode multipliers and types of contacts.
         """
         self.qrpcheck()
         try:
             with sqlite3.connect(self.database) as conn:
                 c = conn.cursor()
-                c.execute(
-                    "select count(*) as cw from contacts where mode = 'CW'")
+                c.execute("select count(*) as cw from contacts where mode = 'CW'")
                 cw = str(c.fetchone()[0])
-                c.execute(
-                    "select count(*) as ph from contacts where mode = 'PH'")
+                c.execute("select count(*) as ph from contacts where mode = 'PH'")
                 ph = str(c.fetchone()[0])
-                c.execute(
-                    "select count(*) as di from contacts where mode = 'DI'")
+                c.execute("select count(*) as di from contacts where mode = 'DI'")
                 di = str(c.fetchone()[0])
                 c.execute("select distinct band, mode from contacts")
                 self.bandmodemult = len(c.fetchall())
@@ -618,8 +679,13 @@ class MainWindow(QtWidgets.QMainWindow):
             self.score = self.score * 2
         self.score = self.score * self.bandmodemult
         # 2022 rules, bonuses down from 1500 to 500 each.
-        self.score = self.score + (500 * self.altpower) + (
-            500 * self.outdoors) + (500 * self.notathome) + (500 * self.satellite)
+        self.score = (
+            self.score
+            + (500 * self.altpower)
+            + (500 * self.outdoors)
+            + (500 * self.notathome)
+            + (500 * self.satellite)
+        )
         return self.score
 
     def qrpcheck(self):
@@ -628,19 +694,23 @@ class MainWindow(QtWidgets.QMainWindow):
             with sqlite3.connect(self.database) as conn:
                 c = conn.cursor()
                 c.execute(
-                    "select count(*) as qrpc from contacts where mode = 'CW' and power > 5")
+                    "select count(*) as qrpc from contacts where mode = 'CW' and power > 5"
+                )
                 log = c.fetchall()
                 qrpc = list(log[0])[0]
                 c.execute(
-                    "select count(*) as qrpp from contacts where mode = 'PH' and power > 10")
+                    "select count(*) as qrpp from contacts where mode = 'PH' and power > 10"
+                )
                 log = c.fetchall()
                 qrpp = list(log[0])[0]
                 c.execute(
-                    "select count(*) as qrpd from contacts where mode = 'DI' and power > 10")
+                    "select count(*) as qrpd from contacts where mode = 'DI' and power > 10"
+                )
                 log = c.fetchall()
                 qrpd = list(log[0])[0]
                 c.execute(
-                    "select count(*) as highpower from contacts where power > 100")
+                    "select count(*) as highpower from contacts where power > 100"
+                )
                 log = c.fetchall()
                 self.highpower = bool(list(log[0])[0])
                 self.qrp = not (qrpc + qrpp + qrpd)
@@ -691,15 +761,14 @@ class MainWindow(QtWidgets.QMainWindow):
                     ln = fd.readline().strip()  # read a line and put in db
                     if not ln:
                         break
-                    if ln[0] == '#':
+                    if ln[0] == "#":
                         continue
                     try:
                         _, st, canum, abbrev, name = str.split(ln, None, 4)
-                        self.secName[abbrev] = abbrev + \
-                            ' ' + name + ' ' + canum
+                        self.secName[abbrev] = abbrev + " " + name + " " + canum
                         self.secState[abbrev] = st
                         for i in range(len(abbrev) - 1):
-                            p = abbrev[:-i - 1]
+                            p = abbrev[: -i - 1]
                             self.secPartial[p] = 1
                     except ValueError as e:
                         logging.warning(f"readSections: {e}")
@@ -718,14 +787,14 @@ class MainWindow(QtWidgets.QMainWindow):
         x = list(self.secName.keys())
         xx = list(filter(lambda y: y.startswith(sec), x))
         for xxx in xx:
-            self.infobox.insertPlainText(self.secName[xxx]+"\n")
+            self.infobox.insertPlainText(self.secName[xxx] + "\n")
 
     def readSCP(self):
         """
         Reads in a list of known contesters into an internal dictionary
         """
         try:
-            with open(self.relpath("MASTER.SCP"), 'r') as f:
+            with open(self.relpath("MASTER.SCP"), "r") as f:
                 self.scp = f.readlines()
                 self.scp = list(map(lambda x: x.strip(), self.scp))
         except IOError as e:
@@ -738,10 +807,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.infobox.clear()
         self.infobox.setTextColor(QtGui.QColor(211, 215, 207))
         acall = self.callsign_entry.text()
-        if(len(acall) > 2):
+        if len(acall) > 2:
             matches = list(filter(lambda x: x.startswith(acall), self.scp))
             for x in matches:
-                self.infobox.insertPlainText(x+" ")
+                self.infobox.insertPlainText(x + " ")
 
     def dupCheck(self):
         acall = self.callsign_entry.text()
@@ -750,7 +819,8 @@ class MainWindow(QtWidgets.QMainWindow):
             with sqlite3.connect(self.database) as conn:
                 c = conn.cursor()
                 c.execute(
-                    f"select callsign, class, section, band, mode from contacts where callsign like '{acall}' order by band")
+                    f"select callsign, class, section, band, mode from contacts where callsign like '{acall}' order by band"
+                )
                 log = c.fetchall()
         except Error as e:
             logging.critical(f"dupCheck: {e}")
@@ -768,8 +838,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 dupetext = " DUP!!!"
             else:
                 self.infobox.setTextColor(QtGui.QColor(211, 215, 207))
-            self.infobox.insertPlainText(
-                f"{hiscall}: {hisband} {hismode}{dupetext}\n")
+            self.infobox.insertPlainText(f"{hiscall}: {hisband} {hismode}{dupetext}\n")
 
     def workedSections(self):
         try:
@@ -781,12 +850,17 @@ class MainWindow(QtWidgets.QMainWindow):
             logging.critical(f"workedSections: {e}")
             return
         self.wrkdsections = str(all_rows)
-        self.wrkdsections = self.wrkdsections.replace("('", "").replace(
-            "',), ", ",").replace("',)]", "").replace('[', '').split(',')
+        self.wrkdsections = (
+            self.wrkdsections.replace("('", "")
+            .replace("',), ", ",")
+            .replace("',)]", "")
+            .replace("[", "")
+            .split(",")
+        )
 
     def workedSection(self, section):
         """
-        Return CSS foreground value for section based on if it has been worked. 
+        Return CSS foreground value for section based on if it has been worked.
         """
         if section in self.wrkdsections:
             return "color: rgb(245, 121, 0);"
@@ -943,7 +1017,8 @@ class MainWindow(QtWidgets.QMainWindow):
             with sqlite3.connect(self.database) as conn:
                 c = conn.cursor()
                 c.execute(
-                    f"select count(*) as tally, MAX(power) as mpow from contacts where band = '{band}' AND mode ='{mode}'")
+                    f"select count(*) as tally, MAX(power) as mpow from contacts where band = '{band}' AND mode ='{mode}'"
+                )
                 return c.fetchone()
         except Error as e:
             logging.critical(f"getBandModeTally: {e}")
@@ -971,16 +1046,19 @@ class MainWindow(QtWidgets.QMainWindow):
         bandlist = self.getbands()
         try:
             with open("Statistics.txt", "w") as f:
-                print("\t\tCW\tPWR\tDI\tPWR\tPH\tPWR", end='\r\n', file=f)
-                print("-"*60, end='\r\n', file=f)
+                print("\t\tCW\tPWR\tDI\tPWR\tPH\tPWR", end="\r\n", file=f)
+                print("-" * 60, end="\r\n", file=f)
                 for band in self.bands:
                     if band in bandlist:
                         cwt = self.getBandModeTally(band, "CW")
                         dit = self.getBandModeTally(band, "DI")
                         pht = self.getBandModeTally(band, "PH")
                         print(
-                            f"Band:\t{band}\t{cwt[0]}\t{cwt[1]}\t{dit[0]}\t{dit[1]}\t{pht[0]}\t{pht[1]}", end='\r\n', file=f)
-                        print("-"*60, end='\r\n', file=f)
+                            f"Band:\t{band}\t{cwt[0]}\t{cwt[1]}\t{dit[0]}\t{dit[1]}\t{pht[0]}\t{pht[1]}",
+                            end="\r\n",
+                            file=f,
+                        )
+                        print("-" * 60, end="\r\n", file=f)
         except IOError as e:
             logging.critical("generateBandModeTally: write error: {e}")
 
@@ -1010,8 +1088,8 @@ class MainWindow(QtWidgets.QMainWindow):
         lat = (ord(maiden[1]) - 65) * 10 - 90
 
         if N >= 4:
-            lon += (ord(maiden[2])-48) * 2
-            lat += (ord(maiden[3])-48)
+            lon += (ord(maiden[2]) - 48) * 2
+            lat += ord(maiden[3]) - 48
 
         if N >= 6:
             lon += (ord(maiden[4]) - 65) / 12 + 1 / 24
@@ -1025,10 +1103,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def updatemarker(self):
         """
-        Updates the xplanet marker file with a list of logged contact lat & lon 
+        Updates the xplanet marker file with a list of logged contact lat & lon
         """
         if self.usemarker:
-            filename = str(Path.home())+"/"+self.markerfile
+            filename = str(Path.home()) + "/" + self.markerfile
             try:
                 with sqlite3.connect(self.database) as conn:
                     c = conn.cursor()
@@ -1036,21 +1114,18 @@ class MainWindow(QtWidgets.QMainWindow):
                     x = c.fetchall()
                 if x:
                     lastcolor = ""
-                    with open(filename, "w", encoding='ascii') as f:
-                        islast = len(x)-1
+                    with open(filename, "w", encoding="ascii") as f:
+                        islast = len(x) - 1
                         for count, grid in enumerate(x):
                             if count == islast:
                                 lastcolor = "color=Orange"
                             if len(grid[0]) > 1:
                                 lat, lon = self.gridtolatlon(grid[0])
-                                print(f'{lat} {lon} "" {lastcolor}',
-                                      end='\r\n', file=f)
+                                print(f'{lat} {lon} "" {lastcolor}', end="\r\n", file=f)
             except IOError as e:
-                logging.warning(
-                    f"updatemarker: error {e} writing to {filename}")
+                logging.warning(f"updatemarker: error {e} writing to {filename}")
                 self.infobox.setTextColor(QtGui.QColor(245, 121, 0))
-                self.infobox.insertPlainText(
-                    f"Unable to write to {filename}\n")
+                self.infobox.insertPlainText(f"Unable to write to {filename}\n")
             except Error as e:
                 logging.critical(f"updatemarker: db error: {e}")
 
@@ -1060,20 +1135,20 @@ class MainWindow(QtWidgets.QMainWindow):
         internet_good = self.has_internet()
         try:
             if self.qrzsession and self.useqrz and internet_good:
-                payload = {'s': self.qrzsession, 'callsign': call}
+                payload = {"s": self.qrzsession, "callsign": call}
                 r = requests.get(self.qrzurl, params=payload, timeout=3.0)
-                if not r.text.find('<Key>'):  # key expired get a new one
+                if not r.text.find("<Key>"):  # key expired get a new one
                     logging.info("qrzlookup: no key, getting new one.")
                     self.qrzauth()
                     if self.qrzsession:
-                        payload = {'s': self.qrzsession, 'callsign': call}
-                        r = requests.get(
-                            self.qrzurl, params=payload, timeout=3.0)
+                        payload = {"s": self.qrzsession, "callsign": call}
+                        r = requests.get(self.qrzurl, params=payload, timeout=3.0)
                 grid, name = self.parseLookup(r)
             elif self.usehamdb and internet_good:
                 logging.info("qrzlookup: using hamdb for the lookup.")
                 r = requests.get(
-                    f"http://api.hamdb.org/{call}/xml/k6gtewfdlogger", timeout=3.0)
+                    f"http://api.hamdb.org/{call}/xml/k6gtewfdlogger", timeout=3.0
+                )
                 grid, name = self.parseLookup(r)
         except:
             logging.warning("qrzlookup: lookup failed.")
@@ -1083,32 +1158,32 @@ class MainWindow(QtWidgets.QMainWindow):
     def parseLookup(self, r):
         """
         Returns gridsquare and name for a callsign looked up by qrz or hamdb.
-        Or False for both if none found or error. 
+        Or False for both if none found or error.
         """
         grid = False
         name = False
         try:
             if r.status_code == 200:
-                if r.text.find('<Error>') > 0:
-                    errorText = r.text[r.text.find(
-                        '<Error>')+7:r.text.find('</Error>')]
+                if r.text.find("<Error>") > 0:
+                    errorText = r.text[
+                        r.text.find("<Error>") + 7 : r.text.find("</Error>")
+                    ]
                     logging.warning(f"parseLookup: {errorText}")
-                    self.infobox.insertPlainText(
-                        f"\nQRZ/HamDB Error: {errorText}\n")
-                if r.text.find('<grid>') > 0:
-                    grid = r.text[r.text.find(
-                        '<grid>')+6:r.text.find('</grid>')]
-                if r.text.find('<fname>') > 0:
-                    name = r.text[r.text.find(
-                        '<fname>')+7:r.text.find('</fname>')]
-                if r.text.find('<name>') > 0:
+                    self.infobox.insertPlainText(f"\nQRZ/HamDB Error: {errorText}\n")
+                if r.text.find("<grid>") > 0:
+                    grid = r.text[r.text.find("<grid>") + 6 : r.text.find("</grid>")]
+                if r.text.find("<fname>") > 0:
+                    name = r.text[r.text.find("<fname>") + 7 : r.text.find("</fname>")]
+                if r.text.find("<name>") > 0:
                     if not name:
-                        name = r.text[r.text.find(
-                            '<name>')+6:r.text.find('</name>')]
+                        name = r.text[
+                            r.text.find("<name>") + 6 : r.text.find("</name>")
+                        ]
                     else:
-                        name += " " + \
-                            r.text[r.text.find('<name>') +
-                                   6:r.text.find('</name>')]
+                        name += (
+                            " "
+                            + r.text[r.text.find("<name>") + 6 : r.text.find("</name>")]
+                        )
         except:
             logging.warning("parseLookup: Lookup failed.")
             self.infobox.insertPlainText(f"Lookup Failed...\n")
@@ -1133,11 +1208,22 @@ class MainWindow(QtWidgets.QMainWindow):
         grid = False
         opname = False
         try:
-            with open(logname, "w", encoding='ascii') as f:
-                print("<ADIF_VER:5>2.2.0", end='\r\n', file=f)
-                print("<EOH>", end='\r\n', file=f)
+            with open(logname, "w", encoding="ascii") as f:
+                print("<ADIF_VER:5>2.2.0", end="\r\n", file=f)
+                print("<EOH>", end="\r\n", file=f)
                 for x in log:
-                    _, hiscall, hisclass, hissection, datetime, band, mode, _, grid, opname = x
+                    (
+                        _,
+                        hiscall,
+                        hisclass,
+                        hissection,
+                        datetime,
+                        band,
+                        mode,
+                        _,
+                        grid,
+                        opname,
+                    ) = x
                     if mode == "DI":
                         mode = "RTTY"
                     if mode == "PH":
@@ -1149,44 +1235,51 @@ class MainWindow(QtWidgets.QMainWindow):
                     loggeddate = datetime[:10]
                     loggedtime = datetime[11:13] + datetime[14:16]
                     print(
-                        f"<QSO_DATE:{len(''.join(loggeddate.split('-')))}:d>{''.join(loggeddate.split('-'))}", end='\r\n', file=f)
+                        f"<QSO_DATE:{len(''.join(loggeddate.split('-')))}:d>{''.join(loggeddate.split('-'))}",
+                        end="\r\n",
+                        file=f,
+                    )
                     print(
-                        f"<TIME_ON:{len(loggedtime)}>{loggedtime}", end='\r\n', file=f)
-                    print(f"<CALL:{len(hiscall)}>{hiscall}",
-                          end='\r\n', file=f)
-                    print(f"<MODE:{len(mode)}>{mode}", end='\r\n', file=f)
-                    print(f"<BAND:{len(band + 'M')}>{band + 'M'}",
-                          end='\r\n', file=f)
+                        f"<TIME_ON:{len(loggedtime)}>{loggedtime}", end="\r\n", file=f
+                    )
+                    print(f"<CALL:{len(hiscall)}>{hiscall}", end="\r\n", file=f)
+                    print(f"<MODE:{len(mode)}>{mode}", end="\r\n", file=f)
+                    print(f"<BAND:{len(band + 'M')}>{band + 'M'}", end="\r\n", file=f)
                     try:
                         print(
-                            f"<FREQ:{len(self.dfreq[band])}>{self.dfreq[band]}", end='\r\n', file=f)
+                            f"<FREQ:{len(self.dfreq[band])}>{self.dfreq[band]}",
+                            end="\r\n",
+                            file=f,
+                        )
                     except:
                         pass  # This is bad form... I can't remember why this is in a try block
-                    print(f"<RST_SENT:{len(rst)}>{rst}", end='\r\n', file=f)
-                    print(f"<RST_RCVD:{len(rst)}>{rst}", end='\r\n', file=f)
+                    print(f"<RST_SENT:{len(rst)}>{rst}", end="\r\n", file=f)
+                    print(f"<RST_RCVD:{len(rst)}>{rst}", end="\r\n", file=f)
                     print(
-                        f"<STX_STRING:{len(self.myclass + ' ' + self.mysection)}>{self.myclass + ' ' + self.mysection}", end='\r\n', file=f)
+                        f"<STX_STRING:{len(self.myclass + ' ' + self.mysection)}>{self.myclass + ' ' + self.mysection}",
+                        end="\r\n",
+                        file=f,
+                    )
                     print(
-                        f"<SRX_STRING:{len(hisclass + ' ' + hissection)}>{hisclass + ' ' + hissection}", end='\r\n', file=f)
+                        f"<SRX_STRING:{len(hisclass + ' ' + hissection)}>{hisclass + ' ' + hissection}",
+                        end="\r\n",
+                        file=f,
+                    )
                     print(
-                        f"<ARRL_SECT:{len(hissection)}>{hissection}", end='\r\n', file=f)
-                    print(f"<CLASS:{len(hisclass)}>{hisclass}",
-                          end='\r\n', file=f)
+                        f"<ARRL_SECT:{len(hissection)}>{hissection}", end="\r\n", file=f
+                    )
+                    print(f"<CLASS:{len(hisclass)}>{hisclass}", end="\r\n", file=f)
                     state = self.getState(hissection)
                     if state:
-                        print(f"<STATE:{len(state)}>{state}",
-                              end='\r\n', file=f)
+                        print(f"<STATE:{len(state)}>{state}", end="\r\n", file=f)
                     if len(grid) > 1:
-                        print(
-                            f"<GRIDSQUARE:{len(grid)}>{grid}", end='\r\n', file=f)
+                        print(f"<GRIDSQUARE:{len(grid)}>{grid}", end="\r\n", file=f)
                     if len(opname) > 1:
-                        print(f"<NAME:{len(opname)}>{opname}",
-                              end='\r\n', file=f)
+                        print(f"<NAME:{len(opname)}>{opname}", end="\r\n", file=f)
                     comment = "WINTER-FIELD-DAY"
-                    print(f"<COMMENT:{len(comment)}>{comment}",
-                          end='\r\n', file=f)
-                    print("<EOR>", end='\r\n', file=f)
-                    print("", end='\r\n', file=f)
+                    print(f"<COMMENT:{len(comment)}>{comment}", end="\r\n", file=f)
+                    print("<EOR>", end="\r\n", file=f)
+                    print("", end="\r\n", file=f)
         except IOError as e:
             logging.critical(f"adif: IO error: {e}")
         self.infobox.insertPlainText("Done\n\n")
@@ -1241,11 +1334,7 @@ class MainWindow(QtWidgets.QMainWindow):
         adifq += f"<COMMENT:{len(comment)}>{comment}"
         adifq += "<EOR>"
 
-        payloadDict = {
-            "key": self.cloudlogapi,
-            "type": "adif",
-            "string": adifq
-        }
+        payloadDict = {"key": self.cloudlogapi, "type": "adif", "string": adifq}
         jsonData = dumps(payloadDict)
         _ = requests.post(self.cloudlogurl, jsonData)
 
@@ -1276,55 +1365,72 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             catpower = "LOW"
         try:
-            with open(filename, "w", encoding='ascii') as f:
-                print("START-OF-LOG: 3.0", end='\r\n', file=f)
-                print("CREATED-BY: K6GTE Winter Field Day Logger",
-                      end='\r\n', file=f)
-                print("CONTEST: WFD", end='\r\n', file=f)
-                print(f"CALLSIGN: {self.mycall}", end='\r\n', file=f)
-                print("LOCATION:", end='\r\n', file=f)
-                print(f"ARRL-SECTION: {self.mysection}", end='\r\n', file=f)
-                print(f"CATEGORY: {self.myclass}", end='\r\n', file=f)
-                print(f"CATEGORY-POWER: {catpower}", end='\r\n', file=f)
+            with open(filename, "w", encoding="ascii") as f:
+                print("START-OF-LOG: 3.0", end="\r\n", file=f)
+                print("CREATED-BY: K6GTE Winter Field Day Logger", end="\r\n", file=f)
+                print("CONTEST: WFD", end="\r\n", file=f)
+                print(f"CALLSIGN: {self.mycall}", end="\r\n", file=f)
+                print("LOCATION:", end="\r\n", file=f)
+                print(f"ARRL-SECTION: {self.mysection}", end="\r\n", file=f)
+                print(f"CATEGORY: {self.myclass}", end="\r\n", file=f)
+                print(f"CATEGORY-POWER: {catpower}", end="\r\n", file=f)
+                print(f"SOAPBOX: QSO Points {self.basescore}", end="\r\n", file=f)
                 print(
-                    f"SOAPBOX: QSO Points {self.basescore}", end='\r\n', file=f)
+                    f"SOAPBOX: Power Output Multiplier {self.powermult}",
+                    end="\r\n",
+                    file=f,
+                )
                 print(
-                    f"SOAPBOX: Power Output Multiplier {self.powermult}", end='\r\n', file=f)
-                print(
-                    f"SOAPBOX: Band/mode multiplier {self.bandmodemult}", end='\r\n', file=f)
+                    f"SOAPBOX: Band/mode multiplier {self.bandmodemult}",
+                    end="\r\n",
+                    file=f,
+                )
                 if self.altpower:
                     print(
-                        "SOAPBOX: 500 points for not using commercial power", end='\r\n', file=f)
+                        "SOAPBOX: 500 points for not using commercial power",
+                        end="\r\n",
+                        file=f,
+                    )
                     bonuses = bonuses + 500
                 if self.outdoors:
-                    print("SOAPBOX: 500 points for setting up outdoors",
-                          end='\r\n', file=f)
+                    print(
+                        "SOAPBOX: 500 points for setting up outdoors",
+                        end="\r\n",
+                        file=f,
+                    )
                     bonuses = bonuses + 500
                 if self.notathome:
                     print(
-                        "SOAPBOX: 500 points for setting up away from home", end='\r\n', file=f)
+                        "SOAPBOX: 500 points for setting up away from home",
+                        end="\r\n",
+                        file=f,
+                    )
                     bonuses = bonuses + 500
                 if self.satellite:
-                    print("SOAPBOX: 500 points for working satellite",
-                          end='\r\n', file=f)
+                    print(
+                        "SOAPBOX: 500 points for working satellite", end="\r\n", file=f
+                    )
                     bonuses = bonuses + 500
-                print(f"SOAPBOX: BONUS Total {bonuses}", end='\r\n', file=f)
-                print(f"CLAIMED-SCORE: {self.calcscore()}", end='\r\n', file=f)
-                print(f"OPERATORS: {self.mycall}", end='\r\n', file=f)
-                print("NAME: ", end='\r\n', file=f)
-                print("ADDRESS: ", end='\r\n', file=f)
-                print("ADDRESS-CITY: ", end='\r\n', file=f)
-                print("ADDRESS-STATE: ", end='\r\n', file=f)
-                print("ADDRESS-POSTALCODE: ", end='\r\n', file=f)
-                print("ADDRESS-COUNTRY: ", end='\r\n', file=f)
-                print("EMAIL: ", end='\r\n', file=f)
+                print(f"SOAPBOX: BONUS Total {bonuses}", end="\r\n", file=f)
+                print(f"CLAIMED-SCORE: {self.calcscore()}", end="\r\n", file=f)
+                print(f"OPERATORS: {self.mycall}", end="\r\n", file=f)
+                print("NAME: ", end="\r\n", file=f)
+                print("ADDRESS: ", end="\r\n", file=f)
+                print("ADDRESS-CITY: ", end="\r\n", file=f)
+                print("ADDRESS-STATE: ", end="\r\n", file=f)
+                print("ADDRESS-POSTALCODE: ", end="\r\n", file=f)
+                print("ADDRESS-COUNTRY: ", end="\r\n", file=f)
+                print("EMAIL: ", end="\r\n", file=f)
                 for x in log:
                     _, hiscall, hisclass, hissection, datetime, band, mode, _, _, _ = x
                     loggeddate = datetime[:10]
                     loggedtime = datetime[11:13] + datetime[14:16]
                     print(
-                        f"QSO: {self.dfreq[band].replace('.','')} {mode} {loggeddate} {loggedtime} {self.mycall} {self.myclass} {self.mysection} {hiscall} {hisclass} {hissection}", end='\r\n', file=f)
-                print("END-OF-LOG:", end='\r\n', file=f)
+                        f"QSO: {self.dfreq[band].replace('.','')} {mode} {loggeddate} {loggedtime} {self.mycall} {self.myclass} {self.mysection} {hiscall} {hisclass} {hissection}",
+                        end="\r\n",
+                        file=f,
+                    )
+                print("END-OF-LOG:", end="\r\n", file=f)
         except IOError as e:
             logging.critical(f"cabrillo: IO error: {e}, writing to {filename}")
             self.infobox.insertPlainText(" Failed\n\n")
@@ -1354,15 +1460,25 @@ class editQSODialog(QtWidgets.QDialog):
 
     def setup(self, linetopass, thedatabase):
         self.database = thedatabase
-        self.theitem, thecall, theclass, thesection, thedate, thetime, theband, themode, thepower = linetopass.split()
+        (
+            self.theitem,
+            thecall,
+            theclass,
+            thesection,
+            thedate,
+            thetime,
+            theband,
+            themode,
+            thepower,
+        ) = linetopass.split()
         self.editCallsign.setText(thecall)
         self.editClass.setText(theclass)
         self.editSection.setText(thesection)
         self.editBand.setCurrentIndex(self.editBand.findText(theband))
         self.editMode.setCurrentIndex(self.editMode.findText(themode))
         self.editPower.setValue(int(thepower))
-        date_time = thedate+" "+thetime
-        now = QtCore.QDateTime.fromString(date_time, 'yyyy-MM-dd hh:mm:ss')
+        date_time = thedate + " " + thetime
+        now = QtCore.QDateTime.fromString(date_time, "yyyy-MM-dd hh:mm:ss")
         self.editDateTime.setDateTime(now)
 
     def relpath(self, filename):
@@ -1419,7 +1535,30 @@ class Settings(QtWidgets.QDialog):
             return
         if len(pref) > 0:
             for x in pref:
-                _, _, _, _, _, _, _, _, _, qrzname, qrzpass, qrzurl, cloudlogapi, cloudlogurl, useqrz, usecloudlog, userigcontrol, rigctrlhost, rigctrlport, markerfile, usemarker, usehamdb = x
+                (
+                    _,
+                    _,
+                    _,
+                    _,
+                    _,
+                    _,
+                    _,
+                    _,
+                    _,
+                    qrzname,
+                    qrzpass,
+                    qrzurl,
+                    cloudlogapi,
+                    cloudlogurl,
+                    useqrz,
+                    usecloudlog,
+                    userigcontrol,
+                    rigctrlhost,
+                    rigctrlport,
+                    markerfile,
+                    usemarker,
+                    usehamdb,
+                ) = x
                 self.qrzname_field.setText(qrzname)
                 self.qrzpass_field.setText(qrzpass)
                 self.qrzurl_field.setText(qrzurl)
@@ -1505,7 +1644,7 @@ def startupDialogFinished():
 
 
 app = QtWidgets.QApplication(sys.argv)
-app.setStyle('Fusion')
+app.setStyle("Fusion")
 font_dir = relpath("font")
 families = load_fonts_from_dir(os.fspath(font_dir))
 logging.info(families)
@@ -1515,7 +1654,7 @@ window.create_DB()
 window.changeband()
 window.changemode()
 window.readpreferences()
-if window.mycall == '' or window.myclass == '' or window.mysection == '':
+if window.mycall == "" or window.myclass == "" or window.mysection == "":
     startupdialog = Startup()
     startupdialog.accepted.connect(startupDialogFinished)
     startupdialog.open()
