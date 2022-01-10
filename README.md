@@ -10,7 +10,7 @@ The log is stored in an sqlite3 database file 'WFD.db'. If you need to wipe ever
 
 The logger will generate a cabrillo for submission, An ADIF file so you can merge contacts into your normal Log, and a Statistics file with a band mode breakdown.
 
-![Alt text](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/loggerscreenshot.png)
+![Snapshot of main screen](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/loggerscreenshot.png)
 
 ## Caveats
 
@@ -66,7 +66,7 @@ You will find the binary in the newly created dist directory.
 ## What to do first
 On first run, there will be a dialog box asking you for your call class and section. if you need to change this later, the entry fields can be found at the bottom of the screen.
 
-![Alt text](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/yourstuff.png)
+![Snapshot focused on bottom of window](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/yourstuff.png)
 
 ## Logging
 
@@ -79,7 +79,7 @@ Okay you've made a contact. Enter the call in the call field. As you type it in,
 
 If you run flrig on a computer connected to the radio, it can be polled for band/mode updates automatically. Click the gear icon at the bottom of the screen to set the IP and port for flrig. There is a radio icon at the bottom of the logging window to indicate polling status.
 
-![Alt text](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/loggerSettingsDialog.png)
+![Snapshot of settings dialog](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/loggerSettingsDialog.png)
 
 ## Cloudlog, QRZ, HamDB useage
 
@@ -91,7 +91,7 @@ The QRZ/HamDB lookup is only used to get the Op name and gridsquare for the call
 
 If you use QRZ/HamdDB lookups you can also generate an [XPlanet](http://xplanet.sourceforge.net/) markerfile which will show little pips on the map as contacts are logged.
 
-![Alt text](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/xplanet.png)
+![Snapshot of xplanet window](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/xplanet.png)
 
 The above launched with an example command:
 
@@ -103,25 +103,25 @@ xplanet -body earth -window -longitude -117 -latitude 38 -config Default -projec
 
 Double click a contact in the upper left of the screen to edit or delete it.
 
-![Alt text](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/editqso.png)
+![Snapshot of edit qso dialog](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/editqso.png)
 
 ## Super Check Partial
 
 If you type more than two characters in the callsign field the program will filter the input through a "Super Check Partial" routine and show you possible matches to known contesting call signs. Is this useful? Doubt it.
 
-![Alt text](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/scp.png)
+![Snapshot of main screen focused on super check partial output](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/scp.png)
 
 ## Section partial check
 
 As you type the section abbreviation you are presented with a list of all possible sections that start with what you have typed.
 
-![Alt text](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/sectioncheck.png)
+![Snapshot of main screen focused on section check partial output](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/sectioncheck.png)
 
 ## DUP checking
 
 Once you type a complete callsign and press TAB or SPACE to advance to the next field. The callsign is checked against previous callsigns in your log. It will list any prior contact made showing the band and mode of the contact. If the band and mode are the same as the one you are currently using, the listing will be highlighted, the screen will flash, a bell will sound to alert you that this is a DUP. At this point you and the other OP can argue back and forth about who's wrong. In the end you'll put your big boy pants on and make a decision if you'll enter the call or not.
 
-![Alt text](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/dupe.png)
+![Snapshot of main screen focused on dup checking output](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/dupe.png)
 
 ## Autofill
 
@@ -131,7 +131,7 @@ If you have worked this person before on another band/mode the program will load
 
 After the big weekend, once you've swept up all the broken beer bottles and wiped the BBQ sauce off your chin, go ahead and click the Generate Logs button.
 
-![Alt text](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/genlog.png)
+![Snapshot of main screen focused on generate logs button](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/genlog.png)
 
 This will generate the following:
 
@@ -140,3 +140,6 @@ An ADIF log 'WFD.adi'.
 A Cabrillo log 'Yourcall.log'. Which you edit to fill in your address etc. If your not using Windows, you must ensure whatever editor you use uses CR/LF line endings. Cause whatever they use at the Winter Field Day society will choke with out them. To be safe you might want to run it through 'unix2dos' before submitting it.
 
 A 'Statistics.txt' file which breaks down your band mode usage. Each unique band/mode combo is a multiplier.
+
+## Added a Bandmap program
+See [here](https://github.com/mbridak/WinterFieldDayLogger/blob/main/bandmap.md "Band Map Docs")
