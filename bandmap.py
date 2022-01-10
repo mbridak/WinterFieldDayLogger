@@ -18,18 +18,27 @@ Find the furthest spotter, figure out how far away they are and make that your d
 The 'showoutofband' variable if True, will show spots outside of the General band. If your an
 Advanced or Extra make sure this is true. If you're a general like me, make it false.
 No use in seeing spots you can respond to...
-
 """
 
 import logging
+from rich.logging import RichHandler
 
-logging.basicConfig(level=logging.CRITICAL)
+logging.basicConfig(
+    level="CRITICAL",
+    format="%(message)s",
+    datefmt="[%X]",
+    handlers=[RichHandler(rich_tracebacks=True)],
+)
+from rich.traceback import install
+
+install(show_locals=True)
 
 import xmlrpc.client
 import requests
 import sqlite3
 import re
 import time
+import argparse
 
 from threading import Thread, Lock
 from sqlite3 import Error
@@ -39,16 +48,105 @@ from rich import print
 from bs4 import BeautifulSoup as bs
 from math import radians, sin, cos, atan2, sqrt
 
-server = xmlrpc.client.ServerProxy("http://localhost:12345")
-# skimmer.skccgroup.com 7000
-#'dxc.nc7j.com', 23
-rbn = "skimmer.skccgroup.com"
-rbnport = 7000
-maxspotterdistance = 500
-mygrid = "DM13AT"
-limitband = ("160", "80", "40", "20", "15", "10", "6")
-showoutofband = True  # show out of general band.
-spottoold = 600  # 10 minutes
+parser = argparse.ArgumentParser(
+    description="Pull RBN spots, filter spotters w/ in a certain distance."
+)
+parser.add_argument("-c", "--call", type=str, help="Your callsign")
+parser.add_argument("-m", "--mygrid", type=str, help="Your gridsquare")
+parser.add_argument(
+    "-d",
+    "--distance",
+    type=int,
+    help="Limit to radius in miles from you to spotter, default is: 500",
+)
+parser.add_argument(
+    "-g",
+    "--general",
+    action="store_true",
+    help="Limit spots to general portion of the band.",
+)
+parser.add_argument(
+    "-a", "--age", type=int, help="Drop spots older than (age) seconds. Default is: 600"
+)
+parser.add_argument(
+    "-r", "--rbn", type=str, help="RBN server. Default is: telnet.reversebeacon.net"
+)
+parser.add_argument(
+    "-p", "--rbnport", type=int, help="RBN server port. Default is: 7000"
+)
+parser.add_argument(
+    "-b",
+    "--bands",
+    nargs="+",
+    type=int,
+    help="Space separated list of bands to receive spots about. Default is: 160 80 40 20 15 10 6",
+)
+parser.add_argument(
+    "-f", "--flrighost", type=str, help="Hostname/IP of flrig. Default is: localhost"
+)
+parser.add_argument("-P", "--flrigport", type=int, help="flrig port. Default is: 12345")
+parser.add_argument(
+    "-l", "--log", type=str, help="Log DB file to monitor. Default is: WFD.db"
+)
+
+args = parser.parse_args()
+
+if args.call:
+    mycall = args.call
+else:
+    mycall = "w1aw"
+
+if args.mygrid:
+    mygrid = args.mygrid.upper()
+else:
+    mygrid = "DM13AT"
+
+if args.distance:
+    maxspotterdistance = args.distance
+else:
+    maxspotterdistance = 500
+
+if args.general:
+    showoutofband = False
+else:
+    showoutofband = True
+
+if args.age:
+    spottoold = args.age
+else:
+    spottoold = 600  # 10 minutes
+
+if args.rbn:
+    rbn = args.rbn
+else:
+    rbn = "telnet.reversebeacon.net"
+
+if args.rbnport:
+    rbnport = args.rbnport
+else:
+    rbnport = 7000
+
+if args.bands:
+    limitband = tuple(map(str, args.bands))
+else:
+    limitband = ("160", "80", "40", "20", "15", "10", "6")
+
+if args.flrighost:
+    flrighost = args.flrighost
+else:
+    flrighost = "localhost"
+
+if args.flrigport:
+    flrigport = args.flrigport
+else:
+    flrigport = 12345
+
+if args.log:
+    logdb = args.log
+else:
+    logdb = "WFD.db"
+
+server = xmlrpc.client.ServerProxy(f"http://{flrighost}:{flrigport}")
 conn = False
 lock = Lock()
 console = Console(width=38)
@@ -67,13 +165,22 @@ def updatecontactlist():
     global contactlist
     contactlist = dict()
     try:
-        with sqlite3.connect("WFD.db") as wfd:
-            c = wfd.cursor()
-            sql = "select * from contacts where mode='CW'"
+        with sqlite3.connect(logdb) as conn:
+            c = conn.cursor()
+            sql = "SELECT COUNT(*) as hascolumn FROM pragma_table_info('contacts') WHERE name='mode';"
+            c.execute(sql)
+            hascolumn = c.fetchone()[0]
+            if hascolumn:
+                sql = "select * from contacts where mode='CW'"
+            else:
+                sql = "select * from contacts"
             c.execute(sql)
             result = c.fetchall()
             for contact in result:
-                _, callsign, _, _, _, band, _, _, _, _ = contact
+                if hascolumn:
+                    _, callsign, _, _, _, band, _, _, _, _ = contact
+                else:
+                    _, callsign, _, _, _, _, band, _, _ = contact
                 if band in contactlist.keys():
                     contactlist[band].append(callsign)
                 else:
@@ -297,9 +404,9 @@ def showspots(lock):
     """
     global vfo
     while True:
+        updatecontactlist()
         console.clear()
         console.rule(f"[bold red]Spots VFO: {vfo}")
-        updatecontactlist()
         with lock:
             with sqlite3.connect("spots.db") as conn:
                 c = conn.cursor()
@@ -342,13 +449,12 @@ def getrbn(lock):
                 continue
             stream = stream.decode()
             if "Please enter your call:" in stream:
-                tn.write("w1aw\r\n".encode("ascii"))
+                tn.write(f"{mycall}\r\n".encode("ascii"))
                 continue
             data = stream.split("\r\n")
             for entry in data:
                 if not entry:
                     continue
-
                 parsed = list(re.findall(rbn_parse, entry.strip()))
                 if not parsed or len(parsed[0]) < 6:
                     continue
@@ -383,16 +489,17 @@ for row in rows:
     grid = datum[2].contents[0]
     distance = calc_distance(grid, mygrid) / 1.609
     if distance < maxspotterdistance:
-        # BandList = [int(x[:-1]) for x in bands.split(',') if x in '160m 80m 60m 40m 30m 20m 17m 15m 12m 10m 6m'.split()]
         localspotters.append(spotter)
 
 print(f"Spotters with in {maxspotterdistance} mi:")
 print(f"{localspotters}")
-
+time.sleep(1)
 with sqlite3.connect("spots.db") as conn:
     c = conn.cursor()
     sql_table = """CREATE TABLE IF NOT EXISTS spots (id INTEGER PRIMARY KEY, callsign text, date_time text NOT NULL, frequency REAL NOT NULL, band INTEGER);"""
     c.execute(sql_table)
+    sql = f"delete from spots where Cast ((JulianDay(datetime('now')) - JulianDay(date_time)) * 24 * 60 * 60 As Integer) > {spottoold}"
+    c.execute(sql)
     conn.commit()
 
 # Threading Oh my!
