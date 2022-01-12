@@ -1,2 +1,5 @@
 PyQt5
 requests
+rich
+bs4
+lxml
