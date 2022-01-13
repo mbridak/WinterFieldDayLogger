@@ -11,13 +11,15 @@ import socket
 import os
 import logging
 
+logging.basicConfig(level="WARNING")
 from json import dumps
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
-from PyQt5.QtCore import QDir
+from PyQt5.QtCore import QDir, Qt
 from PyQt5.QtGui import QFontDatabase
 from datetime import datetime
 from sqlite3 import Error
 from pathlib import Path
+from shutil import copyfile
 
 
 def relpath(filename):
@@ -106,6 +108,8 @@ class MainWindow(QtWidgets.QMainWindow):
     oldrfpower = 0
     basescore = 0
     powermult = 0
+    fkeys = dict()
+    keyerserver = "http://localhost:8000"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -134,6 +138,19 @@ class MainWindow(QtWidgets.QMainWindow):
         self.cloudlog_icon.setPixmap(QtGui.QPixmap(self.relpath("icon/cloud_grey.png")))
         self.QRZ_icon.setStyleSheet("color: rgb(136, 138, 133);")
         self.settingsbutton.clicked.connect(self.settingspressed)
+        self.F1.clicked.connect(self.sendf1)
+        self.F2.clicked.connect(self.sendf2)
+        self.F3.clicked.connect(self.sendf3)
+        self.F4.clicked.connect(self.sendf4)
+        self.F5.clicked.connect(self.sendf5)
+        self.F6.clicked.connect(self.sendf6)
+        self.F7.clicked.connect(self.sendf7)
+        self.F8.clicked.connect(self.sendf8)
+        self.F9.clicked.connect(self.sendf9)
+        self.F10.clicked.connect(self.sendf10)
+        self.F11.clicked.connect(self.sendf11)
+        self.F12.clicked.connect(self.sendf12)
+
         self.server = xmlrpc.client.ServerProxy("http://localhost:12345")
         self.radiochecktimer = QtCore.QTimer()
         self.radiochecktimer.timeout.connect(self.Radio)
@@ -148,6 +165,64 @@ class MainWindow(QtWidgets.QMainWindow):
         except:
             base_path = os.path.abspath(".")
         return os.path.join(base_path, filename)
+
+    def readCWmacros(self):
+        """
+        Reads in the CW macros, firsts it checks to see if the file exists. If it does not,
+        and this has been packaged with pyinstaller it will copy the default file from the
+        temp directory this is running from... In theory.
+        """
+
+        if (
+            getattr(sys, "frozen", False)
+            and hasattr(sys, "_MEIPASS")
+            and not Path("./cwmacros.txt").exists()
+        ):
+            logging.debug("readCWmacros: copying default macro file.")
+            copyfile(relpath("cwmacros.txt"), "./cwmacros.txt")
+        with open("./cwmacros.txt", "r") as f:
+            for line in f:
+                try:
+                    fkey, buttonname, cwtext = line.split("|")
+                    self.fkeys[fkey.strip()] = (buttonname.strip(), cwtext.strip())
+                except ValueError:
+                    break
+        if "F1" in self.fkeys.keys():
+            self.F1.setText(f"F1: {self.fkeys['F1'][0]}")
+            self.F1.setToolTip(self.fkeys["F1"][1])
+        if "F2" in self.fkeys.keys():
+            self.F2.setText(f"F2: {self.fkeys['F2'][0]}")
+            self.F2.setToolTip(self.fkeys["F2"][1])
+        if "F3" in self.fkeys.keys():
+            self.F3.setText(f"F3: {self.fkeys['F3'][0]}")
+            self.F3.setToolTip(self.fkeys["F3"][1])
+        if "F4" in self.fkeys.keys():
+            self.F4.setText(f"F4: {self.fkeys['F4'][0]}")
+            self.F4.setToolTip(self.fkeys["F4"][1])
+        if "F5" in self.fkeys.keys():
+            self.F5.setText(f"F5: {self.fkeys['F5'][0]}")
+            self.F5.setToolTip(self.fkeys["F5"][1])
+        if "F6" in self.fkeys.keys():
+            self.F6.setText(f"F6: {self.fkeys['F6'][0]}")
+            self.F6.setToolTip(self.fkeys["F6"][1])
+        if "F7" in self.fkeys.keys():
+            self.F7.setText(f"F7: {self.fkeys['F7'][0]}")
+            self.F7.setToolTip(self.fkeys["F7"][1])
+        if "F8" in self.fkeys.keys():
+            self.F8.setText(f"F8: {self.fkeys['F8'][0]}")
+            self.F8.setToolTip(self.fkeys["F8"][1])
+        if "F9" in self.fkeys.keys():
+            self.F9.setText(f"F9: {self.fkeys['F9'][0]}")
+            self.F9.setToolTip(self.fkeys["F9"][1])
+        if "F10" in self.fkeys.keys():
+            self.F10.setText(f"F10: {self.fkeys['F10'][0]}")
+            self.F10.setToolTip(self.fkeys["F10"][1])
+        if "F11" in self.fkeys.keys():
+            self.F11.setText(f"F11: {self.fkeys['F11'][0]}")
+            self.F11.setToolTip(self.fkeys["F11"][1])
+        if "F12" in self.fkeys.keys():
+            self.F12.setText(f"F12: {self.fkeys['F12'][0]}")
+            self.F12.setToolTip(self.fkeys["F12"][1])
 
     def updateTime(self):
         """
@@ -365,9 +440,101 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         app.processEvents()
 
+    def processMacro(self, macro):
+        macro = macro.upper()
+        macro = macro.replace("{MYCALL}", self.mycall)
+        macro = macro.replace("{MYCLASS}", self.myclass)
+        macro = macro.replace("{MYSECT}", self.mysection)
+        macro = macro.replace("{HISCALL}", self.callsign_entry.text())
+        return macro
+
     def keyPressEvent(self, event):
-        if event.key() == 16777216:  # ESC
+        if event.key() == Qt.Key_Escape:
             self.clearinputs()
+        if event.key() == Qt.Key_F1:
+            self.sendf1()
+        if event.key() == Qt.Key_F2:
+            self.sendf2()
+        if event.key() == Qt.Key_F3:
+            self.sendf3()
+        if event.key() == Qt.Key_F4:
+            self.sendf4()
+        if event.key() == Qt.Key_F5:
+            self.sendf5()
+        if event.key() == Qt.Key_F6:
+            self.sendf6()
+        if event.key() == Qt.Key_F7:
+            self.sendf7()
+        if event.key() == Qt.Key_F8:
+            self.sendf8()
+        if event.key() == Qt.Key_F9:
+            self.sendf9()
+        if event.key() == Qt.Key_F10:
+            self.sendf10()
+        if event.key() == Qt.Key_F11:
+            self.sendf11()
+        if event.key() == Qt.Key_F12:
+            self.sendf12()
+
+    def sendf1(self):
+        xmlrpc.client.ServerProxy(self.keyerserver).k1elsendstring(
+            self.processMacro(self.F1.toolTip())
+        )
+
+    def sendf2(self):
+        xmlrpc.client.ServerProxy(self.keyerserver).k1elsendstring(
+            self.processMacro(self.F2.toolTip())
+        )
+
+    def sendf3(self):
+        xmlrpc.client.ServerProxy(self.keyerserver).k1elsendstring(
+            self.processMacro(self.F3.toolTip())
+        )
+
+    def sendf4(self):
+        xmlrpc.client.ServerProxy(self.keyerserver).k1elsendstring(
+            self.processMacro(self.F4.toolTip())
+        )
+
+    def sendf5(self):
+        xmlrpc.client.ServerProxy(self.keyerserver).k1elsendstring(
+            self.processMacro(self.F5.toolTip())
+        )
+
+    def sendf6(self):
+        xmlrpc.client.ServerProxy(self.keyerserver).k1elsendstring(
+            self.processMacro(self.F6.toolTip())
+        )
+
+    def sendf7(self):
+        xmlrpc.client.ServerProxy(self.keyerserver).k1elsendstring(
+            self.processMacro(self.F7.toolTip())
+        )
+
+    def sendf8(self):
+        xmlrpc.client.ServerProxy(self.keyerserver).k1elsendstring(
+            self.processMacro(self.F8.toolTip())
+        )
+
+    def sendf9(self):
+        xmlrpc.client.ServerProxy(self.keyerserver).k1elsendstring(
+            self.processMacro(self.F9.toolTip())
+        )
+
+    def sendf10(self):
+        xmlrpc.client.ServerProxy(self.keyerserver).k1elsendstring(
+            self.processMacro(self.F10.toolTip())
+        )
+
+    def sendf11(self):
+        xmlrpc.client.ServerProxy(self.keyerserver).k1elsendstring(
+            self.processMacro(self.F11.toolTip())
+        )
+
+    def sendf12(self):
+        xmlrpc.client.ServerProxy(self.keyerserver).k1elsendstring(
+            self.processMacro(self.F12.toolTip())
+        )
 
     def clearinputs(self):
         self.callsign_entry.clear()
@@ -491,7 +658,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 c = conn.cursor()
                 sql_table = """ CREATE TABLE IF NOT EXISTS contacts (id INTEGER PRIMARY KEY, callsign text NOT NULL, class text NOT NULL, section text NOT NULL, date_time text NOT NULL, band text NOT NULL, mode text NOT NULL, power INTEGER NOT NULL, grid text NOT NULL, opname text NOT NULL); """
                 c.execute(sql_table)
-                sql_table = """ CREATE TABLE IF NOT EXISTS preferences (id INTEGER PRIMARY KEY, mycallsign TEXT DEFAULT '', myclass TEXT DEFAULT '', mysection TEXT DEFAULT '', power TEXT DEFAULT '0', altpower INTEGER DEFAULT 0, outdoors INTEGER DEFAULT 0, notathome INTEGER DEFAULT 0, satellite INTEGER DEFAULT 0, qrzusername TEXT DEFAULT 'w1aw', qrzpassword TEXT default 'secret', qrzurl TEXT DEFAULT 'https://xmldata.qrz.com/xml/',cloudlogapi TEXT DEFAULT 'cl12345678901234567890', cloudlogurl TEXT DEFAULT 'http://www.yoururl.com/Cloudlog/index.php/api/qso', useqrz INTEGER DEFAULT 0, usecloudlog INTEGER DEFAULT 0, userigcontrol INTEGER DEFAULT 0, rigcontrolip TEXT DEFAULT '127.0.0.1', rigcontrolport TEXT DEFAULT '4532',markerfile TEXT default 'secret', usemarker INTEGER DEFAULT 0, usehamdb INTEGER DEFAULT 0); """
+                sql_table = """ CREATE TABLE IF NOT EXISTS preferences (id INTEGER PRIMARY KEY, mycallsign TEXT DEFAULT '', myclass TEXT DEFAULT '', mysection TEXT DEFAULT '', power TEXT DEFAULT '0', altpower INTEGER DEFAULT 0, outdoors INTEGER DEFAULT 0, notathome INTEGER DEFAULT 0, satellite INTEGER DEFAULT 0, qrzusername TEXT DEFAULT 'w1aw', qrzpassword TEXT default 'secret', qrzurl TEXT DEFAULT 'https://xmldata.qrz.com/xml/',cloudlogapi TEXT DEFAULT 'cl12345678901234567890', cloudlogurl TEXT DEFAULT 'http://www.yoururl.com/Cloudlog/index.php/api/qso', useqrz INTEGER DEFAULT 0, usecloudlog INTEGER DEFAULT 0, userigcontrol INTEGER DEFAULT 0, rigcontrolip TEXT DEFAULT '127.0.0.1', rigcontrolport TEXT DEFAULT '12345',markerfile TEXT default 'secret', usemarker INTEGER DEFAULT 0, usehamdb INTEGER DEFAULT 0); """
                 c.execute(sql_table)
                 conn.commit()
         except Error as e:
@@ -1643,35 +1810,37 @@ def startupDialogFinished():
     startupdialog.close()
 
 
-app = QtWidgets.QApplication(sys.argv)
-app.setStyle("Fusion")
-font_dir = relpath("font")
-families = load_fonts_from_dir(os.fspath(font_dir))
-logging.info(families)
-window = MainWindow()
-window.show()
-window.create_DB()
-window.changeband()
-window.changemode()
-window.readpreferences()
-if window.mycall == "" or window.myclass == "" or window.mysection == "":
-    startupdialog = Startup()
-    startupdialog.accepted.connect(startupDialogFinished)
-    startupdialog.open()
-    startupdialog.setCallSign(window.mycall)
-    startupdialog.setClass(window.myclass)
-    startupdialog.setSection(window.mysection)
-window.qrzauth()
-window.cloudlogauth()
-window.stats()
-window.readSections()
-window.readSCP()
-window.logwindow()
-window.sections()
-window.callsign_entry.setFocus()
+if __name__ == "__main__":
+    app = QtWidgets.QApplication(sys.argv)
+    app.setStyle("Fusion")
+    font_dir = relpath("font")
+    families = load_fonts_from_dir(os.fspath(font_dir))
+    logging.info(families)
+    window = MainWindow()
+    window.show()
+    window.create_DB()
+    window.changeband()
+    window.changemode()
+    window.readpreferences()
+    if window.mycall == "" or window.myclass == "" or window.mysection == "":
+        startupdialog = Startup()
+        startupdialog.accepted.connect(startupDialogFinished)
+        startupdialog.open()
+        startupdialog.setCallSign(window.mycall)
+        startupdialog.setClass(window.myclass)
+        startupdialog.setSection(window.mysection)
+    window.readCWmacros()
+    window.qrzauth()
+    window.cloudlogauth()
+    window.stats()
+    window.readSections()
+    window.readSCP()
+    window.logwindow()
+    window.sections()
+    window.callsign_entry.setFocus()
 
-timer = QtCore.QTimer()
-timer.timeout.connect(window.updateTime)
-timer.start(1000)
+    timer = QtCore.QTimer()
+    timer.timeout.connect(window.updateTime)
+    timer.start(1000)
 
-app.exec()
+    app.exec()

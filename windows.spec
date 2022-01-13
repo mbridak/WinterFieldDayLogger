@@ -12,7 +12,8 @@ a = Analysis(['wfdlogger.py'],
              ('arrl_sect.dat','.'),
              ('dialog.ui','.'),
              ('settings.ui','.'),
-             ('startup.ui','.')
+             ('startup.ui','.'),
+             ('cwmacros.txt','.')
              ],
              hiddenimports=[],
              hookspath=[],

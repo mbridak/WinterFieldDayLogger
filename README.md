@@ -10,22 +10,20 @@ The log is stored in an sqlite3 database file 'WFD.db'. If you need to wipe ever
 
 The logger will generate a cabrillo for submission, An ADIF file so you can merge contacts into your normal Log, and a Statistics file with a band mode breakdown.
 
-![Snapshot of main screen](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/loggerscreenshot.png)
+![Snapshot of main screen](./pics/loggerscreenshot.png)
 
 ## Caveats
 
 This is a simple logger ment for single op, it's not usable for clubs.
 WFD only has a generic digital mode designator 'DI', which gets exported to the cabrillo file. But ADIF and CloudLog needed something else, So I Chose RTTY. Feel free to change it to what ever you will use. Just search for the two places in the code 'RTTY' is used and Bob's your dads brother.
 
-## Changes since 21.12.13 Little Pink Tutu
+## Changes since 21.12.21 Half Deflated Beach Ball
 
-* I ditched using the rigctld daemon supplied by hamlib tools. Instead I'll be using the [flrig's](http://w1hkj.com/files/flrig/) XmlRPC interface. It's way simpler. It's available on all platforms.
+* Added CW macro function keys, It will make an XMLRPC call on port 8000 to my [PyWinKeyerSerial](https://github.com/mbridak/PyWinKeyerSerial) program, also on github.
+* Added a rudimentary CW Bandmap, configurable with command line flags with hooks to monitor stations worked and current vfo frequency.
+* Updated the master.scp file
+* Updated the XMLRPC port for flrig to match flrig's default. Duh right?
 
-For Debian based Linux or Raspberry OS you can:
-
-`sudo apt install flrig`
-
-* Updated the UI files to be more windows friendly.
 
 ## Running the binary
 
@@ -44,6 +42,11 @@ Or if you're the Ubuntu/Debian type you can:
 Just make wfdlogger.py executable and run it within the same folder, or type:
 
 `python3 wfdlogger.py`
+
+### Requirements for bandmap
+The [bandmap](./bandmap.md "Band Map Docs") needs a few more python libraries.
+
+pip or pip3 install rich bs4 lxml 
 
 ## Building your own binary.
 
@@ -127,7 +130,24 @@ Once you type a complete callsign and press TAB or SPACE to advance to the next 
 
 If you have worked this person before on another band/mode the program will load the class and section used previously for this call so you will not have to enter this info again.
 
-## When the event is over
+## CW Macros
+
+The program will check in the current working directory for a file called `cwmacros.txt` it will parse the file and configure the new row of 12 buttons along the bottom half of the window. The macros can be activated by either pressing the corresponding function key, or by directly clicking on the button. You can check the file to glean it's structure, but it's pretty straight forward. Each line has 3 sections separated by the pipe `|` character. Here's an example line.
+
+`F2|Run Exch|{HISCALL} {MYCLASS} {MYSECT}`
+
+The first field is the function key to program. The second is the name of the button. And lastly the third is the text you would like to send.
+
+A limited set substitution macros are offered.
+
+`{MYCALL}`
+`{HISCALL}`
+`{MYCLASS}`
+`{MYSECT}`
+
+These are pulled straight from the onscreen input fields. Combined with normal text this should have you covered for most of your exchange needs.
+
+# When the event is over
 
 After the big weekend, once you've swept up all the broken beer bottles and wiped the BBQ sauce off your chin, go ahead and click the Generate Logs button.
 
@@ -141,5 +161,5 @@ A Cabrillo log 'Yourcall.log'. Which you edit to fill in your address etc. If yo
 
 A 'Statistics.txt' file which breaks down your band mode usage. Each unique band/mode combo is a multiplier.
 
-## Added a Bandmap program
-See [here](https://github.com/mbridak/WinterFieldDayLogger/blob/main/bandmap.md "Band Map Docs")
+## The Bandmap program
+See [here](./bandmap.md "Band Map Docs")
