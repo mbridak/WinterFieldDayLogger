@@ -10,7 +10,7 @@ The log is stored in an sqlite3 database file 'WFD.db'. If you need to wipe ever
 
 The logger will generate a cabrillo for submission, An ADIF file so you can merge contacts into your normal Log, and a Statistics file with a band mode breakdown.
 
-![Snapshot of main screen](./pics/loggerscreenshot.png)
+![Snapshot of main screen](pics/loggerscreenshot.png)
 
 ## Caveats
 
