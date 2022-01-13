@@ -11,7 +11,7 @@ import socket
 import os
 import logging
 
-logging.basicConfig(level="WARNING")
+logging.basicConfig(level="DEBUG")
 from json import dumps
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import QDir, Qt
@@ -20,6 +20,7 @@ from datetime import datetime
 from sqlite3 import Error
 from pathlib import Path
 from shutil import copyfile
+from xmlrpc.client import ServerProxy, Error
 
 
 def relpath(filename):
@@ -476,65 +477,50 @@ class MainWindow(QtWidgets.QMainWindow):
         if event.key() == Qt.Key_F12:
             self.sendf12()
 
+    def sendcw(self, texttosend):
+        with ServerProxy(self.keyerserver) as proxy:
+            try:
+                proxy.k1elsendstring(texttosend)
+            except Error as e:
+                logging.debug(f"{self.keyerserver}, xmlrpc error: {e}")
+            except ConnectionRefusedError:
+                logging.debug(f"{self.keyerserver}, xmlrpc Connection Refused")
+
     def sendf1(self):
-        xmlrpc.client.ServerProxy(self.keyerserver).k1elsendstring(
-            self.processMacro(self.F1.toolTip())
-        )
+        self.sendcw(self.processMacro(self.F1.toolTip()))
 
     def sendf2(self):
-        xmlrpc.client.ServerProxy(self.keyerserver).k1elsendstring(
-            self.processMacro(self.F2.toolTip())
-        )
+        self.sendcw(self.processMacro(self.F2.toolTip()))
 
     def sendf3(self):
-        xmlrpc.client.ServerProxy(self.keyerserver).k1elsendstring(
-            self.processMacro(self.F3.toolTip())
-        )
+        self.sendcw(self.processMacro(self.F3.toolTip()))
 
     def sendf4(self):
-        xmlrpc.client.ServerProxy(self.keyerserver).k1elsendstring(
-            self.processMacro(self.F4.toolTip())
-        )
+        self.sendcw(self.processMacro(self.F4.toolTip()))
 
     def sendf5(self):
-        xmlrpc.client.ServerProxy(self.keyerserver).k1elsendstring(
-            self.processMacro(self.F5.toolTip())
-        )
+        self.sendcw(self.processMacro(self.F5.toolTip()))
 
     def sendf6(self):
-        xmlrpc.client.ServerProxy(self.keyerserver).k1elsendstring(
-            self.processMacro(self.F6.toolTip())
-        )
+        self.sendcw(self.processMacro(self.F6.toolTip()))
 
     def sendf7(self):
-        xmlrpc.client.ServerProxy(self.keyerserver).k1elsendstring(
-            self.processMacro(self.F7.toolTip())
-        )
+        self.sendcw(self.processMacro(self.F7.toolTip()))
 
     def sendf8(self):
-        xmlrpc.client.ServerProxy(self.keyerserver).k1elsendstring(
-            self.processMacro(self.F8.toolTip())
-        )
+        self.sendcw(self.processMacro(self.F8.toolTip()))
 
     def sendf9(self):
-        xmlrpc.client.ServerProxy(self.keyerserver).k1elsendstring(
-            self.processMacro(self.F9.toolTip())
-        )
+        self.sendcw(self.processMacro(self.F9.toolTip()))
 
     def sendf10(self):
-        xmlrpc.client.ServerProxy(self.keyerserver).k1elsendstring(
-            self.processMacro(self.F10.toolTip())
-        )
+        self.sendcw(self.processMacro(self.F10.toolTip()))
 
     def sendf11(self):
-        xmlrpc.client.ServerProxy(self.keyerserver).k1elsendstring(
-            self.processMacro(self.F11.toolTip())
-        )
+        self.sendcw(self.processMacro(self.F11.toolTip()))
 
     def sendf12(self):
-        xmlrpc.client.ServerProxy(self.keyerserver).k1elsendstring(
-            self.processMacro(self.F12.toolTip())
-        )
+        self.sendcw(self.processMacro(self.F12.toolTip()))
 
     def clearinputs(self):
         self.callsign_entry.clear()
