@@ -11,7 +11,7 @@ import socket
 import os
 import logging
 
-logging.basicConfig(level="DEBUG")
+logging.basicConfig(level="WARNING")
 from json import dumps
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import QDir, Qt
@@ -19,6 +19,7 @@ from PyQt5.QtGui import QFontDatabase
 from datetime import datetime
 from sqlite3 import Error
 from pathlib import Path
+from shutil import copyfile
 
 
 def relpath(filename):
@@ -166,8 +167,20 @@ class MainWindow(QtWidgets.QMainWindow):
         return os.path.join(base_path, filename)
 
     def readCWmacros(self):
-        self.fkeys = dict()
-        with open("cwmacros.txt", "r") as f:
+        """
+        Reads in the CW macros, firsts it checks to see if the file exists. If it does not,
+        and this has been packaged with pyinstaller it will copy the default file from the
+        temp directory this is running from... In theory.
+        """
+
+        if (
+            getattr(sys, "frozen", False)
+            and hasattr(sys, "_MEIPASS")
+            and not Path("./cwmacros.txt").exists()
+        ):
+            logging.debug("readCWmacros: copying default macro file.")
+            copyfile(relpath("cwmacros.txt"), "./cwmacros.txt")
+        with open("./cwmacros.txt", "r") as f:
             for line in f:
                 try:
                     fkey, buttonname, cwtext = line.split("|")
