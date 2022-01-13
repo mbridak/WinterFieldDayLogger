@@ -1,5 +1,5 @@
 # K6GTE Winter Field Day logger (PyQt5)
-## (Development branch)
+
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)  [![Python: 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)  [![Made With:PyQt5](https://img.shields.io/badge/Made%20with-PyQt5-red)](https://pypi.org/project/PyQt5/)
 
 [Winter Field Day](https://www.winterfieldday.com/) is a once a year 24hr emergency preparidness event for radio amateurs (Hams). During the event, we try and make as many radio contacts with other Hams in a 24 hour period. Bonus points are awarded for operating outside or using alternate power sources, such as battery/solar/wind. You can find out more about amateur radio by visiting the [ARRL](https://www.arrl.org/).
@@ -27,9 +27,7 @@ WFD only has a generic digital mode designator 'DI', which gets exported to the 
 
 ## Running the binary
 
-~In the [releases](https://github.com/mbridak/WinterFieldDayLogger/releases) you will find binaries for Linux, Windows and Raspberry Pi.~
-
-No binaries in development branch.
+In the [releases](https://github.com/mbridak/WinterFieldDayLogger/releases) you will find binaries for Linux, Windows and Raspberry Pi.
 
 ## Running from source
 
@@ -132,7 +130,24 @@ Once you type a complete callsign and press TAB or SPACE to advance to the next 
 
 If you have worked this person before on another band/mode the program will load the class and section used previously for this call so you will not have to enter this info again.
 
-## When the event is over
+## CW Macros
+
+The program will check in the current working directory for a file called `cwmacros.txt` it will parse the file and configure the new row of 12 buttons along the bottom half of the window. The macros can be activated by either pressing the corresponding function key, or by directly clicking on the button. You can check the file to glean it's structure, but it's pretty straight forward. Each line has 3 sections separated by the pipe `|` character. Here's an example line.
+
+`F2|Run Exch|{HISCALL} {MYCLASS} {MYSECT}`
+
+The first field is the function key to program. The second is the name of the button. And lastly the third is the text you would like to send.
+
+A limited set substitution macros are offered.
+
+`{MYCALL}`
+`{HISCALL}`
+`{MYCLASS}`
+`{MYSECT}`
+
+These are pulled straight from the onscreen input fields. Combined with normal text this should have you covered for most of your exchange needs.
+
+# When the event is over
 
 After the big weekend, once you've swept up all the broken beer bottles and wiped the BBQ sauce off your chin, go ahead and click the Generate Logs button.
 
