@@ -11,7 +11,7 @@ import socket
 import os
 import logging
 
-logging.basicConfig(level="DEBUG")
+# logging.basicConfig(level="DEBUG")
 from json import dumps
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import QDir, Qt
@@ -1797,6 +1797,10 @@ def startupDialogFinished():
 
 
 if __name__ == "__main__":
+    if Path("./debug").exists():
+        logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.WARNING)
     app = QtWidgets.QApplication(sys.argv)
     app.setStyle("Fusion")
     font_dir = relpath("font")
