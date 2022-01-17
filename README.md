@@ -17,13 +17,10 @@ The logger will generate a cabrillo for submission, An ADIF file so you can merg
 This is a simple logger ment for single op, it's not usable for clubs.
 WFD only has a generic digital mode designator 'DI', which gets exported to the cabrillo file. But ADIF and CloudLog needed something else, So I Chose RTTY. Feel free to change it to what ever you will use. Just search for the two places in the code 'RTTY' is used and Bob's your dads brother.
 
-## Changes since 21.12.21 Half Deflated Beach Ball
+## Changes since 22.1.14 Don't you test this stuff?
 
-* Added CW macro function keys, It will make an XMLRPC call on port 8000 to my [PyWinKeyerSerial](https://github.com/mbridak/PyWinKeyerSerial) program, also on github.
-* Added a rudimentary CW Bandmap, configurable with command line flags with hooks to monitor stations worked and current vfo frequency.
-* Updated the master.scp file
-* Updated the XMLRPC port for flrig to match flrig's default. Duh right?
-
+* ReImplimented TAB focus behavior to deselect text on field focus.
+* Edit cursor position in field no longer resets to the end after validation. This reduces the amount of swearing emitted by the operator.
 
 ## Running the binary
 
