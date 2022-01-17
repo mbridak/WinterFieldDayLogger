@@ -452,6 +452,25 @@ class MainWindow(QtWidgets.QMainWindow):
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
             self.clearinputs()
+        if event.key() == Qt.Key_Tab:
+            if self.section_entry.hasFocus():
+                logging.debug(f"From section")
+                self.callsign_entry.setFocus()
+                self.callsign_entry.deselect()
+                self.callsign_entry.end(False)
+                return
+            if self.class_entry.hasFocus():
+                logging.debug(f"From class")
+                self.section_entry.setFocus()
+                self.section_entry.deselect()
+                self.section_entry.end(False)
+                return
+            if self.callsign_entry.hasFocus():
+                logging.debug(f"From callsign")
+                self.class_entry.setFocus()
+                self.class_entry.deselect()
+                self.class_entry.end(False)
+                return
         if event.key() == Qt.Key_F1:
             self.sendf1()
         if event.key() == Qt.Key_F2:
