@@ -431,6 +431,9 @@ border-top-color: rgb(255, 255, 255);</string>
        <bold>false</bold>
       </font>
      </property>
+     <property name="focusPolicy">
+      <enum>Qt::ClickFocus</enum>
+     </property>
      <property name="toolTip">
       <string>Enter other operators callsign.</string>
      </property>
@@ -467,6 +470,9 @@ border-top-color: rgb(255, 255, 255);</string>
        <bold>false</bold>
       </font>
      </property>
+     <property name="focusPolicy">
+      <enum>Qt::ClickFocus</enum>
+     </property>
      <property name="placeholderText">
       <string>Class</string>
      </property>
@@ -487,6 +493,9 @@ border-top-color: rgb(255, 255, 255);</string>
        <weight>50</weight>
        <bold>false</bold>
       </font>
+     </property>
+     <property name="focusPolicy">
+      <enum>Qt::ClickFocus</enum>
      </property>
      <property name="placeholderText">
       <string>Section</string>

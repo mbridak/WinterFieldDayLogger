@@ -11,7 +11,6 @@ import socket
 import os
 import logging
 
-# logging.basicConfig(level="DEBUG")
 from json import dumps
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import QDir, Qt
@@ -452,6 +451,25 @@ class MainWindow(QtWidgets.QMainWindow):
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
             self.clearinputs()
+        if event.key() == Qt.Key_Tab:
+            if self.section_entry.hasFocus():
+                logging.debug(f"From section")
+                self.callsign_entry.setFocus()
+                self.callsign_entry.deselect()
+                self.callsign_entry.end(False)
+                return
+            if self.class_entry.hasFocus():
+                logging.debug(f"From class")
+                self.section_entry.setFocus()
+                self.section_entry.deselect()
+                self.section_entry.end(False)
+                return
+            if self.callsign_entry.hasFocus():
+                logging.debug(f"From callsign")
+                self.class_entry.setFocus()
+                self.class_entry.deselect()
+                self.class_entry.end(False)
+                return
         if event.key() == Qt.Key_F1:
             self.sendf1()
         if event.key() == Qt.Key_F2:
@@ -604,11 +622,14 @@ class MainWindow(QtWidgets.QMainWindow):
             if text[-1] == " ":
                 self.callsign_entry.setText(text.strip())
                 self.class_entry.setFocus()
+                self.class_entry.deselect()
             else:
+                washere = self.callsign_entry.cursorPosition()
                 cleaned = "".join(
                     ch for ch in text if ch.isalnum() or ch == "/"
                 ).upper()
                 self.callsign_entry.setText(cleaned)
+                self.callsign_entry.setCursorPosition(washere)
                 self.superCheck()
 
     def classtest(self):
@@ -620,9 +641,12 @@ class MainWindow(QtWidgets.QMainWindow):
             if text[-1] == " ":
                 self.class_entry.setText(text.strip())
                 self.section_entry.setFocus()
+                self.section_entry.deselect()
             else:
+                washere = self.class_entry.cursorPosition()
                 cleaned = "".join(ch for ch in text if ch.isalnum()).upper()
                 self.class_entry.setText(cleaned)
+                self.class_entry.setCursorPosition(washere)
 
     def sectiontest(self):
         """
@@ -633,9 +657,12 @@ class MainWindow(QtWidgets.QMainWindow):
             if text[-1] == " ":
                 self.section_entry.setText(text.strip())
                 self.callsign_entry.setFocus()
+                self.callsign_entry.deselect()
             else:
+                washere = self.section_entry.cursorPosition()
                 cleaned = "".join(ch for ch in text if ch.isalpha()).upper()
                 self.section_entry.setText(cleaned)
+                self.section_entry.setCursorPosition(washere)
 
     def create_DB(self):
         """create a database and table if it does not exist"""
