@@ -604,11 +604,14 @@ class MainWindow(QtWidgets.QMainWindow):
             if text[-1] == " ":
                 self.callsign_entry.setText(text.strip())
                 self.class_entry.setFocus()
+                self.class_entry.deselect()
             else:
+                washere = self.callsign_entry.cursorPosition()
                 cleaned = "".join(
                     ch for ch in text if ch.isalnum() or ch == "/"
                 ).upper()
                 self.callsign_entry.setText(cleaned)
+                self.callsign_entry.setCursorPosition(washere)
                 self.superCheck()
 
     def classtest(self):
@@ -620,9 +623,12 @@ class MainWindow(QtWidgets.QMainWindow):
             if text[-1] == " ":
                 self.class_entry.setText(text.strip())
                 self.section_entry.setFocus()
+                self.section_entry.deselect()
             else:
+                washere = self.class_entry.cursorPosition()
                 cleaned = "".join(ch for ch in text if ch.isalnum()).upper()
                 self.class_entry.setText(cleaned)
+                self.class_entry.setCursorPosition(washere)
 
     def sectiontest(self):
         """
@@ -633,9 +639,12 @@ class MainWindow(QtWidgets.QMainWindow):
             if text[-1] == " ":
                 self.section_entry.setText(text.strip())
                 self.callsign_entry.setFocus()
+                self.callsign_entry.deselect()
             else:
+                washere = self.section_entry.cursorPosition()
                 cleaned = "".join(ch for ch in text if ch.isalpha()).upper()
                 self.section_entry.setText(cleaned)
+                self.section_entry.setCursorPosition(washere)
 
     def create_DB(self):
         """create a database and table if it does not exist"""
