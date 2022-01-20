@@ -21,6 +21,17 @@ WFD only has a generic digital mode designator 'DI', which gets exported to the 
 
 * ReImplimented TAB focus behavior to deselect text on field focus.
 * Edit cursor position in field no longer resets to the end after validation. This reduces the amount of swearing emitted by the operator.
+* Adding quick commands to callsign entry field. Limited list so far:
+
+
+`.Q` Quits.
+ 
+`.B#` set current band. So `.B20` changes you to 20M.
+ 
+`.MCW .MPH .MDI` sets you to CW Phone and Digital respectively.
+ 
+`.E#` will soon edit a logged contact. Not yet.
+ 
 
 ## Running the binary
 
