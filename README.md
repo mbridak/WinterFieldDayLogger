@@ -21,7 +21,7 @@ WFD only has a generic digital mode designator 'DI', which gets exported to the 
 
 * ReImplimented TAB focus behavior to deselect text on field focus.
 * Edit cursor position in field no longer resets to the end after validation. This reduces the amount of swearing emitted by the operator.
-* Adding quick commands to callsign entry field. Limited list so far:
+* Adding quick commands to callsign entry field. Enter the command then press the spacebar. Limited list so far:
 
 
 `.Q` Quits.
