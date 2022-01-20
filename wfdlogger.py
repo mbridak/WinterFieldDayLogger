@@ -613,6 +613,24 @@ class MainWindow(QtWidgets.QMainWindow):
             self.mysectionEntry.setStyleSheet("border: 1px solid red;")
         self.writepreferences()
 
+    def keyboardcommand(self, text):
+        self.callsign_entry.setText("")
+        try:
+            if text[1] == "Q":
+                self.close()
+            if text[1] == "P":
+                self.power_selector.setValue(int(text[2:]))
+            if text[1] == "E":
+                qtoedit = int(text[2:])
+                # attention
+            if text[1] == "M":
+                self.setmode(text[2:])
+            if text[1] == "B":
+                self.setband(text[2:])
+
+        except:
+            pass
+
     def calltest(self):
         """
         Cleans callsign of spaces and strips non alphanumeric or '/' characters.
@@ -620,13 +638,17 @@ class MainWindow(QtWidgets.QMainWindow):
         text = self.callsign_entry.text()
         if len(text):
             if text[-1] == " ":
+                stripped = text.strip()
                 self.callsign_entry.setText(text.strip())
+                if stripped[0] == ".":
+                    self.keyboardcommand(stripped)
+                    return
                 self.class_entry.setFocus()
                 self.class_entry.deselect()
             else:
                 washere = self.callsign_entry.cursorPosition()
                 cleaned = "".join(
-                    ch for ch in text if ch.isalnum() or ch == "/"
+                    ch for ch in text if ch.isalnum() or ch == "/" or ch == "."
                 ).upper()
                 self.callsign_entry.setText(cleaned)
                 self.callsign_entry.setCursorPosition(washere)
@@ -1860,4 +1882,4 @@ if __name__ == "__main__":
     timer.timeout.connect(window.updateTime)
     timer.start(1000)
 
-    app.exec()
+    sys.exit(app.exec())
