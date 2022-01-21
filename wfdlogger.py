@@ -101,6 +101,7 @@ class MainWindow(QtWidgets.QMainWindow):
     rigctrlport = ""
     rigonline = False
     userigctl = False
+    flrig = False
     markerfile = ".xplanet/markers/ham"
     usemarker = False
     oldfreq = 0
@@ -378,8 +379,50 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def pollRadio(self):
         """
-        Poll rigctld to get power band and mode of the radio.
+        Poll rigctld to get band.
         """
+        if self.flrig:
+            try:
+                newfreq = self.server.rig.get_vfo()
+                newmode = self.server.rig.get_mode()
+                self.radio_icon.setPixmap(
+                    QtGui.QPixmap(self.relpath("icon/radio_green.png"))
+                )
+                if newfreq != self.oldfreq or newmode != self.oldmode:
+                    self.oldfreq = newfreq
+                    self.oldmode = newmode
+                    self.setband(str(self.getband(newfreq)))
+                    self.setmode(str(self.getmode(newmode)))
+            except socket.error as e:
+                self.radio_icon.setPixmap(
+                    QtGui.QPixmap(self.relpath("icon/radio_red.png"))
+                )
+                logging.warning(f"pollRadio: flrig: {e}")
+            return
+        if self.rigonline:
+            try:
+                self.rigctrlsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.rigctrlsocket.connect((self.rigctrlhost, int(self.rigctrlport)))
+                self.rigctrlsocket.settimeout(0.5)
+                self.rigctrlsocket.send(b"f\n")
+                newfreq = self.rigctrlsocket.recv(1024).decode().strip()
+                self.rigctrlsocket.send(b"m\n")
+                newmode = self.rigctrlsocket.recv(1024).decode().strip().split()[0]
+                self.radio_icon.setPixmap(
+                    QtGui.QPixmap(self.relpath("icon/radio_green.png"))
+                )
+                self.rigctrlsocket.shutdown(socket.SHUT_RDWR)
+                self.rigctrlsocket.close()
+                if newfreq != self.oldfreq or newmode != self.oldmode:
+                    self.oldfreq = newfreq
+                    self.oldmode = newmode
+                    self.setband(str(self.getband(newfreq)))
+                    self.setmode(str(self.getmode(newmode)))
+            except ConnectionRefusedError:
+                logging.warning("pollRadio: ConnectionRefusedError")
+
+    """            
+    def pollRadio(self):
         if self.rigonline:
             try:
                 newfreq = self.server.rig.get_vfo()
@@ -398,6 +441,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.radio_icon.setPixmap(
                     QtGui.QPixmap(self.relpath("icon/radio_red.png"))
                 )
+    """
 
     def checkRadio(self):
         """
@@ -825,7 +869,14 @@ class MainWindow(QtWidgets.QMainWindow):
                         self.power_selector.setValue(int(self.power))
                         self.usecloudlog = bool(usecloudlog)
                         self.useqrz = bool(useqrz)
-                        self.userigctl = bool(userigcontrol)
+                        self.flrig = False
+                        self.userigctl = False
+                        if userigcontrol == 1:
+                            self.flrig = False
+                            self.userigctl = True
+                        if userigcontrol == 2:
+                            self.flrig = True
+                            self.userigctl = False
                         self.usemarker = bool(self.usemarker)
                         self.usehamdb = bool(self.usehamdb)
                 else:
@@ -1830,7 +1881,12 @@ class Settings(QtWidgets.QDialog):
                 self.rigcontrolport_field.setText(rigctrlport)
                 self.usecloudlog_checkBox.setChecked(bool(usecloudlog))
                 self.useqrz_checkBox.setChecked(bool(useqrz))
-                self.userigcontrol_checkBox.setChecked(bool(userigcontrol))
+                if userigcontrol == 0:
+                    self.radioButton_none.setChecked(True)
+                if userigcontrol == 1:
+                    self.radioButton_rigctld.setChecked(True)
+                if userigcontrol == 2:
+                    self.radioButton_flrig.setChecked(True)
                 self.markerfile_field.setText(markerfile)
                 self.generatemarker_checkbox.setChecked(bool(usemarker))
                 self.usehamdb_checkBox.setChecked(bool(usehamdb))
@@ -1845,7 +1901,12 @@ class Settings(QtWidgets.QDialog):
     def saveChanges(self):
         try:
             with sqlite3.connect(self.database) as conn:
-                sql = f"UPDATE preferences SET qrzusername = '{self.qrzname_field.text()}', qrzpassword = '{self.qrzpass_field.text()}', qrzurl = '{self.qrzurl_field.text()}', cloudlogapi = '{self.cloudlogapi_field.text()}', cloudlogurl = '{self.cloudlogurl_field.text()}', rigcontrolip = '{self.rigcontrolip_field.text()}', rigcontrolport = '{self.rigcontrolport_field.text()}', useqrz = '{int(self.useqrz_checkBox.isChecked())}', usecloudlog = '{int(self.usecloudlog_checkBox.isChecked())}', userigcontrol = '{int(self.userigcontrol_checkBox.isChecked())}', markerfile = '{self.markerfile_field.text()}', usemarker = '{int(self.generatemarker_checkbox.isChecked())}', usehamdb = '{int(self.usehamdb_checkBox.isChecked())}'  where id=1;"
+                userigcontrol = 0
+                if self.radioButton_rigctld.isChecked():
+                    userigcontrol = 1
+                if self.radioButton_flrig.isChecked():
+                    userigcontrol = 2
+                sql = f"UPDATE preferences SET qrzusername = '{self.qrzname_field.text()}', qrzpassword = '{self.qrzpass_field.text()}', qrzurl = '{self.qrzurl_field.text()}', cloudlogapi = '{self.cloudlogapi_field.text()}', cloudlogurl = '{self.cloudlogurl_field.text()}', rigcontrolip = '{self.rigcontrolip_field.text()}', rigcontrolport = '{self.rigcontrolport_field.text()}', useqrz = '{int(self.useqrz_checkBox.isChecked())}', usecloudlog = '{int(self.usecloudlog_checkBox.isChecked())}', userigcontrol = '{userigcontrol}', markerfile = '{self.markerfile_field.text()}', usemarker = '{int(self.generatemarker_checkbox.isChecked())}', usehamdb = '{int(self.usehamdb_checkBox.isChecked())}'  where id=1;"
                 cur = conn.cursor()
                 cur.execute(sql)
                 conn.commit()
