@@ -510,6 +510,11 @@ class MainWindow(QtWidgets.QMainWindow):
                 return
             if self.callsign_entry.hasFocus():
                 logging.debug(f"From callsign")
+                cse = self.callsign_entry.text()
+                if len(cse):
+                    if cse[0] == ".":
+                        self.keyboardcommand(cse)
+                        return
                 self.class_entry.setFocus()
                 self.class_entry.deselect()
                 self.class_entry.end(False)
