@@ -27,6 +27,8 @@ WFD only has a generic digital mode designator 'DI', which gets exported to the 
 `.Q` Quits.
  
 `.B#` set current band. So `.B20` changes you to 20M.
+
+`.P#` set power level. `.P10` sets your logged power to 10 watts.
  
 `.MCW .MPH .MDI` sets you to CW Phone and Digital respectively.
  
