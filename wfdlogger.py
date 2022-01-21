@@ -618,13 +618,41 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             if text[1] == "Q":
                 self.close()
+                return
             if text[1] == "P":
                 self.power_selector.setValue(int(text[2:]))
+                return
             if text[1] == "E":
                 qtoedit = int(text[2:])
+                try:
+                    with sqlite3.connect(self.database) as conn:
+                        c = conn.cursor()
+                        c.execute(f"select * from contacts where id={qtoedit}")
+                        log = c.fetchone()
+                        (
+                            logid,
+                            hiscall,
+                            hisclass,
+                            hissection,
+                            datetime,
+                            band,
+                            mode,
+                            power,
+                            _,
+                            _,
+                        ) = log
+                        self.linetopass = f"{str(logid).rjust(3,'0')} {hiscall.ljust(10)} {hisclass.rjust(3)} {hissection.rjust(3)} {datetime} {str(band).rjust(3)} {mode} {str(power).rjust(3)}"
+                        dialog = editQSODialog(self)
+                        dialog.setup(self.linetopass, self.database)
+                        dialog.change.lineChanged.connect(self.qsoedited)
+                        dialog.open()
+                except:
+                    pass
+                return
                 # attention
             if text[1] == "M":
                 self.setmode(text[2:])
+                return
             if text[1] == "B":
                 self.setband(text[2:])
 
@@ -920,6 +948,7 @@ class MainWindow(QtWidgets.QMainWindow):
             logging.critical(f"qrpcheck: {e}")
 
     def logwindow(self):
+
         self.listWidget.clear()
         try:
             with sqlite3.connect(self.database) as conn:
