@@ -33,6 +33,9 @@ WFD only has a generic digital mode designator 'DI', which gets exported to the 
 `.MCW .MPH .MDI` sets you to CW Phone and Digital respectively.
  
 `.E#` Edit contact. `.E10` would edit contact #010.
+
+
+* Corrected the TAB focus order of the edit dialog.
  
 
 ## Running the binary
