@@ -655,6 +655,26 @@ class MainWindow(QtWidgets.QMainWindow):
                 return
             if text[1] == "B":
                 self.setband(text[2:])
+            if text[1] == "K":
+                pass  # Call
+            if text[1] == "C":
+                pass  # Class
+            if text[1] == "S":
+                pass  # section
+            if text[1] == "1":
+                pass  # alt power
+            if text[1] == "2":
+                pass  # outdoors
+            if text[1] == "3":
+                pass  # away from home
+            if text[1] == "4":
+                pass  # satellite
+            if text[1] == "L":
+                pass  # log
+            if text[1] == "H":
+                pass  # help
+            if text[1] == "":
+                pass  #
 
         except:
             pass
