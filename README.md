@@ -21,7 +21,7 @@ WFD only has a generic digital mode designator 'DI', which gets exported to the 
 
 * ReImplimented TAB focus behavior to deselect text on field focus.
 * Edit cursor position in field no longer resets to the end after validation. This reduces the amount of swearing emitted by the operator.
-* Adding quick commands to callsign entry field. Enter the command then press the spacebar. Limited list so far:
+* Someone with an aversion towards mice, whose name starts with Russ, requested keyboard shortcuts to rarely used interface items. So, adding quick commands to the callsign entry field. Enter the command then press the spacebar. Limited list so far:
 
 
 `.Q` Quits.
@@ -33,6 +33,22 @@ WFD only has a generic digital mode designator 'DI', which gets exported to the 
 `.MCW .MPH .MDI` sets you to CW Phone and Digital respectively.
  
 `.E#` Edit contact. `.E10` would edit contact #010.
+
+`.K` Change your callsign. `.KK6GTE` would change it to K6GTE.
+
+`.C` Change your class. `.C1O` would change it to 1O.
+
+`.S` Change your section. `.SORG` would change it to ORG.
+
+`.1` Toggles Claim for alt-power.
+
+`.2` Toggles Claim for outdoors.
+
+`.3` Toggles Claim for not at home.
+
+`.4` Toggles Claim for satellite contact.
+
+`.L` To generate a log.
 
 
 * Corrected the TAB focus order of the edit dialog.

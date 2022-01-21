@@ -655,27 +655,38 @@ class MainWindow(QtWidgets.QMainWindow):
                 return
             if text[1] == "B":
                 self.setband(text[2:])
+                return
             if text[1] == "K":
-                pass  # Call
+                self.mycallEntry.setText(text[2:])
+                self.changemycall()
+                return
             if text[1] == "C":
-                pass  # Class
+                self.mysectionEntry.setText(text[2:])
+                self.changemyclass()
+                return
             if text[1] == "S":
-                pass  # section
+                self.mysectionEntry.setText(text[2:])
+                self.changemysection()
+                return
             if text[1] == "1":
-                pass  # alt power
+                self.claimAltPower(0)
+                return
             if text[1] == "2":
-                pass  # outdoors
+                self.claimOutdoors(0)
+                return
             if text[1] == "3":
-                pass  # away from home
+                self.claimNotHome(0)
+                return
             if text[1] == "4":
-                pass  # satellite
+                self.claimSatellite(0)
+                return
             if text[1] == "L":
-                pass  # log
+                self.generateLogs()
+                return
             if text[1] == "H":
                 pass  # help
             if text[1] == "":
                 pass  #
-
         except:
             pass
 
