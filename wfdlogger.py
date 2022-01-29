@@ -264,7 +264,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.useqrz and self.has_internet():
             try:
                 payload = {"username": self.qrzname, "password": self.qrzpass}
-                r = requests.get(self.qrzurl, params=payload, timeout=1.0)
+                r = requests.get(self.qrzurl, params=payload, timeout=5.0)
                 if r.status_code == 200 and r.text.find("<Key>") > 0:
                     self.qrzsession = r.text[
                         r.text.find("<Key>") + 5 : r.text.find("</Key>")
