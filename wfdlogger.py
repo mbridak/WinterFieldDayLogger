@@ -748,9 +748,10 @@ class MainWindow(QtWidgets.QMainWindow):
             if text[-1] == " ":
                 stripped = text.strip()
                 self.callsign_entry.setText(text.strip())
-                if stripped[0] == ".":
-                    self.keyboardcommand(stripped)
-                    return
+                if len(stripped):
+                    if stripped[0] == ".":
+                        self.keyboardcommand(stripped)
+                        return
                 self.class_entry.setFocus()
                 self.class_entry.deselect()
             else:
