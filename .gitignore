@@ -137,3 +137,5 @@ changes.txt
 README.md.backup
 spots.db
 bandmap.md.backup
+.pylintrc
+debug

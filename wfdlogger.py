@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
+"""
+K6GTE Winter Field Day logger
+Email: michael.bridak@gmail.com
+GPL V3
+"""
 
 # Nothing to see here move along.
 # xplanet -body earth -window -longitude -117 -latitude 38 -config Default -projection azmithal -radius 200 -wait 5
 
 import xmlrpc.client
-import requests
+
 import sys
 import sqlite3
 import socket
@@ -12,33 +17,44 @@ import os
 import logging
 
 from json import dumps
-from PyQt5 import QtCore, QtGui, QtWidgets, uic
-from PyQt5.QtCore import QDir, Qt
-from PyQt5.QtGui import QFontDatabase
 from datetime import datetime
-from sqlite3 import Error
+
+
+# from sqlite3 import Error
 from pathlib import Path
 from shutil import copyfile
 from xmlrpc.client import ServerProxy, Error
+from PyQt5 import QtCore, QtGui, QtWidgets, uic
+from PyQt5.QtCore import QDir, Qt
+from PyQt5.QtGui import QFontDatabase
+from bs4 import BeautifulSoup as bs
+import requests
 
 
-def relpath(filename):
-    try:
-        base_path = sys._MEIPASS  # pylint: disable=no-member
-    except:
+def relpath(filename: str) -> str:
+    """
+    Checks to see if program has been packaged with pyinstaller.
+    If so base dir is in a temp folder.
+    """
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        base_path = getattr(sys, "_MEIPASS")
+    else:
         base_path = os.path.abspath(".")
     return os.path.join(base_path, filename)
 
 
-def load_fonts_from_dir(directory):
-    families = set()
-    for fi in QDir(directory).entryInfoList(["*.ttf", "*.woff", "*.woff2"]):
-        _id = QFontDatabase.addApplicationFont(fi.absoluteFilePath())
-        families |= set(QFontDatabase.applicationFontFamilies(_id))
-    return families
+def load_fonts_from_dir(directory: str) -> set:
+    """
+    Well it loads fonts from a directory...
+    """
+    font_families = set()
+    for _fi in QDir(directory).entryInfoList(["*.ttf", "*.woff", "*.woff2"]):
+        _id = QFontDatabase.addApplicationFont(_fi.absoluteFilePath())
+        font_families |= set(QFontDatabase.applicationFontFamilies(_id))
+    return font_families
 
 
-class qsoEdit(QtCore.QObject):
+class QSOEdit(QtCore.QObject):
     """
     Custom qt event signal used when qso edited or deleted.
     """
@@ -46,7 +62,120 @@ class qsoEdit(QtCore.QObject):
     lineChanged = QtCore.pyqtSignal()
 
 
+class QRZlookup:
+    """
+    Class manages QRZ lookups. Pass in a username and password at instantiation.
+    """
+
+    def __init__(self, username: str, password: str) -> None:
+        self.session = False
+        self.expiration = False
+        self.error = (
+            False  # "password incorrect", "session timeout", and "callsign not found".
+        )
+        self.username = username
+        self.password = password
+        self.qrzurl = "https://xmldata.qrz.com/xml/134/"
+        self.message = False
+        self.lastresult = False
+        self.getsession()
+
+    def getsession(self) -> None:
+        """
+        Get QRZ session key.
+        Stores key in class variable 'session'
+        Error messages returned by QRZ will be in class variable 'error'
+        Other messages returned will be in class variable 'message'
+        """
+        logging.info("QRZlookup-getsession:")
+        self.error = False
+        self.message = False
+        self.session = False
+        try:
+            payload = {"username": self.username, "password": self.password}
+            query_result = requests.get(self.qrzurl, params=payload, timeout=10.0)
+            root = bs(query_result.text, "html.parser")
+            if root.session.find("key"):
+                self.session = root.session.key.text
+            if root.session.find("subexp"):
+                self.expiration = root.session.subexp.text
+            if root.session.find("error"):
+                self.error = root.session.error.text
+            if root.session.find("message"):
+                self.message = root.session.message.text
+            logging.info(
+                "QRZlookup-getsession: key:%s error:%s message:%s",
+                self.session,
+                self.error,
+                self.message,
+            )
+        except requests.exceptions.RequestException as exception:
+            logging.info("QRZlookup-getsession: %s", exception)
+            self.session = False
+            self.error = f"{exception}"
+
+    def lookup(self, call: str) -> tuple:
+        """
+        Lookup a call on QRZ
+        """
+        logging.info("QRZlookup-lookup: %s", call)
+        grid = False
+        name = False
+        error_text = False
+        nickname = False
+        if self.session:
+            payload = {"s": self.session, "callsign": call}
+            query_result = requests.get(self.qrzurl, params=payload, timeout=3.0)
+            root = bs(query_result.text, "html.parser")
+            if not root.session.key:  # key expired get a new one
+                logging.info("QRZlookup-lookup: no key, getting new one.")
+                self.getsession()
+                if self.session:
+                    payload = {"s": self.session, "callsign": call}
+                    query_result = requests.get(
+                        self.qrzurl, params=payload, timeout=3.0
+                    )
+            grid, name, nickname, error_text = self.parse_lookup(query_result)
+        return grid, name, nickname, error_text
+
+    def parse_lookup(self, query_result) -> list:
+        """
+        Returns gridsquare and name for a callsign looked up by qrz or hamdb.
+        Or False for both if none found or error.
+        """
+        logging.info("QRZlookup-parse_lookup:")
+        grid = False
+        name = False
+        error_text = False
+        nickname = False
+        if query_result.status_code == 200:
+            root = bs(query_result.text, "html.parser")
+            if root.session.find("error"):
+                error_text = root.session.error.text
+                self.error = error_text
+            if root.find("callsign"):
+                if root.callsign.find("grid"):
+                    grid = root.callsign.grid.text
+                if root.callsign.find("fname"):
+                    name = root.callsign.fname.text
+                if root.find("name"):
+                    if not name:
+                        name = root.find("name").string
+                    else:
+                        name = f"{name} {root.find('name').string}"
+                if root.callsign.find("nickname"):
+                    nickname = root.callsign.nickname.text
+        logging.info(
+            "QRZlookup-parse_lookup: %s %s %s %s", grid, name, nickname, error_text
+        )
+        return grid, name, nickname, error_text
+
+
 class MainWindow(QtWidgets.QMainWindow):
+    """
+    The Main Window with all the clicky bits
+    """
+
     database = "WFD.db"
     mycall = ""
     myclass = ""
@@ -101,6 +230,7 @@ class MainWindow(QtWidgets.QMainWindow):
     rigctrlport = ""
     rigonline = False
     userigctl = False
+    flrig = False
     markerfile = ".xplanet/markers/ham"
     usemarker = False
     oldfreq = 0
@@ -114,11 +244,12 @@ class MainWindow(QtWidgets.QMainWindow):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         uic.loadUi(self.relpath("main.ui"), self)
+        self.qrz = None
         self.listWidget.itemDoubleClicked.connect(self.qsoclicked)
-        self.altpowerButton.clicked.connect(self.claimAltPower)
-        self.outdoorsButton.clicked.connect(self.claimOutdoors)
-        self.notathomeButton.clicked.connect(self.claimNotHome)
-        self.satelliteButton.clicked.connect(self.claimSatellite)
+        self.altpowerButton.clicked.connect(self.claim_alt_power)
+        self.outdoorsButton.clicked.connect(self.claim_outdoors)
+        self.notathomeButton.clicked.connect(self.claim_not_at_home)
+        self.satelliteButton.clicked.connect(self.claim_satellite)
         self.callsign_entry.textEdited.connect(self.calltest)
         self.class_entry.textEdited.connect(self.classtest)
         self.section_entry.textEdited.connect(self.sectiontest)
@@ -131,11 +262,17 @@ class MainWindow(QtWidgets.QMainWindow):
         self.band_selector.activated.connect(self.changeband)
         self.mode_selector.activated.connect(self.changemode)
         self.power_selector.valueChanged.connect(self.changepower)
-        self.callsign_entry.editingFinished.connect(self.dupCheck)
-        self.section_entry.textEdited.connect(self.sectionCheck)
-        self.genLogButton.clicked.connect(self.generateLogs)
-        self.radio_icon.setPixmap(QtGui.QPixmap(self.relpath("icon/radio_grey.png")))
-        self.cloudlog_icon.setPixmap(QtGui.QPixmap(self.relpath("icon/cloud_grey.png")))
+        self.callsign_entry.editingFinished.connect(self.dup_check)
+        self.section_entry.textEdited.connect(self.section_check)
+        self.genLogButton.clicked.connect(self.generate_logs)
+        self.radio_grey = QtGui.QPixmap(self.relpath("icon/radio_grey.png"))
+        self.radio_red = QtGui.QPixmap(self.relpath("icon/radio_red.png"))
+        self.radio_green = QtGui.QPixmap(self.relpath("icon/radio_green.png"))
+        self.cloud_grey = QtGui.QPixmap(self.relpath("icon/cloud_grey.png"))
+        self.cloud_red = QtGui.QPixmap(self.relpath("icon/cloud_red.png"))
+        self.cloud_green = QtGui.QPixmap(self.relpath("icon/cloud_green.png"))
+        self.radio_icon.setPixmap(self.radio_grey)
+        self.cloudlog_icon.setPixmap(self.cloud_grey)
         self.QRZ_icon.setStyleSheet("color: rgb(136, 138, 133);")
         self.settingsbutton.clicked.connect(self.settingspressed)
         self.F1.clicked.connect(self.sendf1)
@@ -153,20 +290,30 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.server = xmlrpc.client.ServerProxy("http://localhost:12345")
         self.radiochecktimer = QtCore.QTimer()
-        self.radiochecktimer.timeout.connect(self.Radio)
+        self.radiochecktimer.timeout.connect(self.radio)
         self.radiochecktimer.start(1000)
 
-    def relpath(self, filename):
+    @staticmethod
+    def relpath(filename: str) -> str:
         """
-        If the program is packaged with pyinstaller, this is needed since all files will be in a temp folder during execution.
+        If the program is packaged with pyinstaller,
+        this is needed since all files will be in a temp
+        folder during execution.
         """
-        try:
-            base_path = sys._MEIPASS  # pylint: disable=no-member
-        except:
+        if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+            base_path = getattr(sys, "_MEIPASS")
+        else:
             base_path = os.path.abspath(".")
         return os.path.join(base_path, filename)
 
-    def readCWmacros(self):
+    def setup_qrz(self) -> None:
+        """
+        Setup QRZ
+        """
+        if self.useqrz:
+            self.qrz = QRZlookup(self.qrzname, self.qrzpass)
+
+    def read_cw_macros(self) -> None:
         """
         Reads in the CW macros, firsts it checks to see if the file exists. If it does not,
         and this has been packaged with pyinstaller it will copy the default file from the
@@ -178,53 +325,54 @@ class MainWindow(QtWidgets.QMainWindow):
             and hasattr(sys, "_MEIPASS")
             and not Path("./cwmacros.txt").exists()
         ):
-            logging.debug("readCWmacros: copying default macro file.")
+            logging.debug("read_cw_macros: copying default macro file.")
             copyfile(relpath("cwmacros.txt"), "./cwmacros.txt")
-        with open("./cwmacros.txt", "r") as f:
-            for line in f:
+        with open("./cwmacros.txt", "r", encoding="utf-8") as file_descriptor:
+            for line in file_descriptor:
                 try:
                     fkey, buttonname, cwtext = line.split("|")
                     self.fkeys[fkey.strip()] = (buttonname.strip(), cwtext.strip())
                 except ValueError:
                     break
-        if "F1" in self.fkeys.keys():
+        keys = self.fkeys.keys()
+        if "F1" in keys:
             self.F1.setText(f"F1: {self.fkeys['F1'][0]}")
             self.F1.setToolTip(self.fkeys["F1"][1])
-        if "F2" in self.fkeys.keys():
+        if "F2" in keys:
             self.F2.setText(f"F2: {self.fkeys['F2'][0]}")
             self.F2.setToolTip(self.fkeys["F2"][1])
-        if "F3" in self.fkeys.keys():
+        if "F3" in keys:
             self.F3.setText(f"F3: {self.fkeys['F3'][0]}")
             self.F3.setToolTip(self.fkeys["F3"][1])
-        if "F4" in self.fkeys.keys():
+        if "F4" in keys:
             self.F4.setText(f"F4: {self.fkeys['F4'][0]}")
             self.F4.setToolTip(self.fkeys["F4"][1])
-        if "F5" in self.fkeys.keys():
+        if "F5" in keys:
             self.F5.setText(f"F5: {self.fkeys['F5'][0]}")
             self.F5.setToolTip(self.fkeys["F5"][1])
-        if "F6" in self.fkeys.keys():
+        if "F6" in keys:
             self.F6.setText(f"F6: {self.fkeys['F6'][0]}")
             self.F6.setToolTip(self.fkeys["F6"][1])
-        if "F7" in self.fkeys.keys():
+        if "F7" in keys:
             self.F7.setText(f"F7: {self.fkeys['F7'][0]}")
             self.F7.setToolTip(self.fkeys["F7"][1])
-        if "F8" in self.fkeys.keys():
+        if "F8" in keys:
             self.F8.setText(f"F8: {self.fkeys['F8'][0]}")
             self.F8.setToolTip(self.fkeys["F8"][1])
-        if "F9" in self.fkeys.keys():
+        if "F9" in keys:
             self.F9.setText(f"F9: {self.fkeys['F9'][0]}")
             self.F9.setToolTip(self.fkeys["F9"][1])
-        if "F10" in self.fkeys.keys():
+        if "F10" in keys:
             self.F10.setText(f"F10: {self.fkeys['F10'][0]}")
             self.F10.setToolTip(self.fkeys["F10"][1])
-        if "F11" in self.fkeys.keys():
+        if "F11" in keys:
             self.F11.setText(f"F11: {self.fkeys['F11'][0]}")
             self.F11.setToolTip(self.fkeys["F11"][1])
-        if "F12" in self.fkeys.keys():
+        if "F12" in keys:
             self.F12.setText(f"F12: {self.fkeys['F12'][0]}")
             self.F12.setToolTip(self.fkeys["F12"][1])
 
-    def updateTime(self):
+    def update_time(self) -> None:
         """
         Update local and UTC time on screen.
         """
@@ -233,7 +381,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.localtime.setText(now)
         self.utctime.setText(utcnow)
 
-    def settingspressed(self):
+    def settingspressed(self) -> None:
         """
         Get settings changes, Authorize to QRZ and Cloudlog if needed.
         """
@@ -242,10 +390,11 @@ class MainWindow(QtWidgets.QMainWindow):
         settingsdialog.exec()
         self.infobox.clear()
         self.readpreferences()
-        self.qrzauth()
+        self.setup_qrz()
         self.cloudlogauth()
 
-    def has_internet(self):
+    @staticmethod
+    def has_internet():
         """
         Connect to a main DNS server to check connectivity.
         """
@@ -256,73 +405,45 @@ class MainWindow(QtWidgets.QMainWindow):
             pass
         return False
 
-    def qrzauth(self):
-        """
-        Get QRZ session key.
-        """
-        if self.useqrz and self.has_internet():
-            try:
-                payload = {"username": self.qrzname, "password": self.qrzpass}
-                r = requests.get(self.qrzurl, params=payload, timeout=1.0)
-                if r.status_code == 200 and r.text.find("<Key>") > 0:
-                    self.qrzsession = r.text[
-                        r.text.find("<Key>") + 5 : r.text.find("</Key>")
-                    ]
-                    self.QRZ_icon.setStyleSheet("color: rgb(128, 128, 0);")
-                    logging.info("QRZ: Obtained session key.")
-                else:
-                    self.qrzsession = False
-                    self.QRZ_icon.setStyleSheet("color: rgb(136, 138, 133);")
-                if r.status_code == 200 and r.text.find("<Error>") > 0:
-                    errorText = r.text[
-                        r.text.find("<Error>") + 7 : r.text.find("</Error>")
-                    ]
-                    self.infobox.insertPlainText("\nQRZ Error: " + errorText + "\n")
-                    logging.warning(f"QRZ Error: {errorText}")
-            except requests.exceptions.RequestException as e:
-                self.infobox.insertPlainText(f"****QRZ Error****\n{e}\n")
-                logging.warning(f"QRZ Error: {e}")
-        else:
-            self.QRZ_icon.setStyleSheet("color: rgb(26, 26, 26);")
-            self.qrzsession = False
-
-    def cloudlogauth(self):
+    def cloudlogauth(self) -> None:
         """
         Check if user has valid Cloudlog API key.
         """
-        self.cloudlog_icon.setPixmap(QtGui.QPixmap(self.relpath("icon/cloud_grey.png")))
+        self.cloudlog_icon.setPixmap(self.cloud_grey)
         self.cloudlogauthenticated = False
         if self.usecloudlog:
             try:
-                self.cloudlog_icon.setPixmap(
-                    QtGui.QPixmap(self.relpath("icon/cloud_red.png"))
-                )
+                self.cloudlog_icon.setPixmap(self.cloud_red)
                 test = self.cloudlogurl[:-3] + "auth/" + self.cloudlogapi
-                r = requests.get(test, params={}, timeout=2.0)
-                if r.status_code == 200 and r.text.find("<status>") > 0:
+                result = requests.get(test, params={}, timeout=2.0)
+                if result.status_code == 200 and result.text.find("<status>") > 0:
                     if (
-                        r.text[r.text.find("<status>") + 8 : r.text.find("</status>")]
+                        result.text[
+                            result.text.find("<status>")
+                            + 8 : result.text.find("</status>")
+                        ]
                         == "Valid"
                     ):
                         self.cloudlogauthenticated = True
-                        self.cloudlog_icon.setPixmap(
-                            QtGui.QPixmap(self.relpath("icon/cloud_green.png"))
-                        )
+                        self.cloudlog_icon.setPixmap(self.cloud_green)
                         logging.info("Cloudlog: Authenticated.")
                 else:
                     logging.warning(
-                        f"Cloudlog: {r.status_code} Unable to authenticate."
+                        "Cloudlog: %s Unable to authenticate.", result.status_code
                     )
-            except requests.exceptions.RequestException as e:
-                self.infobox.insertPlainText(f"****Cloudlog Auth Error:****\n{e}\n")
-                logging.warning(f"Cloudlog: {e}")
+            except requests.exceptions.RequestException as exception:
+                self.infobox.insertPlainText(
+                    f"****Cloudlog Auth Error:****\n{exception}\n"
+                )
+                logging.warning("Cloudlog: %s", exception)
 
-    def getband(self, freq):
+    def getband(self, freq: str) -> str:
         """
-        Convert a (float) frequency into a (string) band.
+        Convert a (string) frequency into a (string) band.
         Returns a (string) band.
         Returns a "0" if frequency is out of band.
         """
+        logging.info("getband: %s %s", type(freq), freq)
         if freq.isnumeric():
             frequency = int(float(freq))
             if frequency > 1800000 and frequency < 2000000:
@@ -352,7 +473,8 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             return "0"
 
-    def getmode(self, rigmode):
+    @staticmethod
+    def getmode(rigmode: str) -> str:
         """
         Change what rigctld returned for the mode to the cabrillo mode for logging.
         """
@@ -362,44 +484,79 @@ class MainWindow(QtWidgets.QMainWindow):
             return "PH"
         return "DI"  # All else digital
 
-    def setband(self, theband):
+    def setband(self, theband: str) -> None:
         """
         Takes a band in meters and programatically changes the onscreen dropdown to match.
         """
         self.band_selector.setCurrentIndex(self.band_selector.findText(theband))
         self.changeband()
 
-    def setmode(self, themode):
+    def setmode(self, themode: str) -> None:
         """
         Takes a string for the mode (CW, PH, DI) and programatically changes the onscreen dropdown.
         """
         self.mode_selector.setCurrentIndex(self.mode_selector.findText(themode))
         self.changemode()
 
-    def pollRadio(self):
+    def poll_radio(self) -> None:
         """
-        Poll rigctld to get power band and mode of the radio.
+        Poll rigctld to get band.
         """
-        if self.rigonline:
+        if self.flrig:
             try:
                 newfreq = self.server.rig.get_vfo()
                 newmode = self.server.rig.get_mode()
-                self.radio_icon.setPixmap(
-                    QtGui.QPixmap(self.relpath("icon/radio_green.png"))
-                )
-                # or newrfpower != self.oldrfpower:
+                self.radio_icon.setPixmap(self.radio_green)
                 if newfreq != self.oldfreq or newmode != self.oldmode:
                     self.oldfreq = newfreq
                     self.oldmode = newmode
                     self.setband(str(self.getband(newfreq)))
                     self.setmode(str(self.getmode(newmode)))
-            except:
-                self.rigonline = False
-                self.radio_icon.setPixmap(
-                    QtGui.QPixmap(self.relpath("icon/radio_red.png"))
-                )
+            except socket.error as exception:
+                self.radio_icon.setPixmap(self.radio_red)
+                logging.warning("poll_radio: flrig: %s", exception)
+            return
+        if self.rigonline:
+            try:
+                self.rigctrlsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.rigctrlsocket.connect((self.rigctrlhost, int(self.rigctrlport)))
+                self.rigctrlsocket.settimeout(0.5)
+                self.rigctrlsocket.send(b"f\n")
+                newfreq = self.rigctrlsocket.recv(1024).decode().strip()
+                self.rigctrlsocket.send(b"m\n")
+                newmode = self.rigctrlsocket.recv(1024).decode().strip().split()[0]
+                self.radio_icon.setPixmap(self.radio_green)
+                self.rigctrlsocket.shutdown(socket.SHUT_RDWR)
+                self.rigctrlsocket.close()
+                if newfreq != self.oldfreq or newmode != self.oldmode:
+                    self.oldfreq = newfreq
+                    self.oldmode = newmode
+                    self.setband(str(self.getband(newfreq)))
+                    self.setmode(str(self.getmode(newmode)))
+            except ConnectionRefusedError:
+                logging.warning("poll_radio: ConnectionRefusedError")
 
-    def checkRadio(self):
+    # def poll_radio(self):
+    #    if self.rigonline:
+    #        try:
+    #            newfreq = self.server.rig.get_vfo()
+    #            newmode = self.server.rig.get_mode()
+    #            self.radio_icon.setPixmap(
+    #                QtGui.QPixmap(self.relpath("icon/radio_green.png"))
+    #            )
+    #            # or newrfpower != self.oldrfpower:
+    #            if newfreq != self.oldfreq or newmode != self.oldmode:
+    #                self.oldfreq = newfreq
+    #                self.oldmode = newmode
+    #                self.setband(str(self.getband(newfreq)))
+    #                self.setmode(str(self.getmode(newmode)))
+    #        except:
+    #            self.rigonline = False
+    #            self.radio_icon.setPixmap(
+    #                QtGui.QPixmap(self.relpath("icon/radio_red.png"))
+    #            )
+
+    def check_radio(self):
         """
         Checks to see if rigctld daemon is running.
         """
@@ -409,23 +566,19 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.server = xmlrpc.client.ServerProxy(
                     f"http://{self.rigctrlhost}:{self.rigctrlport}"
                 )
-                self.radio_icon.setPixmap(
-                    QtGui.QPixmap(self.relpath("icon/radio_red.png"))
-                )
-            except:
+                self.radio_icon.setPixmap(self.radio_red)
+            except Error:
                 self.rigonline = False
-                self.radio_icon.setPixmap(
-                    QtGui.QPixmap(self.relpath("icon/radio_grey.png"))
-                )
+                self.radio_icon.setPixmap(self.radio_grey)
         else:
             self.rigonline = False
 
-    def Radio(self):
+    def radio(self):
         """
         Check for connection to rigctld. if it's there, poll it for radio status.
         """
-        self.checkRadio()
-        self.pollRadio()
+        self.check_radio()
+        self.poll_radio()
 
     def flash(self):
         """
@@ -440,7 +593,8 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         app.processEvents()
 
-    def processMacro(self, macro):
+    def process_macro(self, macro):
+        """Process CW macro substitutions"""
         macro = macro.upper()
         macro = macro.replace("{MYCALL}", self.mycall)
         macro = macro.replace("{MYCLASS}", self.myclass)
@@ -449,23 +603,29 @@ class MainWindow(QtWidgets.QMainWindow):
         return macro
 
     def keyPressEvent(self, event):
+        """This overrides Qt key event."""
         if event.key() == Qt.Key_Escape:
             self.clearinputs()
         if event.key() == Qt.Key_Tab:
             if self.section_entry.hasFocus():
-                logging.debug(f"From section")
+                logging.debug("From section")
                 self.callsign_entry.setFocus()
                 self.callsign_entry.deselect()
                 self.callsign_entry.end(False)
                 return
             if self.class_entry.hasFocus():
-                logging.debug(f"From class")
+                logging.debug("From class")
                 self.section_entry.setFocus()
                 self.section_entry.deselect()
                 self.section_entry.end(False)
                 return
             if self.callsign_entry.hasFocus():
-                logging.debug(f"From callsign")
+                logging.debug("From callsign")
+                cse = self.callsign_entry.text()
+                if len(cse):
+                    if cse[0] == ".":
+                        self.keyboardcommand(cse)
+                        return
                 self.class_entry.setFocus()
                 self.class_entry.deselect()
                 self.class_entry.end(False)
@@ -496,51 +656,65 @@ class MainWindow(QtWidgets.QMainWindow):
             self.sendf12()
 
     def sendcw(self, texttosend):
+        """Sends text via XMLRPC to external CW server"""
         with ServerProxy(self.keyerserver) as proxy:
             try:
                 proxy.k1elsendstring(texttosend)
-            except Error as e:
-                logging.debug(f"{self.keyerserver}, xmlrpc error: {e}")
+            except Error as exception:
+                logging.debug("%s, xmlrpc error: %s", self.keyerserver, exception)
             except ConnectionRefusedError:
-                logging.debug(f"{self.keyerserver}, xmlrpc Connection Refused")
+                logging.debug("%s, xmlrpc Connection Refused", self.keyerserver)
 
     def sendf1(self):
-        self.sendcw(self.processMacro(self.F1.toolTip()))
+        """Sends CW macro"""
+        self.sendcw(self.process_macro(self.F1.toolTip()))
 
     def sendf2(self):
-        self.sendcw(self.processMacro(self.F2.toolTip()))
+        """Sends CW macro"""
+        self.sendcw(self.process_macro(self.F2.toolTip()))
 
     def sendf3(self):
-        self.sendcw(self.processMacro(self.F3.toolTip()))
+        """Sends CW macro"""
+        self.sendcw(self.process_macro(self.F3.toolTip()))
 
     def sendf4(self):
-        self.sendcw(self.processMacro(self.F4.toolTip()))
+        """Sends CW macro"""
+        self.sendcw(self.process_macro(self.F4.toolTip()))
 
     def sendf5(self):
-        self.sendcw(self.processMacro(self.F5.toolTip()))
+        """Sends CW macro"""
+        self.sendcw(self.process_macro(self.F5.toolTip()))
 
     def sendf6(self):
-        self.sendcw(self.processMacro(self.F6.toolTip()))
+        """Sends CW macro"""
+        self.sendcw(self.process_macro(self.F6.toolTip()))
 
     def sendf7(self):
-        self.sendcw(self.processMacro(self.F7.toolTip()))
+        """Sends CW macro"""
+        self.sendcw(self.process_macro(self.F7.toolTip()))
 
     def sendf8(self):
-        self.sendcw(self.processMacro(self.F8.toolTip()))
+        """Sends CW macro"""
+        self.sendcw(self.process_macro(self.F8.toolTip()))
 
     def sendf9(self):
-        self.sendcw(self.processMacro(self.F9.toolTip()))
+        """Sends CW macro"""
+        self.sendcw(self.process_macro(self.F9.toolTip()))
 
     def sendf10(self):
-        self.sendcw(self.processMacro(self.F10.toolTip()))
+        """Sends CW macro"""
+        self.sendcw(self.process_macro(self.F10.toolTip()))
 
     def sendf11(self):
-        self.sendcw(self.processMacro(self.F11.toolTip()))
+        """Sends CW macro"""
+        self.sendcw(self.process_macro(self.F11.toolTip()))
 
     def sendf12(self):
-        self.sendcw(self.processMacro(self.F12.toolTip()))
+        """Sends CW macro"""
+        self.sendcw(self.process_macro(self.F12.toolTip()))
 
     def clearinputs(self):
+        """Clears the text input fields and sets focus to callsign field."""
         self.callsign_entry.clear()
         self.class_entry.clear()
         self.section_entry.clear()
@@ -567,6 +741,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.writepreferences()
 
     def changemycall(self):
+        """Changes the users callsign"""
         text = self.mycallEntry.text()
         if len(text):
             if text[-1] == " ":
@@ -584,6 +759,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.writepreferences()
 
     def changemyclass(self):
+        """Changes the users class"""
         text = self.myclassEntry.text()
         if len(text):
             if text[-1] == " ":
@@ -599,6 +775,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.writepreferences()
 
     def changemysection(self):
+        """Changes the stored section."""
         text = self.mysectionEntry.text()
         if len(text):
             if text[-1] == " ":
@@ -613,6 +790,88 @@ class MainWindow(QtWidgets.QMainWindow):
             self.mysectionEntry.setStyleSheet("border: 1px solid red;")
         self.writepreferences()
 
+    def keyboardcommand(self, text):
+        """Process . commands entered in the callsign field"""
+        self.callsign_entry.setText("")
+        try:
+            if text[1] == "Q":
+                self.close()
+                return
+            if text[1] == "P":
+                self.power_selector.setValue(int(text[2:]))
+                return
+            if text[1] == "E":
+                qtoedit = int(text[2:])
+                try:
+                    with sqlite3.connect(self.database) as conn:
+                        cursor = conn.cursor()
+                        cursor.execute(f"select * from contacts where id={qtoedit}")
+                        log = cursor.fetchone()
+                        (
+                            logid,
+                            hiscall,
+                            hisclass,
+                            hissection,
+                            the_datetime,
+                            band,
+                            mode,
+                            power,
+                            _,
+                            _,
+                        ) = log
+                        self.linetopass = (
+                            f"{str(logid).rjust(3,'0')} {hiscall.ljust(10)} {hisclass.rjust(3)} "
+                            f"{hissection.rjust(3)} {the_datetime} {str(band).rjust(3)} "
+                            f"{mode} {str(power).rjust(3)}"
+                        )
+                        dialog = EditQsoDialog(self)
+                        dialog.setup(self.linetopass, self.database)
+                        dialog.change.lineChanged.connect(self.qsoedited)
+                        dialog.open()
+                except sqlite3.Error:
+                    pass
+                return
+                # attention
+            if text[1] == "M":
+                self.setmode(text[2:])
+                return
+            if text[1] == "B":
+                self.setband(text[2:])
+                return
+            if text[1] == "K":
+                self.mycallEntry.setText(text[2:])
+                self.changemycall()
+                return
+            if text[1] == "C":
+                self.mysectionEntry.setText(text[2:])
+                self.changemyclass()
+                return
+            if text[1] == "S":
+                self.mysectionEntry.setText(text[2:])
+                self.changemysection()
+                return
+            if text[1] == "1":
+                self.claim_alt_power(0)
+                return
+            if text[1] == "2":
+                self.claim_outdoors(0)
+                return
+            if text[1] == "3":
+                self.claim_not_at_home(0)
+                return
+            if text[1] == "4":
+                self.claim_satellite(0)
+                return
+            if text[1] == "L":
+                self.generate_logs()
+                return
+            if text[1] == "H":
+                pass  # help
+            if text[1] == "":
+                pass  #
+        except IndexError:
+            pass
+
     def calltest(self):
         """
         Cleans callsign of spaces and strips non alphanumeric or '/' characters.
@@ -620,17 +879,22 @@ class MainWindow(QtWidgets.QMainWindow):
         text = self.callsign_entry.text()
         if len(text):
             if text[-1] == " ":
+                stripped = text.strip()
                 self.callsign_entry.setText(text.strip())
+                if len(stripped):
+                    if stripped[0] == ".":
+                        self.keyboardcommand(stripped)
+                        return
                 self.class_entry.setFocus()
                 self.class_entry.deselect()
             else:
                 washere = self.callsign_entry.cursorPosition()
                 cleaned = "".join(
-                    ch for ch in text if ch.isalnum() or ch == "/"
+                    ch for ch in text if ch.isalnum() or ch == "/" or ch == "."
                 ).upper()
                 self.callsign_entry.setText(cleaned)
                 self.callsign_entry.setCursorPosition(washere)
-                self.superCheck()
+                self.super_check()
 
     def classtest(self):
         """
@@ -664,20 +928,21 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.section_entry.setText(cleaned)
                 self.section_entry.setCursorPosition(washere)
 
-    def create_DB(self):
+    def create_db(self) -> None:
         """create a database and table if it does not exist"""
         try:
             with sqlite3.connect(self.database) as conn:
-                c = conn.cursor()
+                cursor = conn.cursor()
                 sql_table = """ CREATE TABLE IF NOT EXISTS contacts (id INTEGER PRIMARY KEY, callsign text NOT NULL, class text NOT NULL, section text NOT NULL, date_time text NOT NULL, band text NOT NULL, mode text NOT NULL, power INTEGER NOT NULL, grid text NOT NULL, opname text NOT NULL); """
-                c.execute(sql_table)
+                cursor.execute(sql_table)
                 sql_table = """ CREATE TABLE IF NOT EXISTS preferences (id INTEGER PRIMARY KEY, mycallsign TEXT DEFAULT '', myclass TEXT DEFAULT '', mysection TEXT DEFAULT '', power TEXT DEFAULT '0', altpower INTEGER DEFAULT 0, outdoors INTEGER DEFAULT 0, notathome INTEGER DEFAULT 0, satellite INTEGER DEFAULT 0, qrzusername TEXT DEFAULT 'w1aw', qrzpassword TEXT default 'secret', qrzurl TEXT DEFAULT 'https://xmldata.qrz.com/xml/',cloudlogapi TEXT DEFAULT 'cl12345678901234567890', cloudlogurl TEXT DEFAULT 'http://www.yoururl.com/Cloudlog/index.php/api/qso', useqrz INTEGER DEFAULT 0, usecloudlog INTEGER DEFAULT 0, userigcontrol INTEGER DEFAULT 0, rigcontrolip TEXT DEFAULT '127.0.0.1', rigcontrolport TEXT DEFAULT '12345',markerfile TEXT default 'secret', usemarker INTEGER DEFAULT 0, usehamdb INTEGER DEFAULT 0); """
-                c.execute(sql_table)
+                cursor.execute(sql_table)
                 conn.commit()
-        except Error as e:
-            logging.critical(f"create_DB: Unable to create database: {e}")
+        except Error as exception:
+            logging.critical("create_db: Unable to create database: %s", exception)
 
-    def highlighted(self, state):
+    @staticmethod
+    def highlighted(state: bool) -> str:
         """
         Return CSS foreground highlight color if state is true,
         otherwise return an empty string.
@@ -689,15 +954,15 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def readpreferences(self):
         """
-        Restore preferences if they exist, otherwise create some sane defaults.
+        Read preferences if they exist, otherwise create some sane defaults.
         """
         try:
             with sqlite3.connect(self.database) as conn:
-                c = conn.cursor()
-                c.execute("select * from preferences where id = 1")
-                pref = c.fetchall()
+                cursor = conn.cursor()
+                cursor.execute("select * from preferences where id = 1")
+                pref = cursor.fetchall()
                 if len(pref) > 0:
-                    for x in pref:
+                    for preferences in pref:
                         (
                             _,
                             self.mycall,
@@ -721,7 +986,7 @@ class MainWindow(QtWidgets.QMainWindow):
                             self.markerfile,
                             self.usemarker,
                             self.usehamdb,
-                        ) = x
+                        ) = preferences
                         self.altpower = bool(self.altpower)
                         self.altpowerButton.setStyleSheet(
                             self.highlighted(self.altpower)
@@ -744,16 +1009,33 @@ class MainWindow(QtWidgets.QMainWindow):
                         self.power_selector.setValue(int(self.power))
                         self.usecloudlog = bool(usecloudlog)
                         self.useqrz = bool(useqrz)
-                        self.userigctl = bool(userigcontrol)
+                        self.flrig = False
+                        self.userigctl = False
+                        if userigcontrol == 1:
+                            self.flrig = False
+                            self.userigctl = True
+                        if userigcontrol == 2:
+                            self.flrig = True
+                            self.userigctl = False
                         self.usemarker = bool(self.usemarker)
                         self.usehamdb = bool(self.usehamdb)
                 else:
-                    sql = f"INSERT INTO preferences(id, mycallsign, myclass, mysection, power, altpower, outdoors, notathome, satellite, markerfile, usemarker, usehamdb) VALUES(1,'{self.mycall}','{self.myclass}','{self.mysection}','{self.power}',{int(self.altpower)},{int(self.outdoors)},{int(self.notathome)},{int(self.satellite)},'{self.markerfile}',{int(self.usemarker)},{int(self.usehamdb)})"
-                    c.execute(sql)
+                    sql = (
+                        "INSERT INTO preferences(id, mycallsign, myclass, "
+                        "mysection, power, altpower, outdoors, notathome, "
+                        "satellite, markerfile, usemarker, usehamdb) "
+                        f"VALUES(1,'{self.mycall}','{self.myclass}',"
+                        f"'{self.mysection}','{self.power}',"
+                        f"{int(self.altpower)},{int(self.outdoors)},"
+                        f"{int(self.notathome)},{int(self.satellite)},"
+                        f"'{self.markerfile}',{int(self.usemarker)},"
+                        f"{int(self.usehamdb)})"
+                    )
+                    cursor.execute(sql)
                     conn.commit()
                     self.power_selector.setValue(int(self.power))
-        except Error as e:
-            logging.critical(f"readpreferences: {e}")
+        except sqlite3.Error as exception:
+            logging.critical("readpreferences: %s", exception)
 
     def writepreferences(self):
         """
@@ -761,21 +1043,43 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         try:
             with sqlite3.connect(self.database) as conn:
-                sql = f"UPDATE preferences SET mycallsign = '{self.mycall}', myclass = '{self.myclass}', mysection = '{self.mysection}', power = '{self.power_selector.value()}', altpower = {int(self.altpower)}, outdoors = {int(self.outdoors)}, notathome = {int(self.notathome)}, satellite = {int(self.satellite)}, markerfile = '{self.markerfile}', usemarker = {int(self.usemarker)}, usehamdb = {int(self.usehamdb)} WHERE id = 1"
+                sql = (
+                    f"UPDATE preferences SET "
+                    f"mycallsign = '{self.mycall}', "
+                    f"myclass = '{self.myclass}', "
+                    f"mysection = '{self.mysection}', "
+                    f"power = '{self.power_selector.value()}', "
+                    f"altpower = {int(self.altpower)}, "
+                    f"outdoors = {int(self.outdoors)}, "
+                    f"notathome = {int(self.notathome)}, "
+                    f"satellite = {int(self.satellite)}, "
+                    f"markerfile = '{self.markerfile}', "
+                    f"usemarker = {int(self.usemarker)}, "
+                    f"usehamdb = {int(self.usehamdb)} "
+                    "WHERE id = 1"
+                )
                 cur = conn.cursor()
                 cur.execute(sql)
                 conn.commit()
-        except Error as e:
-            logging.critical(f"writepreferences: {e}")
+        except sqlite3.Error as exception:
+            logging.critical("writepreferences: %s", exception)
 
     def log_contact(self):
+        """Log a contact to the db."""
         if (
             len(self.callsign_entry.text()) == 0
             or len(self.class_entry.text()) == 0
             or len(self.section_entry.text()) == 0
         ):
             return
-        grid, opname = self.qrzlookup(self.callsign_entry.text())
+        if self.useqrz:
+            grid, opname, _, error = self.qrz.lookup(self.callsign_entry.text())
+        if error:
+            logging.info("log_contact: lookup error %s", error)
+        if not grid:
+            grid = ""
+        if not opname:
+            opname = ""
         contact = (
             self.callsign_entry.text(),
             self.class_entry.text(),
@@ -788,13 +1092,18 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         try:
             with sqlite3.connect(self.database) as conn:
-                sql = "INSERT INTO contacts(callsign, class, section, date_time, band, mode, power, grid, opname) VALUES(?,?,?,datetime('now'),?,?,?,?,?)"
+                sql = (
+                    "INSERT INTO "
+                    "contacts(callsign, class, section, date_time, "
+                    "band, mode, power, grid, opname) "
+                    "VALUES(?,?,?,datetime('now'),?,?,?,?,?)"
+                )
                 cur = conn.cursor()
-                logging.info(f"log_contact: {sql} : {contact}")
+                logging.info("log_contact: %s : %s", sql, contact)
                 cur.execute(sql, contact)
                 conn.commit()
-        except Error as e:
-            logging.critical(f"log_ontact: {e}")
+        except sqlite3.Error as exception:
+            logging.critical("log_ontact: %s", exception)
         self.sections()
         self.stats()
         self.updatemarker()
@@ -802,53 +1111,56 @@ class MainWindow(QtWidgets.QMainWindow):
         self.clearinputs()
         self.postcloudlog()
 
-    def stats(self):
+    def stats(self) -> None:
         """
         Get an idea of how you're doing points wise.
         """
         try:
             with sqlite3.connect(self.database) as conn:
-                c = conn.cursor()
-                c.execute("select count(*) from contacts where mode = 'CW'")
-                self.Total_CW.setText(str(c.fetchone()[0]))
-                c.execute("select count(*) from contacts where mode = 'PH'")
-                self.Total_Phone.setText(str(c.fetchone()[0]))
-                c.execute("select count(*) from contacts where mode = 'DI'")
-                self.Total_Digital.setText(str(c.fetchone()[0]))
-                c.execute("select distinct band, mode from contacts")
-                self.bandmodemult = len(c.fetchall())
-                c.execute(
-                    "SELECT count(*) FROM contacts where datetime(date_time) >=datetime('now', '-15 Minutes')"
+                cursor = conn.cursor()
+                cursor.execute("select count(*) from contacts where mode = 'CW'")
+                self.Total_CW.setText(str(cursor.fetchone()[0]))
+                cursor.execute("select count(*) from contacts where mode = 'PH'")
+                self.Total_Phone.setText(str(cursor.fetchone()[0]))
+                cursor.execute("select count(*) from contacts where mode = 'DI'")
+                self.Total_Digital.setText(str(cursor.fetchone()[0]))
+                cursor.execute("select distinct band, mode from contacts")
+                self.bandmodemult = len(cursor.fetchall())
+                cursor.execute(
+                    "SELECT count(*) FROM contacts "
+                    "where datetime(date_time) >=datetime('now', '-15 Minutes')"
                 )
-                self.QSO_Last15.setText(str(c.fetchone()[0]))
-                c.execute(
-                    "SELECT count(*) FROM contacts where datetime(date_time) >=datetime('now', '-1 Hours')"
+                self.QSO_Last15.setText(str(cursor.fetchone()[0]))
+                cursor.execute(
+                    "SELECT count(*) FROM contacts where "
+                    "datetime(date_time) >=datetime('now', '-1 Hours')"
                 )
-                self.QSO_PerHour.setText(str(c.fetchone()[0]))
+                self.QSO_PerHour.setText(str(cursor.fetchone()[0]))
                 self.QSO_Points.setText(str(self.calcscore()))
-        except Error as e:
-            logging.critical(f"stats: {e}")
+        except sqlite3.Error as exception:
+            logging.critical("stats: %s", exception)
 
-    def calcscore(self):
+    def calcscore(self) -> int:
         """
-        Return our current score based on operating power, band / mode multipliers and types of contacts.
+        Return our current score based on operating power,
+        band / mode multipliers and types of contacts.
         """
         self.qrpcheck()
         try:
             with sqlite3.connect(self.database) as conn:
-                c = conn.cursor()
-                c.execute("select count(*) as cw from contacts where mode = 'CW'")
-                cw = str(c.fetchone()[0])
-                c.execute("select count(*) as ph from contacts where mode = 'PH'")
-                ph = str(c.fetchone()[0])
-                c.execute("select count(*) as di from contacts where mode = 'DI'")
-                di = str(c.fetchone()[0])
-                c.execute("select distinct band, mode from contacts")
-                self.bandmodemult = len(c.fetchall())
-        except Error as e:
-            logging.critical(f"calcscore: {e}")
+                cursor = conn.cursor()
+                cursor.execute("select count(*) as cw from contacts where mode = 'CW'")
+                morse = str(cursor.fetchone()[0])
+                cursor.execute("select count(*) as ph from contacts where mode = 'PH'")
+                phone = str(cursor.fetchone()[0])
+                cursor.execute("select count(*) as di from contacts where mode = 'DI'")
+                digital = str(cursor.fetchone()[0])
+                cursor.execute("select distinct band, mode from contacts")
+                self.bandmodemult = len(cursor.fetchall())
+        except Error as exception:
+            logging.critical("calcscore: %s", exception)
             return 0
-        self.score = (int(cw) * 2) + int(ph) + (int(di) * 2)
+        self.score = (int(morse) * 2) + int(phone) + (int(digital) * 2)
         self.basescore = self.score
         self.powermult = 0  # 2022 rules, no highpower allowed
         if self.qrp:
@@ -872,44 +1184,61 @@ class MainWindow(QtWidgets.QMainWindow):
         """qrp = 5W cw, 10W ph and di, highpower greater than 100W"""
         try:
             with sqlite3.connect(self.database) as conn:
-                c = conn.cursor()
-                c.execute(
+                cursor = conn.cursor()
+                cursor.execute(
                     "select count(*) as qrpc from contacts where mode = 'CW' and power > 5"
                 )
-                log = c.fetchall()
+                log = cursor.fetchall()
                 qrpc = list(log[0])[0]
-                c.execute(
+                cursor.execute(
                     "select count(*) as qrpp from contacts where mode = 'PH' and power > 10"
                 )
-                log = c.fetchall()
+                log = cursor.fetchall()
                 qrpp = list(log[0])[0]
-                c.execute(
+                cursor.execute(
                     "select count(*) as qrpd from contacts where mode = 'DI' and power > 10"
                 )
-                log = c.fetchall()
+                log = cursor.fetchall()
                 qrpd = list(log[0])[0]
-                c.execute(
+                cursor.execute(
                     "select count(*) as highpower from contacts where power > 100"
                 )
-                log = c.fetchall()
+                log = cursor.fetchall()
                 self.highpower = bool(list(log[0])[0])
                 self.qrp = not (qrpc + qrpp + qrpd)
-        except Error as e:
-            logging.critical(f"qrpcheck: {e}")
+        except Error as exception:
+            logging.critical("qrpcheck: %s", exception)
 
     def logwindow(self):
+        """Populated the log window with contacts stored in the database."""
+
         self.listWidget.clear()
         try:
             with sqlite3.connect(self.database) as conn:
-                c = conn.cursor()
-                c.execute("select * from contacts order by date_time desc")
-                log = c.fetchall()
-        except Error as e:
-            logging.critical(f"logwindow: {e}")
+                cursor = conn.cursor()
+                cursor.execute("select * from contacts order by date_time desc")
+                log = cursor.fetchall()
+        except Error as exception:
+            logging.critical("logwindow: %s", exception)
             return
         for x in log:
-            logid, hiscall, hisclass, hissection, datetime, band, mode, power, _, _ = x
-            logline = f"{str(logid).rjust(3,'0')} {hiscall.ljust(10)} {hisclass.rjust(3)} {hissection.rjust(3)} {datetime} {str(band).rjust(3)} {mode} {str(power).rjust(3)}"
+            (
+                logid,
+                hiscall,
+                hisclass,
+                hissection,
+                the_date_and_time,
+                band,
+                mode,
+                power,
+                _,
+                _,
+            ) = x
+            logline = (
+                f"{str(logid).rjust(3,'0')} {hiscall.ljust(10)} {hisclass.rjust(3)} "
+                f"{hissection.rjust(3)} {the_date_and_time} {str(band).rjust(3)} {mode} "
+                f"{str(power).rjust(3)}"
+            )
             self.listWidget.addItem(logline)
 
     def qsoedited(self):
@@ -926,38 +1255,43 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         item = self.listWidget.currentItem()
         self.linetopass = item.text()
-        dialog = editQSODialog(self)
+        dialog = EditQsoDialog(self)
         dialog.setup(self.linetopass, self.database)
         dialog.change.lineChanged.connect(self.qsoedited)
         dialog.open()
 
-    def readSections(self):
+    def read_sections(self):
         """
         Reads in the ARRL sections into some internal dictionaries.
         """
         try:
-            with open(self.relpath("arrl_sect.dat"), "r") as fd:  # read section data
+            with open(
+                self.relpath("arrl_sect.dat"), "r", encoding="utf-8"
+            ) as file_descriptor:  # read section data
                 while 1:
-                    ln = fd.readline().strip()  # read a line and put in db
-                    if not ln:
+                    line = (
+                        file_descriptor.readline().strip()
+                    )  # read a line and put in db
+                    if not line:
                         break
-                    if ln[0] == "#":
+                    if line[0] == "#":
                         continue
                     try:
-                        _, st, canum, abbrev, name = str.split(ln, None, 4)
+                        _, state, canum, abbrev, name = str.split(line, None, 4)
                         self.secName[abbrev] = abbrev + " " + name + " " + canum
-                        self.secState[abbrev] = st
+                        self.secState[abbrev] = state
                         for i in range(len(abbrev) - 1):
-                            p = abbrev[: -i - 1]
-                            self.secPartial[p] = 1
-                    except ValueError as e:
-                        logging.warning(f"readSections: {e}")
-        except IOError as e:
-            logging.critical(f"readSections: read error: {e}")
+                            partial = abbrev[: -i - 1]
+                            self.secPartial[partial] = 1
+                    except ValueError as exception:
+                        logging.warning("read_sections: %s", exception)
+        except IOError as exception:
+            logging.critical("read_sections: read error: %s", exception)
 
-    def sectionCheck(self):
+    def section_check(self):
         """
-        Shows you the possible section matches based on what you have typed in the section input filed.
+        Shows you the possible section matches based on
+        what you have typed in the section input filed.
         """
         self.infobox.clear()
         self.infobox.setTextColor(QtGui.QColor(211, 215, 207))
@@ -969,18 +1303,20 @@ class MainWindow(QtWidgets.QMainWindow):
         for xxx in xx:
             self.infobox.insertPlainText(self.secName[xxx] + "\n")
 
-    def readSCP(self):
+    def read_scp(self):
         """
         Reads in a list of known contesters into an internal dictionary
         """
         try:
-            with open(self.relpath("MASTER.SCP"), "r") as f:
-                self.scp = f.readlines()
+            with open(
+                self.relpath("MASTER.SCP"), "r", encoding="utf-8"
+            ) as file_descriptor:
+                self.scp = file_descriptor.readlines()
                 self.scp = list(map(lambda x: x.strip(), self.scp))
-        except IOError as e:
-            logging.critical(f"readSCP: read error: {e}")
+        except IOError as exception:
+            logging.critical("read_scp: read error: %s", exception)
 
-    def superCheck(self):
+    def super_check(self):
         """
         Performs a supercheck partial on the callsign entered in the field.
         """
@@ -989,24 +1325,26 @@ class MainWindow(QtWidgets.QMainWindow):
         acall = self.callsign_entry.text()
         if len(acall) > 2:
             matches = list(filter(lambda x: x.startswith(acall), self.scp))
-            for x in matches:
-                self.infobox.insertPlainText(x + " ")
+            for match in matches:
+                self.infobox.insertPlainText(match + " ")
 
-    def dupCheck(self):
+    def dup_check(self) -> None:
+        """checks to see if a contact you're entering will be a dup."""
         acall = self.callsign_entry.text()
         self.infobox.clear()
         try:
             with sqlite3.connect(self.database) as conn:
-                c = conn.cursor()
-                c.execute(
-                    f"select callsign, class, section, band, mode from contacts where callsign like '{acall}' order by band"
+                cursor = conn.cursor()
+                cursor.execute(
+                    f"select callsign, class, section, band, mode "
+                    f"from contacts where callsign like '{acall}' order by band"
                 )
-                log = c.fetchall()
-        except Error as e:
-            logging.critical(f"dupCheck: {e}")
+                log = cursor.fetchall()
+        except sqlite3.Error as exception:
+            logging.critical("dup_check: %s", exception)
             return
-        for x in log:
-            hiscall, hisclass, hissection, hisband, hismode = x
+        for contact in log:
+            hiscall, hisclass, hissection, hisband, hismode = contact
             if len(self.class_entry.text()) == 0:
                 self.class_entry.setText(hisclass)
             if len(self.section_entry.text()) == 0:
@@ -1020,14 +1358,15 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.infobox.setTextColor(QtGui.QColor(211, 215, 207))
             self.infobox.insertPlainText(f"{hiscall}: {hisband} {hismode}{dupetext}\n")
 
-    def workedSections(self):
+    def sections_worked(self) -> None:
+        """Generates a list of sections worked."""
         try:
             with sqlite3.connect(self.database) as conn:
-                c = conn.cursor()
-                c.execute("select distinct section from contacts")
-                all_rows = c.fetchall()
-        except Error as e:
-            logging.critical(f"workedSections: {e}")
+                cursor = conn.cursor()
+                cursor.execute("select distinct section from contacts")
+                all_rows = cursor.fetchall()
+        except sqlite3.Error as exception:
+            logging.critical("sections_worked: %s", exception)
             return
         self.wrkdsections = str(all_rows)
         self.wrkdsections = (
@@ -1038,7 +1377,7 @@ class MainWindow(QtWidgets.QMainWindow):
             .split(",")
         )
 
-    def workedSection(self, section):
+    def worked_section(self, section: str) -> str:
         """
         Return CSS foreground value for section based on if it has been worked.
         """
@@ -1047,113 +1386,119 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             return "color: rgb(136, 138, 133);"
 
-    def sectionsCol1(self):
-        self.Section_DX.setStyleSheet(self.workedSection("DX"))
-        self.Section_CT.setStyleSheet(self.workedSection("CT"))
-        self.Section_RI.setStyleSheet(self.workedSection("RI"))
-        self.Section_EMA.setStyleSheet(self.workedSection("EMA"))
-        self.Section_VT.setStyleSheet(self.workedSection("VT"))
-        self.Section_ME.setStyleSheet(self.workedSection("ME"))
-        self.Section_WMA.setStyleSheet(self.workedSection("WMA"))
-        self.Section_NH.setStyleSheet(self.workedSection("NH"))
-        self.Section_ENY.setStyleSheet(self.workedSection("ENY"))
-        self.Section_NNY.setStyleSheet(self.workedSection("NNY"))
-        self.Section_NLI.setStyleSheet(self.workedSection("NLI"))
-        self.Section_SNJ.setStyleSheet(self.workedSection("SNJ"))
-        self.Section_NNJ.setStyleSheet(self.workedSection("NNJ"))
-        self.Section_WNY.setStyleSheet(self.workedSection("WNY"))
+    def sections_column_1(self) -> None:
+        """Highlights the sections worked in column 1"""
+        self.Section_DX.setStyleSheet(self.worked_section("DX"))
+        self.Section_CT.setStyleSheet(self.worked_section("CT"))
+        self.Section_RI.setStyleSheet(self.worked_section("RI"))
+        self.Section_EMA.setStyleSheet(self.worked_section("EMA"))
+        self.Section_VT.setStyleSheet(self.worked_section("VT"))
+        self.Section_ME.setStyleSheet(self.worked_section("ME"))
+        self.Section_WMA.setStyleSheet(self.worked_section("WMA"))
+        self.Section_NH.setStyleSheet(self.worked_section("NH"))
+        self.Section_ENY.setStyleSheet(self.worked_section("ENY"))
+        self.Section_NNY.setStyleSheet(self.worked_section("NNY"))
+        self.Section_NLI.setStyleSheet(self.worked_section("NLI"))
+        self.Section_SNJ.setStyleSheet(self.worked_section("SNJ"))
+        self.Section_NNJ.setStyleSheet(self.worked_section("NNJ"))
+        self.Section_WNY.setStyleSheet(self.worked_section("WNY"))
 
-    def sectionsCol2(self):
-        self.Section_DE.setStyleSheet(self.workedSection("DE"))
-        self.Section_MDC.setStyleSheet(self.workedSection("MDC"))
-        self.Section_EPA.setStyleSheet(self.workedSection("EPA"))
-        self.Section_WPA.setStyleSheet(self.workedSection("WPA"))
-        self.Section_AL.setStyleSheet(self.workedSection("AL"))
-        self.Section_SC.setStyleSheet(self.workedSection("SC"))
-        self.Section_GA.setStyleSheet(self.workedSection("GA"))
-        self.Section_SFL.setStyleSheet(self.workedSection("SFL"))
-        self.Section_KY.setStyleSheet(self.workedSection("KY"))
-        self.Section_TN.setStyleSheet(self.workedSection("TN"))
-        self.Section_NC.setStyleSheet(self.workedSection("NC"))
-        self.Section_VA.setStyleSheet(self.workedSection("VA"))
-        self.Section_NFL.setStyleSheet(self.workedSection("NFL"))
-        self.Section_VI.setStyleSheet(self.workedSection("VI"))
-        self.Section_PR.setStyleSheet(self.workedSection("PR"))
-        self.Section_WCF.setStyleSheet(self.workedSection("WCF"))
+    def sections_column_2(self) -> None:
+        """Highlights the sections worked in column 2"""
+        self.Section_DE.setStyleSheet(self.worked_section("DE"))
+        self.Section_MDC.setStyleSheet(self.worked_section("MDC"))
+        self.Section_EPA.setStyleSheet(self.worked_section("EPA"))
+        self.Section_WPA.setStyleSheet(self.worked_section("WPA"))
+        self.Section_AL.setStyleSheet(self.worked_section("AL"))
+        self.Section_SC.setStyleSheet(self.worked_section("SC"))
+        self.Section_GA.setStyleSheet(self.worked_section("GA"))
+        self.Section_SFL.setStyleSheet(self.worked_section("SFL"))
+        self.Section_KY.setStyleSheet(self.worked_section("KY"))
+        self.Section_TN.setStyleSheet(self.worked_section("TN"))
+        self.Section_NC.setStyleSheet(self.worked_section("NC"))
+        self.Section_VA.setStyleSheet(self.worked_section("VA"))
+        self.Section_NFL.setStyleSheet(self.worked_section("NFL"))
+        self.Section_VI.setStyleSheet(self.worked_section("VI"))
+        self.Section_PR.setStyleSheet(self.worked_section("PR"))
+        self.Section_WCF.setStyleSheet(self.worked_section("WCF"))
 
-    def sectionsCol3(self):
-        self.Section_AR.setStyleSheet(self.workedSection("AR"))
-        self.Section_NTX.setStyleSheet(self.workedSection("NTX"))
-        self.Section_LA.setStyleSheet(self.workedSection("LA"))
-        self.Section_OK.setStyleSheet(self.workedSection("OK"))
-        self.Section_MS.setStyleSheet(self.workedSection("MS"))
-        self.Section_STX.setStyleSheet(self.workedSection("STX"))
-        self.Section_NM.setStyleSheet(self.workedSection("NM"))
-        self.Section_WTX.setStyleSheet(self.workedSection("WTX"))
-        self.Section_EB.setStyleSheet(self.workedSection("EB"))
-        self.Section_SCV.setStyleSheet(self.workedSection("SCV"))
-        self.Section_LAX.setStyleSheet(self.workedSection("LAX"))
-        self.Section_SDG.setStyleSheet(self.workedSection("SDG"))
-        self.Section_ORG.setStyleSheet(self.workedSection("ORG"))
-        self.Section_SF.setStyleSheet(self.workedSection("SF"))
-        self.Section_PAC.setStyleSheet(self.workedSection("PAC"))
-        self.Section_SJV.setStyleSheet(self.workedSection("SJV"))
-        self.Section_SB.setStyleSheet(self.workedSection("SB"))
-        self.Section_SV.setStyleSheet(self.workedSection("SV"))
+    def sections_column_3(self) -> None:
+        """Highlights the sections worked in column 3"""
+        self.Section_AR.setStyleSheet(self.worked_section("AR"))
+        self.Section_NTX.setStyleSheet(self.worked_section("NTX"))
+        self.Section_LA.setStyleSheet(self.worked_section("LA"))
+        self.Section_OK.setStyleSheet(self.worked_section("OK"))
+        self.Section_MS.setStyleSheet(self.worked_section("MS"))
+        self.Section_STX.setStyleSheet(self.worked_section("STX"))
+        self.Section_NM.setStyleSheet(self.worked_section("NM"))
+        self.Section_WTX.setStyleSheet(self.worked_section("WTX"))
+        self.Section_EB.setStyleSheet(self.worked_section("EB"))
+        self.Section_SCV.setStyleSheet(self.worked_section("SCV"))
+        self.Section_LAX.setStyleSheet(self.worked_section("LAX"))
+        self.Section_SDG.setStyleSheet(self.worked_section("SDG"))
+        self.Section_ORG.setStyleSheet(self.worked_section("ORG"))
+        self.Section_SF.setStyleSheet(self.worked_section("SF"))
+        self.Section_PAC.setStyleSheet(self.worked_section("PAC"))
+        self.Section_SJV.setStyleSheet(self.worked_section("SJV"))
+        self.Section_SB.setStyleSheet(self.worked_section("SB"))
+        self.Section_SV.setStyleSheet(self.worked_section("SV"))
 
-    def sectionsCol4(self):
-        self.Section_AK.setStyleSheet(self.workedSection("AK"))
-        self.Section_NV.setStyleSheet(self.workedSection("NV"))
-        self.Section_AZ.setStyleSheet(self.workedSection("AZ"))
-        self.Section_OR.setStyleSheet(self.workedSection("OR"))
-        self.Section_EWA.setStyleSheet(self.workedSection("EWA"))
-        self.Section_UT.setStyleSheet(self.workedSection("UT"))
-        self.Section_ID.setStyleSheet(self.workedSection("ID"))
-        self.Section_WWA.setStyleSheet(self.workedSection("WWA"))
-        self.Section_MT.setStyleSheet(self.workedSection("MT"))
-        self.Section_WY.setStyleSheet(self.workedSection("WY"))
-        self.Section_MI.setStyleSheet(self.workedSection("MI"))
-        self.Section_WV.setStyleSheet(self.workedSection("WV"))
-        self.Section_OH.setStyleSheet(self.workedSection("OH"))
-        self.Section_IL.setStyleSheet(self.workedSection("IL"))
-        self.Section_WI.setStyleSheet(self.workedSection("WI"))
-        self.Section_IN.setStyleSheet(self.workedSection("IN"))
+    def sections_column_4(self) -> None:
+        """Highlights the sections worked in column 4"""
+        self.Section_AK.setStyleSheet(self.worked_section("AK"))
+        self.Section_NV.setStyleSheet(self.worked_section("NV"))
+        self.Section_AZ.setStyleSheet(self.worked_section("AZ"))
+        self.Section_OR.setStyleSheet(self.worked_section("OR"))
+        self.Section_EWA.setStyleSheet(self.worked_section("EWA"))
+        self.Section_UT.setStyleSheet(self.worked_section("UT"))
+        self.Section_ID.setStyleSheet(self.worked_section("ID"))
+        self.Section_WWA.setStyleSheet(self.worked_section("WWA"))
+        self.Section_MT.setStyleSheet(self.worked_section("MT"))
+        self.Section_WY.setStyleSheet(self.worked_section("WY"))
+        self.Section_MI.setStyleSheet(self.worked_section("MI"))
+        self.Section_WV.setStyleSheet(self.worked_section("WV"))
+        self.Section_OH.setStyleSheet(self.worked_section("OH"))
+        self.Section_IL.setStyleSheet(self.worked_section("IL"))
+        self.Section_WI.setStyleSheet(self.worked_section("WI"))
+        self.Section_IN.setStyleSheet(self.worked_section("IN"))
 
-    def sectionsCol5(self):
-        self.Section_CO.setStyleSheet(self.workedSection("CO"))
-        self.Section_MO.setStyleSheet(self.workedSection("MO"))
-        self.Section_IA.setStyleSheet(self.workedSection("IA"))
-        self.Section_ND.setStyleSheet(self.workedSection("ND"))
-        self.Section_KS.setStyleSheet(self.workedSection("KS"))
-        self.Section_NE.setStyleSheet(self.workedSection("NE"))
-        self.Section_MN.setStyleSheet(self.workedSection("MN"))
-        self.Section_SD.setStyleSheet(self.workedSection("SD"))
-        self.Section_AB.setStyleSheet(self.workedSection("AB"))
-        self.Section_NT.setStyleSheet(self.workedSection("NT"))
-        self.Section_BC.setStyleSheet(self.workedSection("BC"))
-        self.Section_ONE.setStyleSheet(self.workedSection("ONE"))
-        self.Section_GTA.setStyleSheet(self.workedSection("GTA"))
-        self.Section_ONN.setStyleSheet(self.workedSection("ONN"))
-        self.Section_MAR.setStyleSheet(self.workedSection("MAR"))
-        self.Section_ONS.setStyleSheet(self.workedSection("ONS"))
-        self.Section_MB.setStyleSheet(self.workedSection("MB"))
-        self.Section_QC.setStyleSheet(self.workedSection("QC"))
-        self.Section_NL.setStyleSheet(self.workedSection("NL"))
-        self.Section_SK.setStyleSheet(self.workedSection("SK"))
-        self.Section_PE.setStyleSheet(self.workedSection("PE"))
+    def sections_column_5(self) -> None:
+        """Highlights the sections worked in column 5"""
+        self.Section_CO.setStyleSheet(self.worked_section("CO"))
+        self.Section_MO.setStyleSheet(self.worked_section("MO"))
+        self.Section_IA.setStyleSheet(self.worked_section("IA"))
+        self.Section_ND.setStyleSheet(self.worked_section("ND"))
+        self.Section_KS.setStyleSheet(self.worked_section("KS"))
+        self.Section_NE.setStyleSheet(self.worked_section("NE"))
+        self.Section_MN.setStyleSheet(self.worked_section("MN"))
+        self.Section_SD.setStyleSheet(self.worked_section("SD"))
+        self.Section_AB.setStyleSheet(self.worked_section("AB"))
+        self.Section_NT.setStyleSheet(self.worked_section("NT"))
+        self.Section_BC.setStyleSheet(self.worked_section("BC"))
+        self.Section_ONE.setStyleSheet(self.worked_section("ONE"))
+        self.Section_GTA.setStyleSheet(self.worked_section("GTA"))
+        self.Section_ONN.setStyleSheet(self.worked_section("ONN"))
+        self.Section_MAR.setStyleSheet(self.worked_section("MAR"))
+        self.Section_ONS.setStyleSheet(self.worked_section("ONS"))
+        self.Section_MB.setStyleSheet(self.worked_section("MB"))
+        self.Section_QC.setStyleSheet(self.worked_section("QC"))
+        self.Section_NL.setStyleSheet(self.worked_section("NL"))
+        self.Section_SK.setStyleSheet(self.worked_section("SK"))
+        self.Section_PE.setStyleSheet(self.worked_section("PE"))
 
-    def sections(self):
+    def sections(self) -> None:
         """
         Updates onscreen sections highlighting the ones worked.
         """
-        self.workedSections()
-        self.sectionsCol1()
-        self.sectionsCol2()
-        self.sectionsCol3()
-        self.sectionsCol4()
-        self.sectionsCol5()
+        self.sections_worked()
+        self.sections_column_1()
+        self.sections_column_2()
+        self.sections_column_3()
+        self.sections_column_4()
+        self.sections_column_5()
 
-    def claimAltPower(self, _):
+    def claim_alt_power(self, _) -> None:
+        """is called when the Alt Power button is pressed."""
         if self.altpower:
             self.altpower = False
         else:
@@ -1162,7 +1507,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.writepreferences()
         self.stats()
 
-    def claimOutdoors(self, _):
+    def claim_outdoors(self, _) -> None:
+        """Is called when the Outdoors button is pressed."""
         if self.outdoors:
             self.outdoors = False
         else:
@@ -1171,7 +1517,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.writepreferences()
         self.stats()
 
-    def claimNotHome(self, _):
+    def claim_not_at_home(self, _) -> None:
+        """Is called when the Not At Home button is pressed."""
         if self.notathome:
             self.notathome = False
         else:
@@ -1180,7 +1527,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.writepreferences()
         self.stats()
 
-    def claimSatellite(self, _):
+    def claim_satellite(self, _) -> None:
+        """Is called when the satellite button is pressed."""
         if self.satellite:
             self.satellite = False
         else:
@@ -1189,68 +1537,77 @@ class MainWindow(QtWidgets.QMainWindow):
         self.writepreferences()
         self.stats()
 
-    def getBandModeTally(self, band, mode):
+    def get_band_mode_tally(self, band, mode):
         """
-        Returns the amount of contacts and the maximum power used for a particular band/mode combination.
+        Returns the amount of contacts and the maximum power
+        used for a particular band/mode combination.
         """
         try:
             with sqlite3.connect(self.database) as conn:
-                c = conn.cursor()
-                c.execute(
-                    f"select count(*) as tally, MAX(power) as mpow from contacts where band = '{band}' AND mode ='{mode}'"
+                cursor = conn.cursor()
+                cursor.execute(
+                    f"select count(*) as tally, MAX(power) as mpow "
+                    f"from contacts where band = '{band}' AND mode ='{mode}'"
                 )
-                return c.fetchone()
-        except Error as e:
-            logging.critical(f"getBandModeTally: {e}")
+                return cursor.fetchone()
+        except Error as exception:
+            logging.critical("get_band_mode_tally: %s", exception)
 
-    def getbands(self):
+    def getbands(self) -> list:
         """
         Returns a list of bands worked, and an empty list if none worked.
         """
         bandlist = []
         try:
             with sqlite3.connect(self.database) as conn:
-                c = conn.cursor()
-                c.execute("select DISTINCT band from contacts")
-                result = c.fetchall()
-        except Error as e:
-            logging.critical(f"getbands: {e}")
+                cursor = conn.cursor()
+                cursor.execute("select DISTINCT band from contacts")
+                result = cursor.fetchall()
+        except Error as exception:
+            logging.critical("getbands: %s", exception)
             return []
         if result:
-            for returnedBand in result:
-                bandlist.append(returnedBand[0])
+            for returned_band in result:
+                bandlist.append(returned_band[0])
             return bandlist
         return []
 
-    def generateBandModeTally(self):
+    def generate_band_mode_tally(self) -> None:
+        """
+        Creates a Statistics.txt file when the Generate Logs button
+        is pressed. Containing a breakdown of the bands and modes
+        used.
+        """
         bandlist = self.getbands()
         try:
-            with open("Statistics.txt", "w") as f:
-                print("\t\tCW\tPWR\tDI\tPWR\tPH\tPWR", end="\r\n", file=f)
-                print("-" * 60, end="\r\n", file=f)
+            with open("Statistics.txt", "w", encoding="utf-8") as file_descriptor:
+                print("\t\tCW\tPWR\tDI\tPWR\tPH\tPWR", end="\r\n", file=file_descriptor)
+                print("-" * 60, end="\r\n", file=file_descriptor)
                 for band in self.bands:
                     if band in bandlist:
-                        cwt = self.getBandModeTally(band, "CW")
-                        dit = self.getBandModeTally(band, "DI")
-                        pht = self.getBandModeTally(band, "PH")
+                        cwt = self.get_band_mode_tally(band, "CW")
+                        dit = self.get_band_mode_tally(band, "DI")
+                        pht = self.get_band_mode_tally(band, "PH")
                         print(
-                            f"Band:\t{band}\t{cwt[0]}\t{cwt[1]}\t{dit[0]}\t{dit[1]}\t{pht[0]}\t{pht[1]}",
+                            f"Band:\t{band}\t{cwt[0]}\t{cwt[1]}\t"
+                            f"{dit[0]}\t{dit[1]}\t{pht[0]}\t{pht[1]}",
                             end="\r\n",
-                            file=f,
+                            file=file_descriptor,
                         )
-                        print("-" * 60, end="\r\n", file=f)
-        except IOError as e:
-            logging.critical("generateBandModeTally: write error: {e}")
+                        print("-" * 60, end="\r\n", file=file_descriptor)
+        except IOError as exception:
+            logging.critical("generate_band_mode_tally: write error: %s", exception)
 
-    def getState(self, section):
+    def get_state(self, section):
         """
         Returns the US state a section is in, or Bool False if none was found.
+        !todo rewrite this probably with 'if state in self.secState:'
         """
         try:
             state = self.secState[section]
             if state != "--":
                 return state
-        except:
+        except IndexError:
             return False
         return False
 
@@ -1260,22 +1617,22 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         maiden = str(maiden).strip().upper()
 
-        N = len(maiden)
-        if not 8 >= N >= 2 and N % 2 == 0:
+        chars_in_grid_square = len(maiden)
+        if not 8 >= chars_in_grid_square >= 2 and chars_in_grid_square % 2 == 0:
             return 0, 0
 
         lon = (ord(maiden[0]) - 65) * 20 - 180
         lat = (ord(maiden[1]) - 65) * 10 - 90
 
-        if N >= 4:
+        if chars_in_grid_square >= 4:
             lon += (ord(maiden[2]) - 48) * 2
             lat += ord(maiden[3]) - 48
 
-        if N >= 6:
+        if chars_in_grid_square >= 6:
             lon += (ord(maiden[4]) - 65) / 12 + 1 / 24
             lat += (ord(maiden[5]) - 65) / 24 + 1 / 48
 
-        if N >= 8:
+        if chars_in_grid_square >= 8:
             lon += (ord(maiden[6])) * 5.0 / 600
             lat += (ord(maiden[7])) * 2.5 / 600
 
@@ -1289,85 +1646,31 @@ class MainWindow(QtWidgets.QMainWindow):
             filename = str(Path.home()) + "/" + self.markerfile
             try:
                 with sqlite3.connect(self.database) as conn:
-                    c = conn.cursor()
-                    c.execute("select DISTINCT grid from contacts")
-                    x = c.fetchall()
-                if x:
+                    cursor = conn.cursor()
+                    cursor.execute("select DISTINCT grid from contacts")
+                    grids = cursor.fetchall()
+                if grids:
                     lastcolor = ""
-                    with open(filename, "w", encoding="ascii") as f:
-                        islast = len(x) - 1
-                        for count, grid in enumerate(x):
+                    with open(filename, "w", encoding="ascii") as file_descriptor:
+                        islast = len(grids) - 1
+                        for count, grid in enumerate(grids):
                             if count == islast:
                                 lastcolor = "color=Orange"
                             if len(grid[0]) > 1:
                                 lat, lon = self.gridtolatlon(grid[0])
-                                print(f'{lat} {lon} "" {lastcolor}', end="\r\n", file=f)
-            except IOError as e:
-                logging.warning(f"updatemarker: error {e} writing to {filename}")
+                                print(
+                                    f'{lat} {lon} "" {lastcolor}',
+                                    end="\r\n",
+                                    file=file_descriptor,
+                                )
+            except IOError as exception:
+                logging.warning(
+                    "updatemarker: error %s writing to %s", exception, filename
+                )
                 self.infobox.setTextColor(QtGui.QColor(245, 121, 0))
                 self.infobox.insertPlainText(f"Unable to write to {filename}\n")
-            except Error as e:
-                logging.critical(f"updatemarker: db error: {e}")
-
-    def qrzlookup(self, call):
-        grid = False
-        name = False
-        internet_good = self.has_internet()
-        try:
-            if self.qrzsession and self.useqrz and internet_good:
-                payload = {"s": self.qrzsession, "callsign": call}
-                r = requests.get(self.qrzurl, params=payload, timeout=3.0)
-                if not r.text.find("<Key>"):  # key expired get a new one
-                    logging.info("qrzlookup: no key, getting new one.")
-                    self.qrzauth()
-                    if self.qrzsession:
-                        payload = {"s": self.qrzsession, "callsign": call}
-                        r = requests.get(self.qrzurl, params=payload, timeout=3.0)
-                grid, name = self.parseLookup(r)
-            elif self.usehamdb and internet_good:
-                logging.info("qrzlookup: using hamdb for the lookup.")
-                r = requests.get(
-                    f"http://api.hamdb.org/{call}/xml/k6gtewfdlogger", timeout=3.0
-                )
-                grid, name = self.parseLookup(r)
-        except:
-            logging.warning("qrzlookup: lookup failed.")
-            self.infobox.insertPlainText(f"Something Smells...\n")
-        return grid, name
-
-    def parseLookup(self, r):
-        """
-        Returns gridsquare and name for a callsign looked up by qrz or hamdb.
-        Or False for both if none found or error.
-        """
-        grid = False
-        name = False
-        try:
-            if r.status_code == 200:
-                if r.text.find("<Error>") > 0:
-                    errorText = r.text[
-                        r.text.find("<Error>") + 7 : r.text.find("</Error>")
-                    ]
-                    logging.warning(f"parseLookup: {errorText}")
-                    self.infobox.insertPlainText(f"\nQRZ/HamDB Error: {errorText}\n")
-                if r.text.find("<grid>") > 0:
-                    grid = r.text[r.text.find("<grid>") + 6 : r.text.find("</grid>")]
-                if r.text.find("<fname>") > 0:
-                    name = r.text[r.text.find("<fname>") + 7 : r.text.find("</fname>")]
-                if r.text.find("<name>") > 0:
-                    if not name:
-                        name = r.text[
-                            r.text.find("<name>") + 6 : r.text.find("</name>")
-                        ]
-                    else:
-                        name += (
-                            " "
-                            + r.text[r.text.find("<name>") + 6 : r.text.find("</name>")]
-                        )
-        except:
-            logging.warning("parseLookup: Lookup failed.")
-            self.infobox.insertPlainText(f"Lookup Failed...\n")
-        return grid, name
+            except Error as exception:
+                logging.critical("updatemarker: db error: %s", exception)
 
     def adif(self):
         """
@@ -1379,31 +1682,31 @@ class MainWindow(QtWidgets.QMainWindow):
         app.processEvents()
         try:
             with sqlite3.connect(self.database) as conn:
-                c = conn.cursor()
-                c.execute("select * from contacts order by date_time ASC")
-                log = c.fetchall()
-        except Error as e:
-            logging.critical(f"adif: db error: {e}")
+                cursor = conn.cursor()
+                cursor.execute("select * from contacts order by date_time ASC")
+                log = cursor.fetchall()
+        except sqlite3.Error as exception:
+            logging.critical("adif: db error: %s", exception)
             return
         grid = False
         opname = False
         try:
-            with open(logname, "w", encoding="ascii") as f:
-                print("<ADIF_VER:5>2.2.0", end="\r\n", file=f)
-                print("<EOH>", end="\r\n", file=f)
-                for x in log:
+            with open(logname, "w", encoding="ascii") as file_descriptor:
+                print("<ADIF_VER:5>2.2.0", end="\r\n", file=file_descriptor)
+                print("<EOH>", end="\r\n", file=file_descriptor)
+                for contact in log:
                     (
                         _,
                         hiscall,
                         hisclass,
                         hissection,
-                        datetime,
+                        the_date_and_time,
                         band,
                         mode,
                         _,
                         grid,
                         opname,
-                    ) = x
+                    ) = contact
                     if mode == "DI":
                         mode = "RTTY"
                     if mode == "PH":
@@ -1412,56 +1715,95 @@ class MainWindow(QtWidgets.QMainWindow):
                         rst = "599"
                     else:
                         rst = "59"
-                    loggeddate = datetime[:10]
-                    loggedtime = datetime[11:13] + datetime[14:16]
+                    loggeddate = the_date_and_time[:10]
+                    loggedtime = the_date_and_time[11:13] + the_date_and_time[14:16]
                     print(
-                        f"<QSO_DATE:{len(''.join(loggeddate.split('-')))}:d>{''.join(loggeddate.split('-'))}",
+                        f"<QSO_DATE:{len(''.join(loggeddate.split('-')))}:d>"
+                        f"{''.join(loggeddate.split('-'))}",
                         end="\r\n",
-                        file=f,
+                        file=file_descriptor,
                     )
                     print(
-                        f"<TIME_ON:{len(loggedtime)}>{loggedtime}", end="\r\n", file=f
+                        f"<TIME_ON:{len(loggedtime)}>{loggedtime}",
+                        end="\r\n",
+                        file=file_descriptor,
                     )
-                    print(f"<CALL:{len(hiscall)}>{hiscall}", end="\r\n", file=f)
-                    print(f"<MODE:{len(mode)}>{mode}", end="\r\n", file=f)
-                    print(f"<BAND:{len(band + 'M')}>{band + 'M'}", end="\r\n", file=f)
+                    print(
+                        f"<CALL:{len(hiscall)}>{hiscall}",
+                        end="\r\n",
+                        file=file_descriptor,
+                    )
+                    print(f"<MODE:{len(mode)}>{mode}", end="\r\n", file=file_descriptor)
+                    print(
+                        f"<BAND:{len(band + 'M')}>{band + 'M'}",
+                        end="\r\n",
+                        file=file_descriptor,
+                    )
                     try:
                         print(
                             f"<FREQ:{len(self.dfreq[band])}>{self.dfreq[band]}",
                             end="\r\n",
-                            file=f,
+                            file=file_descriptor,
                         )
-                    except:
+                    except IndexError:
                         pass  # This is bad form... I can't remember why this is in a try block
-                    print(f"<RST_SENT:{len(rst)}>{rst}", end="\r\n", file=f)
-                    print(f"<RST_RCVD:{len(rst)}>{rst}", end="\r\n", file=f)
                     print(
-                        f"<STX_STRING:{len(self.myclass + ' ' + self.mysection)}>{self.myclass + ' ' + self.mysection}",
+                        f"<RST_SENT:{len(rst)}>{rst}", end="\r\n", file=file_descriptor
+                    )
+                    print(
+                        f"<RST_RCVD:{len(rst)}>{rst}", end="\r\n", file=file_descriptor
+                    )
+                    print(
+                        f"<STX_STRING:{len(self.myclass + ' ' + self.mysection)}>"
+                        f"{self.myclass + ' ' + self.mysection}",
                         end="\r\n",
-                        file=f,
+                        file=file_descriptor,
                     )
                     print(
-                        f"<SRX_STRING:{len(hisclass + ' ' + hissection)}>{hisclass + ' ' + hissection}",
+                        f"<SRX_STRING:{len(hisclass + ' ' + hissection)}>"
+                        f"{hisclass + ' ' + hissection}",
                         end="\r\n",
-                        file=f,
+                        file=file_descriptor,
                     )
                     print(
-                        f"<ARRL_SECT:{len(hissection)}>{hissection}", end="\r\n", file=f
+                        f"<ARRL_SECT:{len(hissection)}>{hissection}",
+                        end="\r\n",
+                        file=file_descriptor,
                     )
-                    print(f"<CLASS:{len(hisclass)}>{hisclass}", end="\r\n", file=f)
-                    state = self.getState(hissection)
+                    print(
+                        f"<CLASS:{len(hisclass)}>{hisclass}",
+                        end="\r\n",
+                        file=file_descriptor,
+                    )
+                    state = self.get_state(hissection)
                     if state:
-                        print(f"<STATE:{len(state)}>{state}", end="\r\n", file=f)
+                        print(
+                            f"<STATE:{len(state)}>{state}",
+                            end="\r\n",
+                            file=file_descriptor,
+                        )
                     if len(grid) > 1:
-                        print(f"<GRIDSQUARE:{len(grid)}>{grid}", end="\r\n", file=f)
+                        print(
+                            f"<GRIDSQUARE:{len(grid)}>{grid}",
+                            end="\r\n",
+                            file=file_descriptor,
+                        )
                     if len(opname) > 1:
-                        print(f"<NAME:{len(opname)}>{opname}", end="\r\n", file=f)
+                        print(
+                            f"<NAME:{len(opname)}>{opname}",
+                            end="\r\n",
+                            file=file_descriptor,
+                        )
                     comment = "WINTER-FIELD-DAY"
-                    print(f"<COMMENT:{len(comment)}>{comment}", end="\r\n", file=f)
-                    print("<EOR>", end="\r\n", file=f)
-                    print("", end="\r\n", file=f)
-        except IOError as e:
-            logging.critical(f"adif: IO error: {e}")
+                    print(
+                        f"<COMMENT:{len(comment)}>{comment}",
+                        end="\r\n",
+                        file=file_descriptor,
+                    )
+                    print("<EOR>", end="\r\n", file=file_descriptor)
+                    print("", end="\r\n", file=file_descriptor)
+        except IOError as exception:
+            logging.critical("adif: IO error: %s", exception)
         self.infobox.insertPlainText("Done\n\n")
         app.processEvents()
 
@@ -1473,13 +1815,24 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         try:
             with sqlite3.connect(self.database) as conn:
-                c = conn.cursor()
-                c.execute("select * from contacts order by id DESC")
-                q = c.fetchone()
-        except Error as e:
-            logging.critical(f"postcloudlog: db error: {e}")
+                cursor = conn.cursor()
+                cursor.execute("select * from contacts order by id DESC")
+                contact = cursor.fetchone()
+        except sqlite3.Error as exception:
+            logging.critical("postcloudlog: db error: %s", exception)
             return
-        _, hiscall, hisclass, hissection, datetime, band, mode, _, grid, opname = q
+        (
+            _,
+            hiscall,
+            hisclass,
+            hissection,
+            the_date_and_time,
+            band,
+            mode,
+            _,
+            grid,
+            opname,
+        ) = contact
 
         if mode == "DI":
             mode = "RTTY"
@@ -1489,21 +1842,26 @@ class MainWindow(QtWidgets.QMainWindow):
             rst = "599"
         else:
             rst = "59"
-        loggeddate = datetime[:10]
-        loggedtime = datetime[11:13] + datetime[14:16]
-        adifq = f"<QSO_DATE:{len(''.join(loggeddate.split('-')))}:d>{''.join(loggeddate.split('-'))}"
-        adifq += f"<TIME_ON:{len(loggedtime)}>{loggedtime}"
-        adifq += f"<CALL:{len(hiscall)}>{hiscall}"
-        adifq += f"<MODE:{len(mode)}>{mode}"
-        adifq += f"<BAND:{len(band + 'M')}>{band + 'M'}"
-        adifq += f"<FREQ:{len(self.dfreq[band])}>{self.dfreq[band]}"
-        adifq += f"<RST_SENT:{len(rst)}>{rst}"
-        adifq += f"<RST_RCVD:{len(rst)}>{rst}"
-        adifq += f"<STX_STRING:{len(self.myclass + ' ' + self.mysection)}>{self.myclass + ' ' + self.mysection}"
-        adifq += f"<SRX_STRING:{len(hisclass + ' ' + hissection)}>{hisclass + ' ' + hissection}"
-        adifq += f"<ARRL_SECT:{len(hissection)}>{hissection}"
-        adifq += f"<CLASS:{len(hisclass)}>{hisclass}"
-        state = self.getState(hissection)
+        loggeddate = the_date_and_time[:10]
+        loggedtime = the_date_and_time[11:13] + the_date_and_time[14:16]
+        adifq = (
+            f"<QSO_DATE:{len(''.join(loggeddate.split('-')))}:d>"
+            f"{''.join(loggeddate.split('-'))}"
+            f"<TIME_ON:{len(loggedtime)}>{loggedtime}"
+            f"<CALL:{len(hiscall)}>{hiscall}"
+            f"<MODE:{len(mode)}>{mode}"
+            f"<BAND:{len(band + 'M')}>{band + 'M'}"
+            f"<FREQ:{len(self.dfreq[band])}>{self.dfreq[band]}"
+            f"<RST_SENT:{len(rst)}>{rst}"
+            f"<RST_RCVD:{len(rst)}>{rst}"
+            f"<STX_STRING:{len(self.myclass + ' ' + self.mysection)}>"
+            f"{self.myclass + ' ' + self.mysection}"
+            f"<SRX_STRING:{len(hisclass + ' ' + hissection)}>"
+            f"{hisclass + ' ' + hissection}"
+            f"<ARRL_SECT:{len(hissection)}>{hissection}"
+            f"<CLASS:{len(hisclass)}>{hisclass}"
+        )
+        state = self.get_state(hissection)
         if state:
             adifq += f"<STATE:{len(state)}>{state}"
         if len(grid) > 1:
@@ -1514,9 +1872,9 @@ class MainWindow(QtWidgets.QMainWindow):
         adifq += f"<COMMENT:{len(comment)}>{comment}"
         adifq += "<EOR>"
 
-        payloadDict = {"key": self.cloudlogapi, "type": "adif", "string": adifq}
-        jsonData = dumps(payloadDict)
-        _ = requests.post(self.cloudlogurl, jsonData)
+        payload_dict = {"key": self.cloudlogapi, "type": "adif", "string": adifq}
+        jason_data = dumps(payload_dict)
+        _ = requests.post(self.cloudlogurl, jason_data)
 
     def cabrillo(self):
         """
@@ -1529,11 +1887,11 @@ class MainWindow(QtWidgets.QMainWindow):
         bonuses = 0
         try:
             with sqlite3.connect(self.database) as conn:
-                c = conn.cursor()
-                c.execute("select * from contacts order by date_time ASC")
-                log = c.fetchall()
-        except Error as e:
-            logging.critical(f"cabrillo: db error: {e}")
+                cursor = conn.cursor()
+                cursor.execute("select * from contacts order by date_time ASC")
+                log = cursor.fetchall()
+        except sqlite3.Error as exception:
+            logging.critical("cabrillo: db error: %s", exception)
             self.infobox.insertPlainText(" Failed\n\n")
             app.processEvents()
             return
@@ -1545,88 +1903,123 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             catpower = "LOW"
         try:
-            with open(filename, "w", encoding="ascii") as f:
-                print("START-OF-LOG: 3.0", end="\r\n", file=f)
-                print("CREATED-BY: K6GTE Winter Field Day Logger", end="\r\n", file=f)
-                print("CONTEST: WFD", end="\r\n", file=f)
-                print(f"CALLSIGN: {self.mycall}", end="\r\n", file=f)
-                print("LOCATION:", end="\r\n", file=f)
-                print(f"ARRL-SECTION: {self.mysection}", end="\r\n", file=f)
-                print(f"CATEGORY: {self.myclass}", end="\r\n", file=f)
-                print(f"CATEGORY-POWER: {catpower}", end="\r\n", file=f)
-                print(f"SOAPBOX: QSO Points {self.basescore}", end="\r\n", file=f)
+            with open(filename, "w", encoding="ascii") as file_descriptor:
+                print("START-OF-LOG: 3.0", end="\r\n", file=file_descriptor)
+                print(
+                    "CREATED-BY: K6GTE Winter Field Day Logger",
+                    end="\r\n",
+                    file=file_descriptor,
+                )
+                print("CONTEST: WFD", end="\r\n", file=file_descriptor)
+                print(f"CALLSIGN: {self.mycall}", end="\r\n", file=file_descriptor)
+                print("LOCATION:", end="\r\n", file=file_descriptor)
+                print(
+                    f"ARRL-SECTION: {self.mysection}", end="\r\n", file=file_descriptor
+                )
+                print(f"CATEGORY: {self.myclass}", end="\r\n", file=file_descriptor)
+                print(f"CATEGORY-POWER: {catpower}", end="\r\n", file=file_descriptor)
+                print(
+                    f"SOAPBOX: QSO Points {self.basescore}",
+                    end="\r\n",
+                    file=file_descriptor,
+                )
                 print(
                     f"SOAPBOX: Power Output Multiplier {self.powermult}",
                     end="\r\n",
-                    file=f,
+                    file=file_descriptor,
                 )
                 print(
                     f"SOAPBOX: Band/mode multiplier {self.bandmodemult}",
                     end="\r\n",
-                    file=f,
+                    file=file_descriptor,
                 )
                 if self.altpower:
                     print(
                         "SOAPBOX: 500 points for not using commercial power",
                         end="\r\n",
-                        file=f,
+                        file=file_descriptor,
                     )
                     bonuses = bonuses + 500
                 if self.outdoors:
                     print(
                         "SOAPBOX: 500 points for setting up outdoors",
                         end="\r\n",
-                        file=f,
+                        file=file_descriptor,
                     )
                     bonuses = bonuses + 500
                 if self.notathome:
                     print(
                         "SOAPBOX: 500 points for setting up away from home",
                         end="\r\n",
-                        file=f,
+                        file=file_descriptor,
                     )
                     bonuses = bonuses + 500
                 if self.satellite:
                     print(
-                        "SOAPBOX: 500 points for working satellite", end="\r\n", file=f
+                        "SOAPBOX: 500 points for working satellite",
+                        end="\r\n",
+                        file=file_descriptor,
                     )
                     bonuses = bonuses + 500
-                print(f"SOAPBOX: BONUS Total {bonuses}", end="\r\n", file=f)
-                print(f"CLAIMED-SCORE: {self.calcscore()}", end="\r\n", file=f)
-                print(f"OPERATORS: {self.mycall}", end="\r\n", file=f)
-                print("NAME: ", end="\r\n", file=f)
-                print("ADDRESS: ", end="\r\n", file=f)
-                print("ADDRESS-CITY: ", end="\r\n", file=f)
-                print("ADDRESS-STATE: ", end="\r\n", file=f)
-                print("ADDRESS-POSTALCODE: ", end="\r\n", file=f)
-                print("ADDRESS-COUNTRY: ", end="\r\n", file=f)
-                print("EMAIL: ", end="\r\n", file=f)
-                for x in log:
-                    _, hiscall, hisclass, hissection, datetime, band, mode, _, _, _ = x
-                    loggeddate = datetime[:10]
-                    loggedtime = datetime[11:13] + datetime[14:16]
+                print(
+                    f"SOAPBOX: BONUS Total {bonuses}", end="\r\n", file=file_descriptor
+                )
+                print(
+                    f"CLAIMED-SCORE: {self.calcscore()}",
+                    end="\r\n",
+                    file=file_descriptor,
+                )
+                print(f"OPERATORS: {self.mycall}", end="\r\n", file=file_descriptor)
+                print("NAME: ", end="\r\n", file=file_descriptor)
+                print("ADDRESS: ", end="\r\n", file=file_descriptor)
+                print("ADDRESS-CITY: ", end="\r\n", file=file_descriptor)
+                print("ADDRESS-STATE: ", end="\r\n", file=file_descriptor)
+                print("ADDRESS-POSTALCODE: ", end="\r\n", file=file_descriptor)
+                print("ADDRESS-COUNTRY: ", end="\r\n", file=file_descriptor)
+                print("EMAIL: ", end="\r\n", file=file_descriptor)
+                for contact in log:
+                    (
+                        _,
+                        hiscall,
+                        hisclass,
+                        hissection,
+                        the_date_and_time,
+                        band,
+                        mode,
+                        _,
+                        _,
+                        _,
+                    ) = contact
+                    loggeddate = the_date_and_time[:10]
+                    loggedtime = the_date_and_time[11:13] + the_date_and_time[14:16]
                     print(
-                        f"QSO: {self.dfreq[band].replace('.','')} {mode} {loggeddate} {loggedtime} {self.mycall} {self.myclass} {self.mysection} {hiscall} {hisclass} {hissection}",
+                        f"QSO: {self.dfreq[band].replace('.','')} {mode} {loggeddate} "
+                        f"{loggedtime} {self.mycall} {self.myclass} {self.mysection} "
+                        f"{hiscall} {hisclass} {hissection}",
                         end="\r\n",
-                        file=f,
+                        file=file_descriptor,
                     )
-                print("END-OF-LOG:", end="\r\n", file=f)
-        except IOError as e:
-            logging.critical(f"cabrillo: IO error: {e}, writing to {filename}")
+                print("END-OF-LOG:", end="\r\n", file=file_descriptor)
+        except IOError as exception:
+            logging.critical(
+                "cabrillo: IO error: %s, writing to %s", exception, filename
+            )
             self.infobox.insertPlainText(" Failed\n\n")
             app.processEvents()
             return
         self.infobox.insertPlainText(" Done\n\n")
         app.processEvents()
 
-    def generateLogs(self):
+    def generate_logs(self):
+        """Called when the user presses the Generate Logs button."""
         self.infobox.clear()
         self.cabrillo()
-        self.generateBandModeTally()
+        self.generate_band_mode_tally()
         self.adif()
 
 
-class editQSODialog(QtWidgets.QDialog):
+class EditQsoDialog(QtWidgets.QDialog):
+    """Edits/deletes a contacts in the database"""
 
     theitem = ""
     database = ""
@@ -1635,10 +2028,11 @@ class editQSODialog(QtWidgets.QDialog):
         super().__init__(parent)
         uic.loadUi(self.relpath("dialog.ui"), self)
         self.deleteButton.clicked.connect(self.delete_contact)
-        self.buttonBox.accepted.connect(self.saveChanges)
-        self.change = qsoEdit()
+        self.buttonBox.accepted.connect(self.save_changes)
+        self.change = QSOEdit()
 
     def setup(self, linetopass, thedatabase):
+        """Loads in the contact information and db to access."""
         self.database = thedatabase
         (
             self.theitem,
@@ -1661,33 +2055,48 @@ class editQSODialog(QtWidgets.QDialog):
         now = QtCore.QDateTime.fromString(date_time, "yyyy-MM-dd hh:mm:ss")
         self.editDateTime.setDateTime(now)
 
-    def relpath(self, filename):
-        try:
-            base_path = sys._MEIPASS  # pylint: disable=no-member
-        except:
+    @staticmethod
+    def relpath(filename: str) -> str:
+        """
+        If the program is packaged with pyinstaller,
+        this is needed since all files will be in a temp folder during execution.
+        """
+        if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+            base_path = getattr(sys, "_MEIPASS")
+        else:
             base_path = os.path.abspath(".")
         return os.path.join(base_path, filename)
 
-    def saveChanges(self):
+    def save_changes(self):
+        """Update edited contact in the db."""
         try:
             with sqlite3.connect(self.database) as conn:
-                sql = f"update contacts set callsign = '{self.editCallsign.text().upper()}', class = '{self.editClass.text().upper()}', section = '{self.editSection.text().upper()}', date_time = '{self.editDateTime.text()}', band = '{self.editBand.currentText()}', mode = '{self.editMode.currentText()}', power = '{self.editPower.value()}'  where id={self.theitem}"
+                sql = (
+                    f"update contacts set callsign = '{self.editCallsign.text().upper()}', "
+                    f"class = '{self.editClass.text().upper()}', "
+                    f"section = '{self.editSection.text().upper()}', "
+                    f"date_time = '{self.editDateTime.text()}', "
+                    f"band = '{self.editBand.currentText()}', "
+                    f"mode = '{self.editMode.currentText()}', "
+                    f"power = '{self.editPower.value()}'  where id={self.theitem}"
+                )
                 cur = conn.cursor()
                 cur.execute(sql)
                 conn.commit()
-        except Error as e:
-            logging.critical(f"saveChanges: db error: {e}")
+        except sqlite3.Error as exception:
+            logging.critical("save_changes: db error: %s", exception)
         self.change.lineChanged.emit()
 
     def delete_contact(self):
+        """Delete a contact from the db."""
         try:
             with sqlite3.connect(self.database) as conn:
                 sql = f"delete from contacts where id={self.theitem}"
                 cur = conn.cursor()
                 cur.execute(sql)
                 conn.commit()
-        except Error as e:
-            logging.critical(f"delete_contact: db error: {e}")
+        except sqlite3.Error as exception:
+            logging.critical("delete_contact: db error: %s", exception)
         self.change.lineChanged.emit()
         self.close()
 
@@ -1701,20 +2110,22 @@ class Settings(QtWidgets.QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         uic.loadUi(self.relpath("settings.ui"), self)
-        self.buttonBox.accepted.connect(self.saveChanges)
+        self.buttonBox.accepted.connect(self.save_changes)
+        self.database = None
 
-    def setup(self, thedatabase):
+    def setup(self, thedatabase: str) -> None:
+        """Loads the local variables with data in the db that was passed in."""
         self.database = thedatabase
         try:
             with sqlite3.connect(self.database) as conn:
-                c = conn.cursor()
-                c.execute("select * from preferences where id = 1")
-                pref = c.fetchall()
-        except Error as e:
-            logging.critical(f"settings setup: db error: {e}")
+                cursor = conn.cursor()
+                cursor.execute("select * from preferences where id = 1")
+                record = cursor.fetchall()
+        except sqlite3.Error as exception:
+            logging.critical("settings setup: db error: %s", exception)
             return
-        if len(pref) > 0:
-            for x in pref:
+        if len(record) > 0:
+            for data in record:
                 (
                     _,
                     _,
@@ -1738,7 +2149,7 @@ class Settings(QtWidgets.QDialog):
                     markerfile,
                     usemarker,
                     usehamdb,
-                ) = x
+                ) = data
                 self.qrzname_field.setText(qrzname)
                 self.qrzpass_field.setText(qrzpass)
                 self.qrzurl_field.setText(qrzurl)
@@ -1748,27 +2159,58 @@ class Settings(QtWidgets.QDialog):
                 self.rigcontrolport_field.setText(rigctrlport)
                 self.usecloudlog_checkBox.setChecked(bool(usecloudlog))
                 self.useqrz_checkBox.setChecked(bool(useqrz))
-                self.userigcontrol_checkBox.setChecked(bool(userigcontrol))
+                if userigcontrol == 0:
+                    self.radioButton_none.setChecked(True)
+                if userigcontrol == 1:
+                    self.radioButton_rigctld.setChecked(True)
+                if userigcontrol == 2:
+                    self.radioButton_flrig.setChecked(True)
                 self.markerfile_field.setText(markerfile)
                 self.generatemarker_checkbox.setChecked(bool(usemarker))
                 self.usehamdb_checkBox.setChecked(bool(usehamdb))
 
-    def relpath(self, filename):
-        try:
-            base_path = sys._MEIPASS  # pylint: disable=no-member
-        except:
+    @staticmethod
+    def relpath(filename: str) -> str:
+        """
+        Checks to see if program has been packaged with pyinstaller.
+        If so base dir is in a temp folder.
+        """
+        if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+            base_path = getattr(sys, "_MEIPASS")
+        else:
             base_path = os.path.abspath(".")
         return os.path.join(base_path, filename)
 
-    def saveChanges(self):
+    def save_changes(self):
+        """Saves any changes back to the preferences table in the db."""
         try:
             with sqlite3.connect(self.database) as conn:
-                sql = f"UPDATE preferences SET qrzusername = '{self.qrzname_field.text()}', qrzpassword = '{self.qrzpass_field.text()}', qrzurl = '{self.qrzurl_field.text()}', cloudlogapi = '{self.cloudlogapi_field.text()}', cloudlogurl = '{self.cloudlogurl_field.text()}', rigcontrolip = '{self.rigcontrolip_field.text()}', rigcontrolport = '{self.rigcontrolport_field.text()}', useqrz = '{int(self.useqrz_checkBox.isChecked())}', usecloudlog = '{int(self.usecloudlog_checkBox.isChecked())}', userigcontrol = '{int(self.userigcontrol_checkBox.isChecked())}', markerfile = '{self.markerfile_field.text()}', usemarker = '{int(self.generatemarker_checkbox.isChecked())}', usehamdb = '{int(self.usehamdb_checkBox.isChecked())}'  where id=1;"
+                userigcontrol = 0
+                if self.radioButton_rigctld.isChecked():
+                    userigcontrol = 1
+                if self.radioButton_flrig.isChecked():
+                    userigcontrol = 2
+                sql = (
+                    f"UPDATE preferences SET qrzusername = '{self.qrzname_field.text()}', "
+                    f"qrzpassword = '{self.qrzpass_field.text()}', "
+                    f"qrzurl = '{self.qrzurl_field.text()}', "
+                    f"cloudlogapi = '{self.cloudlogapi_field.text()}', "
+                    f"cloudlogurl = '{self.cloudlogurl_field.text()}', "
+                    f"rigcontrolip = '{self.rigcontrolip_field.text()}', "
+                    f"rigcontrolport = '{self.rigcontrolport_field.text()}', "
+                    f"useqrz = '{int(self.useqrz_checkBox.isChecked())}', "
+                    f"usecloudlog = '{int(self.usecloudlog_checkBox.isChecked())}', "
+                    f"userigcontrol = '{userigcontrol}', "
+                    f"markerfile = '{self.markerfile_field.text()}', "
+                    f"usemarker = '{int(self.generatemarker_checkbox.isChecked())}', "
+                    f"usehamdb = '{int(self.usehamdb_checkBox.isChecked())}'  where id=1;"
+                )
+
                 cur = conn.cursor()
                 cur.execute(sql)
                 conn.commit()
-        except Error as e:
-            logging.critical(f"settings saveChanges: db error: {e}")
+        except sqlite3.Error as exception:
+            logging.critical("settings save_changes: db error: %s", exception)
 
 
 class Startup(QtWidgets.QDialog):
@@ -1781,44 +2223,56 @@ class Startup(QtWidgets.QDialog):
         uic.loadUi(self.relpath("startup.ui"), self)
         self.continue_pushButton.clicked.connect(self.store)
 
-    def relpath(self, filename):
-        try:
-            base_path = sys._MEIPASS  # pylint: disable=no-member
-        except:
+    @staticmethod
+    def relpath(filename: str) -> str:
+        """
+        Checks to see if program has been packaged with pyinstaller.
+        If so base dir is in a temp folder.
+        """
+        if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+            base_path = getattr(sys, "_MEIPASS")
+        else:
             base_path = os.path.abspath(".")
         return os.path.join(base_path, filename)
 
-    def setCallSign(self, callsign):
+    def set_callsign(self, callsign):
+        """generic getter/setter method"""
         self.dialog_callsign.setText(callsign)
 
-    def setClass(self, myclass):
+    def set_class(self, myclass):
+        """generic getter/setter method"""
         self.dialog_class.setText(myclass)
 
-    def setSection(self, mysection):
+    def set_section(self, mysection):
+        """generic getter/setter method"""
         self.dialog_section.setText(mysection)
 
-    def getCallSign(self):
+    def get_callsign(self):
+        """generic getter/setter method"""
         return self.dialog_callsign.text()
 
-    def getClass(self):
+    def get_class(self):
+        """generic getter/setter method"""
         return self.dialog_class.text()
 
-    def getSection(self):
+    def get_section(self):
+        """generic getter/setter method"""
         return self.dialog_section.text()
 
     def store(self):
+        """dialog magic"""
         self.accept()
 
 
-def startupDialogFinished():
+def startup_dialog_finished():
     """
     Store call, class, section enteries and close dialog
     """
-    window.mycallEntry.setText(startupdialog.getCallSign())
+    window.mycallEntry.setText(startupdialog.get_callsign())
     window.changemycall()
-    window.myclassEntry.setText(startupdialog.getClass())
+    window.myclassEntry.setText(startupdialog.get_class())
     window.changemyclass()
-    window.mysectionEntry.setText(startupdialog.getSection())
+    window.mysectionEntry.setText(startupdialog.get_section())
     window.changemysection()
     startupdialog.close()
 
@@ -1835,29 +2289,29 @@ if __name__ == "__main__":
     logging.info(families)
     window = MainWindow()
     window.show()
-    window.create_DB()
+    window.create_db()
     window.changeband()
     window.changemode()
     window.readpreferences()
     if window.mycall == "" or window.myclass == "" or window.mysection == "":
         startupdialog = Startup()
-        startupdialog.accepted.connect(startupDialogFinished)
+        startupdialog.accepted.connect(startup_dialog_finished)
         startupdialog.open()
-        startupdialog.setCallSign(window.mycall)
-        startupdialog.setClass(window.myclass)
-        startupdialog.setSection(window.mysection)
-    window.readCWmacros()
-    window.qrzauth()
+        startupdialog.set_callsign(window.mycall)
+        startupdialog.set_class(window.myclass)
+        startupdialog.set_section(window.mysection)
+    window.read_cw_macros()
+    window.setup_qrz()
     window.cloudlogauth()
     window.stats()
-    window.readSections()
-    window.readSCP()
+    window.read_sections()
+    window.read_scp()
     window.logwindow()
     window.sections()
     window.callsign_entry.setFocus()
 
     timer = QtCore.QTimer()
-    timer.timeout.connect(window.updateTime)
+    timer.timeout.connect(window.update_time)
     timer.start(1000)
 
-    app.exec()
+    sys.exit(app.exec())
