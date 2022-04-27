@@ -1,0 +1,23 @@
+{
+    "mycallsign": "",
+    "myclass": "",
+    "mysection": "",
+    "power": "0",
+    "usehamdb": 0,
+    "useqrz": 0,
+    "usehamqth": 0,
+    "lookupusername": "",
+    "lookuppassword": "",
+    "userigctld": 0,
+    "useflrig": 0,
+    "CAT_ip": "localhost",
+    "CAT_port": 4532,
+    "cloudlog": 0,
+    "cloudlogapi": "c01234567890123456789",
+    "cloudlogurl": "https://www.cloudlog.com/Cloudlog/index.php/api",
+    "cloudlogstationid": "",
+    "altpower": 0,
+    "outdoors": 0,
+    "notathome": 0,
+    "satellite": 0
+}
