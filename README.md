@@ -12,6 +12,10 @@ The logger will generate a cabrillo for submission, An ADIF file so you can merg
 
 ![Snapshot of main screen](pics/loggerscreenshot.png)
 
+## :skull_and_crossbones: !!!!Development Branch!!!! :skull_and_crossbones:
+
+### Lots of breaking stuff in here.
+
 ## Caveats
 
 This is a simple logger ment for single op, it's not usable for clubs.
