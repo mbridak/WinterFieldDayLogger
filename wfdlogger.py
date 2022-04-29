@@ -1131,30 +1131,23 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         Get an idea of how you're doing points wise.
         """
-        try:
-            with sqlite3.connect(self.database) as conn:
-                cursor = conn.cursor()
-                cursor.execute("select count(*) from contacts where mode = 'CW'")
-                self.Total_CW.setText(str(cursor.fetchone()[0]))
-                cursor.execute("select count(*) from contacts where mode = 'PH'")
-                self.Total_Phone.setText(str(cursor.fetchone()[0]))
-                cursor.execute("select count(*) from contacts where mode = 'DI'")
-                self.Total_Digital.setText(str(cursor.fetchone()[0]))
-                cursor.execute("select distinct band, mode from contacts")
-                self.bandmodemult = len(cursor.fetchall())
-                cursor.execute(
-                    "SELECT count(*) FROM contacts "
-                    "where datetime(date_time) >=datetime('now', '-15 Minutes')"
-                )
-                self.QSO_Last15.setText(str(cursor.fetchone()[0]))
-                cursor.execute(
-                    "SELECT count(*) FROM contacts where "
-                    "datetime(date_time) >=datetime('now', '-1 Hours')"
-                )
-                self.QSO_PerHour.setText(str(cursor.fetchone()[0]))
-                self.QSO_Points.setText(str(self.calcscore()))
-        except sqlite3.Error as exception:
-            logging.critical("stats: %s", exception)
+        (
+            cwcontacts,
+            phonecontacts,
+            digitalcontacts,
+            bandmodemult,
+            last15,
+            lasthour,
+            _,
+            _,
+        ) = self.db.stats()
+        self.Total_CW.setText(str(cwcontacts))
+        self.Total_Phone.setText(str(phonecontacts))
+        self.Total_Digital.setText(str(digitalcontacts))
+        self.QSO_Last15.setText(str(last15))
+        self.QSO_PerHour.setText(str(lasthour))
+        self.bandmodemult = bandmodemult
+        self.QSO_Points.setText(str(self.calcscore()))
 
     def calcscore(self) -> int:
         """
