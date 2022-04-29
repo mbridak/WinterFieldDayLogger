@@ -1501,16 +1501,7 @@ class MainWindow(QtWidgets.QMainWindow):
         Returns the amount of contacts and the maximum power
         used for a particular band/mode combination.
         """
-        try:
-            with sqlite3.connect(self.database) as conn:
-                cursor = conn.cursor()
-                cursor.execute(
-                    f"select count(*) as tally, MAX(power) as mpow "
-                    f"from contacts where band = '{band}' AND mode ='{mode}'"
-                )
-                return cursor.fetchone()
-        except Error as exception:
-            logging.critical("get_band_mode_tally: %s", exception)
+        return self.db.get_band_mode_tally(band, mode)
 
     def getbands(self) -> list:
         """
