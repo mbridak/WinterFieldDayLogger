@@ -10,8 +10,6 @@ GPL V3
 # Nothing to see here move along.
 # xplanet -body earth -window -longitude -117 -latitude 38 -config Default -projection azmithal -radius 200 -wait 5
 
-# from types import NoneType
-# import xmlrpc.client
 from math import radians, sin, cos, atan2, sqrt, asin, pi
 import sys
 import sqlite3
@@ -22,19 +20,14 @@ import logging
 from json import dumps, loads
 from datetime import datetime
 
-
-# from sqlite3 import Error
 from pathlib import Path
 from shutil import copyfile
 
-# from xmlrpc.client import ServerProxy, Error
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import QDir, Qt
 from PyQt5.QtGui import QFontDatabase
 
-# from bs4 import BeautifulSoup as bs
 import requests
-
 from settings import Settings
 from database import DataBase
 from lookup import HamDBlookup, HamQTH, QRZlookup
@@ -147,7 +140,6 @@ class MainWindow(QtWidgets.QMainWindow):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         uic.loadUi(self.relpath("main.ui"), self)
-        # self.qrz = None
         self.db = DataBase(self.database)
         self.listWidget.itemDoubleClicked.connect(self.qsoclicked)
         self.altpowerButton.clicked.connect(self.claim_alt_power)
@@ -205,28 +197,28 @@ class MainWindow(QtWidgets.QMainWindow):
             "myclass": "",
             "mysection": "",
             "power": "100",
-            "usehamdb": 0,
-            "useqrz": 0,
-            "usehamqth": 0,
+            "usehamdb": False,
+            "useqrz": False,
+            "usehamqth": False,
             "lookupusername": "w1aw",
             "lookuppassword": "secret",
-            "userigctld": 0,
-            "useflrig": 0,
+            "userigctld": False,
+            "useflrig": False,
             "CAT_ip": "localhost",
             "CAT_port": 4532,
-            "cloudlog": 0,
+            "cloudlog": False,
             "cloudlogapi": "c01234567890123456789",
             "cloudlogurl": "https://www.cloudlog.com/Cloudlog/index.php/api",
             "cloudlogstationid": "",
-            "usemarker": 0,
+            "usemarker": False,
             "markerfile": ".xplanet/markers/ham",
             "cwtype": 0,
             "cwip": "localhost",
             "cwport": 6789,
-            "altpower": 0,
-            "outdoors": 0,
-            "notathome": 0,
-            "satellite": 0,
+            "altpower": False,
+            "outdoors": False,
+            "notathome": False,
+            "satellite": False,
         }
         self.reference_preference = self.preference.copy()
         self.look_up = None
@@ -2091,7 +2083,6 @@ if __name__ == "__main__":
     window.setWindowTitle(f"K6GTE Winter Field Day Logger v{__version__}")
     window.show()
     window.read_cw_macros()
-    # window.create_db()
     window.changeband()
     window.changemode()
     if (
@@ -2106,8 +2097,7 @@ if __name__ == "__main__":
         startupdialog.set_class(window.preference["myclass"])
         startupdialog.set_section(window.preference["mysection"])
     window.read_cw_macros()
-    # window.setup_qrz()
-    window.cloudlogauth()
+    # window.cloudlogauth()
     window.stats()
     window.read_sections()
     window.read_scp()
