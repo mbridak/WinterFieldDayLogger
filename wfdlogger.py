@@ -24,18 +24,17 @@ from datetime import datetime
 # from sqlite3 import Error
 from pathlib import Path
 from shutil import copyfile
-from xmlrpc.client import ServerProxy, Error
+
+# from xmlrpc.client import ServerProxy, Error
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import QDir, Qt
 from PyQt5.QtGui import QFontDatabase
-from bs4 import BeautifulSoup as bs
+
+# from bs4 import BeautifulSoup as bs
 import requests
-from preferences import Preferences
 
 from settings import Settings
 from database import DataBase
-
-# from preferences import Preferences
 from lookup import HamDBlookup, HamQTH, QRZlookup
 from cat_interface import CAT
 from cwinterface import CW
@@ -203,7 +202,7 @@ class MainWindow(QtWidgets.QMainWindow):
             "mycallsign": "",
             "myclass": "",
             "mysection": "",
-            "power": "0",
+            "power": "100",
             "usehamdb": 0,
             "useqrz": 0,
             "usehamqth": 0,
