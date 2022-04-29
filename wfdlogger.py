@@ -719,9 +719,9 @@ class MainWindow(QtWidgets.QMainWindow):
     def process_macro(self, macro):
         """Process CW macro substitutions"""
         macro = macro.upper()
-        macro = macro.replace("{MYCALL}", self.mycall)
-        macro = macro.replace("{MYCLASS}", self.myclass)
-        macro = macro.replace("{MYSECT}", self.mysection)
+        macro = macro.replace("{MYCALL}", self.preference["mycallsign"])
+        macro = macro.replace("{MYCLASS}", self.preference["myclass"])
+        macro = macro.replace("{MYSECT}", self.preference["mysection"])
         macro = macro.replace("{HISCALL}", self.callsign_entry.text())
         return macro
 
