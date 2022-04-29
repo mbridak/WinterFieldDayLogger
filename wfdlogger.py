@@ -1719,16 +1719,18 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         Log contact to Cloudlog: https://github.com/magicbug/Cloudlog
         """
-        if (not self.usecloudlog) or (not self.cloudlogauthenticated):
+        if (not self.preference["cloudlog"]) or (not self.cloudlogauthenticated):
             return
-        try:
-            with sqlite3.connect(self.database) as conn:
-                cursor = conn.cursor()
-                cursor.execute("select * from contacts order by id DESC")
-                contact = cursor.fetchone()
-        except sqlite3.Error as exception:
-            logging.critical("postcloudlog: db error: %s", exception)
-            return
+        contact = self.db.fetch_last_contact()
+        # try:
+        #     with sqlite3.connect(self.database) as conn:
+        #         cursor = conn.cursor()
+        #         cursor.execute("select * from contacts order by id DESC")
+        #         contact = cursor.fetchone()
+        # except sqlite3.Error as exception:
+        #     logging.critical("postcloudlog: db error: %s", exception)
+        #     return
+        # fixme
         (
             _,
             hiscall,
@@ -1741,7 +1743,7 @@ class MainWindow(QtWidgets.QMainWindow):
             grid,
             opname,
         ) = contact
-
+        logging.info("%s", contact)
         if mode == "DI":
             mode = "RTTY"
         if mode == "PH":
@@ -1762,8 +1764,8 @@ class MainWindow(QtWidgets.QMainWindow):
             f"<FREQ:{len(self.dfreq[band])}>{self.dfreq[band]}"
             f"<RST_SENT:{len(rst)}>{rst}"
             f"<RST_RCVD:{len(rst)}>{rst}"
-            f"<STX_STRING:{len(self.myclass + ' ' + self.mysection)}>"
-            f"{self.myclass + ' ' + self.mysection}"
+            f"<STX_STRING:{len(self.preference['myclass'] + ' ' + self.preference['mysection'])}>"
+            f"{self.preference['myclass'] + ' ' + self.preference['mysection']}"
             f"<SRX_STRING:{len(hisclass + ' ' + hissection)}>"
             f"{hisclass + ' ' + hissection}"
             f"<ARRL_SECT:{len(hissection)}>{hissection}"
@@ -1780,9 +1782,13 @@ class MainWindow(QtWidgets.QMainWindow):
         adifq += f"<COMMENT:{len(comment)}>{comment}"
         adifq += "<EOR>"
 
-        payload_dict = {"key": self.cloudlogapi, "type": "adif", "string": adifq}
+        payload_dict = {
+            "key": self.preference["cloudlogapi"],
+            "type": "adif",
+            "string": adifq,
+        }
         jason_data = dumps(payload_dict)
-        _ = requests.post(self.cloudlogurl, jason_data)
+        _ = requests.post(self.preference["cloudlogurl"] + "/qso/", jason_data)
 
     def cabrillo(self):
         """
