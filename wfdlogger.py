@@ -8,15 +8,16 @@ GPL V3
 # Nothing to see here move along.
 # xplanet -body earth -window -longitude -117 -latitude 38 -config Default -projection azmithal -radius 200 -wait 5
 
+from types import NoneType
 import xmlrpc.client
-
+from math import radians, sin, cos, atan2, sqrt, asin, pi
 import sys
 import sqlite3
 import socket
 import os
 import logging
 
-from json import dumps
+from json import dumps, loads
 from datetime import datetime
 
 
@@ -29,6 +30,16 @@ from PyQt5.QtCore import QDir, Qt
 from PyQt5.QtGui import QFontDatabase
 from bs4 import BeautifulSoup as bs
 import requests
+from preferences import Preferences
+
+from settings import Settings
+from database import DataBase
+
+# from preferences import Preferences
+from lookup import HamDBlookup, HamQTH, QRZlookup
+from cat_interface import CAT
+from cwinterface import CW
+from version import __version__
 
 
 def relpath(filename: str) -> str:
@@ -62,115 +73,6 @@ class QSOEdit(QtCore.QObject):
     lineChanged = QtCore.pyqtSignal()
 
 
-class QRZlookup:
-    """
-    Class manages QRZ lookups. Pass in a username and password at instantiation.
-    """
-
-    def __init__(self, username: str, password: str) -> None:
-        self.session = False
-        self.expiration = False
-        self.error = (
-            False  # "password incorrect", "session timeout", and "callsign not found".
-        )
-        self.username = username
-        self.password = password
-        self.qrzurl = "https://xmldata.qrz.com/xml/134/"
-        self.message = False
-        self.lastresult = False
-        self.getsession()
-
-    def getsession(self) -> None:
-        """
-        Get QRZ session key.
-        Stores key in class variable 'session'
-        Error messages returned by QRZ will be in class variable 'error'
-        Other messages returned will be in class variable 'message'
-        """
-        logging.info("QRZlookup-getsession:")
-        self.error = False
-        self.message = False
-        self.session = False
-        try:
-            payload = {"username": self.username, "password": self.password}
-            query_result = requests.get(self.qrzurl, params=payload, timeout=10.0)
-            root = bs(query_result.text, "html.parser")
-            if root.session.find("key"):
-                self.session = root.session.key.text
-            if root.session.find("subexp"):
-                self.expiration = root.session.subexp.text
-            if root.session.find("error"):
-                self.error = root.session.error.text
-            if root.session.find("message"):
-                self.message = root.session.message.text
-            logging.info(
-                "QRZlookup-getsession: key:%s error:%s message:%s",
-                self.session,
-                self.error,
-                self.message,
-            )
-        except requests.exceptions.RequestException as exception:
-            logging.info("QRZlookup-getsession: %s", exception)
-            self.session = False
-            self.error = f"{exception}"
-
-    def lookup(self, call: str) -> tuple:
-        """
-        Lookup a call on QRZ
-        """
-        logging.info("QRZlookup-lookup: %s", call)
-        grid = False
-        name = False
-        error_text = False
-        nickname = False
-        if self.session:
-            payload = {"s": self.session, "callsign": call}
-            query_result = requests.get(self.qrzurl, params=payload, timeout=3.0)
-            root = bs(query_result.text, "html.parser")
-            if not root.session.key:  # key expired get a new one
-                logging.info("QRZlookup-lookup: no key, getting new one.")
-                self.getsession()
-                if self.session:
-                    payload = {"s": self.session, "callsign": call}
-                    query_result = requests.get(
-                        self.qrzurl, params=payload, timeout=3.0
-                    )
-            grid, name, nickname, error_text = self.parse_lookup(query_result)
-        return grid, name, nickname, error_text
-
-    def parse_lookup(self, query_result) -> list:
-        """
-        Returns gridsquare and name for a callsign looked up by qrz or hamdb.
-        Or False for both if none found or error.
-        """
-        logging.info("QRZlookup-parse_lookup:")
-        grid = False
-        name = False
-        error_text = False
-        nickname = False
-        if query_result.status_code == 200:
-            root = bs(query_result.text, "html.parser")
-            if root.session.find("error"):
-                error_text = root.session.error.text
-                self.error = error_text
-            if root.find("callsign"):
-                if root.callsign.find("grid"):
-                    grid = root.callsign.grid.text
-                if root.callsign.find("fname"):
-                    name = root.callsign.fname.text
-                if root.find("name"):
-                    if not name:
-                        name = root.find("name").string
-                    else:
-                        name = f"{name} {root.find('name').string}"
-                if root.callsign.find("nickname"):
-                    nickname = root.callsign.nickname.text
-        logging.info(
-            "QRZlookup-parse_lookup: %s %s %s %s", grid, name, nickname, error_text
-        )
-        return grid, name, nickname, error_text
-
-
 class MainWindow(QtWidgets.QMainWindow):
     """
     The Main Window with all the clicky bits
@@ -180,7 +82,7 @@ class MainWindow(QtWidgets.QMainWindow):
     mycall = ""
     myclass = ""
     mysection = ""
-    power = "0"
+    power = "100"
     band = "40"
     mode = "CW"
     qrp = False
@@ -239,12 +141,13 @@ class MainWindow(QtWidgets.QMainWindow):
     basescore = 0
     powermult = 0
     fkeys = dict()
-    keyerserver = "http://localhost:8000"
+    # keyerserver = "http://localhost:8000"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         uic.loadUi(self.relpath("main.ui"), self)
-        self.qrz = None
+        # self.qrz = None
+        self.db = DataBase(self.database)
         self.listWidget.itemDoubleClicked.connect(self.qsoclicked)
         self.altpowerButton.clicked.connect(self.claim_alt_power)
         self.outdoorsButton.clicked.connect(self.claim_outdoors)
@@ -287,8 +190,48 @@ class MainWindow(QtWidgets.QMainWindow):
         self.F10.clicked.connect(self.sendf10)
         self.F11.clicked.connect(self.sendf11)
         self.F12.clicked.connect(self.sendf12)
-
-        self.server = xmlrpc.client.ServerProxy("http://localhost:12345")
+        self.contactlookup = {
+            "call": "",
+            "grid": "",
+            "bearing": "",
+            "name": "",
+            "nickname": "",
+            "error": "",
+            "distance": "",
+        }
+        self.preference = {
+            "mycallsign": "",
+            "myclass": "",
+            "mysection": "",
+            "power": "0",
+            "usehamdb": 0,
+            "useqrz": 0,
+            "usehamqth": 0,
+            "lookupusername": "w1aw",
+            "lookuppassword": "secret",
+            "userigctld": 0,
+            "useflrig": 0,
+            "CAT_ip": "localhost",
+            "CAT_port": 4532,
+            "cloudlog": 0,
+            "cloudlogapi": "c01234567890123456789",
+            "cloudlogurl": "https://www.cloudlog.com/Cloudlog/index.php/api/",
+            "cloudlogstationid": "",
+            "usemarker": 0,
+            "markerfile": ".xplanet/markers/ham",
+            "cwtype": 0,
+            "cwip": "localhost",
+            "cwport": 6789,
+            "altpower": 0,
+            "outdoors": 0,
+            "notathome": 0,
+            "satellite": 0,
+        }
+        self.reference_preference = self.preference.copy()
+        self.look_up = None
+        self.cat_control = None
+        self.cw = None
+        self.readpreferences()
         self.radiochecktimer = QtCore.QTimer()
         self.radiochecktimer.timeout.connect(self.radio)
         self.radiochecktimer.start(1000)
@@ -306,12 +249,88 @@ class MainWindow(QtWidgets.QMainWindow):
             base_path = os.path.abspath(".")
         return os.path.join(base_path, filename)
 
-    def setup_qrz(self) -> None:
+    def clearcontactlookup(self):
+        """clearout the contact lookup"""
+        self.contactlookup["call"] = ""
+        self.contactlookup["grid"] = ""
+        self.contactlookup["name"] = ""
+        self.contactlookup["nickname"] = ""
+        self.contactlookup["error"] = ""
+        self.contactlookup["distance"] = ""
+        self.contactlookup["bearing"] = ""
+
+    def lazy_lookup(self, acall: str):
+        """El Lookup De Lazy"""
+        if self.look_up:
+            if acall == self.contactlookup["call"]:
+                return
+
+            self.contactlookup["call"] = acall
+            (
+                self.contactlookup["grid"],
+                self.contactlookup["name"],
+                self.contactlookup["nickname"],
+                self.contactlookup["error"],
+            ) = self.look_up.lookup(acall)
+            if self.contactlookup["grid"] and self.mygrid:
+                self.contactlookup["distance"] = self.distance(
+                    self.mygrid, self.contactlookup["grid"]
+                )
+                self.contactlookup["bearing"] = self.bearing(
+                    self.mygrid, self.contactlookup["grid"]
+                )
+            logging.info("%s", self.contactlookup)
+
+    def distance(self, grid1: str, grid2: str) -> float:
         """
-        Setup QRZ
+        Takes two maidenhead gridsquares and returns the distance between the two in kilometers.
         """
-        if self.useqrz:
-            self.qrz = QRZlookup(self.qrzname, self.qrzpass)
+        lat1, lon1 = self.gridtolatlon(grid1)
+        lat2, lon2 = self.gridtolatlon(grid2)
+        return round(self.haversine(lon1, lat1, lon2, lat2))
+
+    def bearing(self, grid1: str, grid2: str) -> float:
+        """calculate bearing to contact"""
+        lat1, lon1 = self.gridtolatlon(grid1)
+        lat2, lon2 = self.gridtolatlon(grid2)
+        lat1 = radians(lat1)
+        lon1 = radians(lon1)
+        lat2 = radians(lat2)
+        lon2 = radians(lon2)
+        londelta = lon2 - lon1
+        why = sin(londelta) * cos(lat2)
+        exs = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(londelta)
+        brng = atan2(why, exs)
+        brng *= 180 / pi
+
+        if brng < 0:
+            brng += 360
+
+        return round(brng)
+
+    @staticmethod
+    def haversine(lon1, lat1, lon2, lat2):
+        """
+        Calculate the great circle distance in kilometers between two points
+        on the earth (specified in decimal degrees)
+        """
+        # convert degrees to radians
+        lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+
+        # haversine formula
+        dlon = lon2 - lon1
+        dlat = lat2 - lat1
+        aye = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
+        cee = 2 * asin(sqrt(aye))
+        arrgh = 6372.8  # Radius of earth in kilometers.
+        return cee * arrgh
+
+    # def setup_qrz(self) -> None:
+    #     """
+    #     Setup QRZ
+    #     """
+    #     if self.useqrz:
+    #         self.qrz = QRZlookup(self.qrzname, self.qrzpass)
 
     def read_cw_macros(self) -> None:
         """
@@ -386,12 +405,116 @@ class MainWindow(QtWidgets.QMainWindow):
         Get settings changes, Authorize to QRZ and Cloudlog if needed.
         """
         settingsdialog = Settings(self)
-        settingsdialog.setup(self.database)
+        # settingsdialog.setup(self.database)
         settingsdialog.exec()
         self.infobox.clear()
+        self.look_up = None
+        self.cat_control = None
         self.readpreferences()
-        self.setup_qrz()
-        self.cloudlogauth()
+        # self.setup_qrz()
+        # self.cloudlogauth()
+
+    def readpreferences(self):
+        """
+        Restore preferences if they exist, otherwise create some sane defaults.
+        """
+        try:
+            if os.path.exists("./wfd_preferences.json"):
+                with open(
+                    "./wfd_preferences.json", "rt", encoding="utf-8"
+                ) as file_descriptor:
+                    self.preference = loads(file_descriptor.read())
+                    logging.info("%s", self.preference)
+            else:
+                logging.info("No preference file. Writing preference.")
+                with open(
+                    "./wfd_preferences.json", "wt", encoding="utf-8"
+                ) as file_descriptor:
+                    self.preference = self.reference_preference.copy()
+                    file_descriptor.write(dumps(self.preference, indent=4))
+                    logging.info("%s", self.preference)
+        except IOError as exception:
+            logging.critical("Error: %s", exception)
+        try:
+            self.mycallEntry.setText(self.preference["mycallsign"])
+            if self.preference["mycallsign"] != "":
+                self.mycallEntry.setStyleSheet("border: 1px solid green;")
+            self.myclassEntry.setText(self.preference["myclass"])
+            if self.preference["myclass"] != "":
+                self.myclassEntry.setStyleSheet("border: 1px solid green;")
+            self.mysectionEntry.setText(self.preference["mysection"])
+            if self.preference["mysection"] != "":
+                self.mysectionEntry.setStyleSheet("border: 1px solid green;")
+
+            self.power_selector.setValue(int(self.preference["power"]))
+
+            self.cat_control = None
+            if self.preference["useflrig"]:
+                self.cat_control = CAT(
+                    "flrig", self.preference["CAT_ip"], self.preference["CAT_port"]
+                )
+            if self.preference["userigctld"]:
+                self.cat_control = CAT(
+                    "rigctld", self.preference["CAT_ip"], self.preference["CAT_port"]
+                )
+
+            if self.preference["useqrz"]:
+                self.look_up = QRZlookup(
+                    self.preference["lookupusername"], self.preference["lookuppassword"]
+                )
+                self.callbook_icon.setText("QRZ")
+                if self.look_up.session:
+                    self.callbook_icon.setStyleSheet("color: rgb(128, 128, 0);")
+                else:
+                    self.callbook_icon.setStyleSheet("color: rgb(136, 138, 133);")
+
+            if self.preference["usehamdb"]:
+                self.look_up = HamDBlookup()
+                self.callbook_icon.setText("HamDB")
+                self.callbook_icon.setStyleSheet("color: rgb(128, 128, 0);")
+
+            if self.preference["usehamqth"]:
+                self.look_up = HamQTH(
+                    self.preference["lookupusername"],
+                    self.preference["lookuppassword"],
+                )
+                self.callbook_icon.setText("HamQTH")
+                if self.look_up.session:
+                    self.callbook_icon.setStyleSheet("color: rgb(128, 128, 0);")
+                else:
+                    self.callbook_icon.setStyleSheet("color: rgb(136, 138, 133);")
+
+            self.cloudlogauth()
+
+            if self.preference["cwtype"] == 0:
+                self.cw = None
+            else:
+                self.cw = CW(
+                    self.preference["cwtype"],
+                    self.preference["cwip"],
+                    self.preference["cwport"],
+                )
+        except KeyError as err:
+            logging.warning("Corrupt preference, %s, loading clean version.", err)
+            self.preference = self.reference_preference.copy()
+            with open(
+                "./wfd_preferences.json", "wt", encoding="utf-8"
+            ) as file_descriptor:
+                file_descriptor.write(dumps(self.preference, indent=4))
+                logging.info("writing: %s", self.preference)
+
+    def writepreferences(self):
+        """
+        Write preferences to json file.
+        """
+        try:
+            with open(
+                "./wfd_preferences.json", "wt", encoding="utf-8"
+            ) as file_descriptor:
+                file_descriptor.write(dumps(self.preference, indent=4))
+                logging.info("writing: %s", self.preference)
+        except IOError as exception:
+            logging.critical("writepreferences: %s", exception)
 
     @staticmethod
     def has_internet():
@@ -502,39 +625,40 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         Poll rigctld to get band.
         """
-        if self.flrig:
-            try:
-                newfreq = self.server.rig.get_vfo()
-                newmode = self.server.rig.get_mode()
-                self.radio_icon.setPixmap(self.radio_green)
-                if newfreq != self.oldfreq or newmode != self.oldmode:
-                    self.oldfreq = newfreq
-                    self.oldmode = newmode
-                    self.setband(str(self.getband(newfreq)))
-                    self.setmode(str(self.getmode(newmode)))
-            except socket.error as exception:
-                self.radio_icon.setPixmap(self.radio_red)
-                logging.warning("poll_radio: flrig: %s", exception)
-            return
-        if self.rigonline:
-            try:
-                self.rigctrlsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                self.rigctrlsocket.connect((self.rigctrlhost, int(self.rigctrlport)))
-                self.rigctrlsocket.settimeout(0.5)
-                self.rigctrlsocket.send(b"f\n")
-                newfreq = self.rigctrlsocket.recv(1024).decode().strip()
-                self.rigctrlsocket.send(b"m\n")
-                newmode = self.rigctrlsocket.recv(1024).decode().strip().split()[0]
-                self.radio_icon.setPixmap(self.radio_green)
-                self.rigctrlsocket.shutdown(socket.SHUT_RDWR)
-                self.rigctrlsocket.close()
-                if newfreq != self.oldfreq or newmode != self.oldmode:
-                    self.oldfreq = newfreq
-                    self.oldmode = newmode
-                    self.setband(str(self.getband(newfreq)))
-                    self.setmode(str(self.getmode(newmode)))
-            except ConnectionRefusedError:
-                logging.warning("poll_radio: ConnectionRefusedError")
+        pass
+        # if self.flrig:
+        #     try:
+        #         newfreq = self.server.rig.get_vfo()
+        #         newmode = self.server.rig.get_mode()
+        #         self.radio_icon.setPixmap(self.radio_green)
+        #         if newfreq != self.oldfreq or newmode != self.oldmode:
+        #             self.oldfreq = newfreq
+        #             self.oldmode = newmode
+        #             self.setband(str(self.getband(newfreq)))
+        #             self.setmode(str(self.getmode(newmode)))
+        #     except socket.error as exception:
+        #         self.radio_icon.setPixmap(self.radio_red)
+        #         logging.warning("poll_radio: flrig: %s", exception)
+        #     return
+        # if self.rigonline:
+        #     try:
+        #         self.rigctrlsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        #         self.rigctrlsocket.connect((self.rigctrlhost, int(self.rigctrlport)))
+        #         self.rigctrlsocket.settimeout(0.5)
+        #         self.rigctrlsocket.send(b"f\n")
+        #         newfreq = self.rigctrlsocket.recv(1024).decode().strip()
+        #         self.rigctrlsocket.send(b"m\n")
+        #         newmode = self.rigctrlsocket.recv(1024).decode().strip().split()[0]
+        #         self.radio_icon.setPixmap(self.radio_green)
+        #         self.rigctrlsocket.shutdown(socket.SHUT_RDWR)
+        #         self.rigctrlsocket.close()
+        #         if newfreq != self.oldfreq or newmode != self.oldmode:
+        #             self.oldfreq = newfreq
+        #             self.oldmode = newmode
+        #             self.setband(str(self.getband(newfreq)))
+        #             self.setmode(str(self.getmode(newmode)))
+        #     except ConnectionRefusedError:
+        #         logging.warning("poll_radio: ConnectionRefusedError")
 
     # def poll_radio(self):
     #    if self.rigonline:
@@ -655,63 +779,65 @@ class MainWindow(QtWidgets.QMainWindow):
         if event.key() == Qt.Key_F12:
             self.sendf12()
 
-    def sendcw(self, texttosend):
-        """Sends text via XMLRPC to external CW server"""
-        with ServerProxy(self.keyerserver) as proxy:
-            try:
-                proxy.k1elsendstring(texttosend)
-            except Error as exception:
-                logging.debug("%s, xmlrpc error: %s", self.keyerserver, exception)
-            except ConnectionRefusedError:
-                logging.debug("%s, xmlrpc Connection Refused", self.keyerserver)
-
     def sendf1(self):
         """Sends CW macro"""
-        self.sendcw(self.process_macro(self.F1.toolTip()))
+        if self.cw:
+            self.cw.sendcw(self.process_macro(self.F1.toolTip()))
 
     def sendf2(self):
         """Sends CW macro"""
-        self.sendcw(self.process_macro(self.F2.toolTip()))
+        if self.cw:
+            self.cw.sendcw(self.process_macro(self.F2.toolTip()))
 
     def sendf3(self):
         """Sends CW macro"""
-        self.sendcw(self.process_macro(self.F3.toolTip()))
+        if self.cw:
+            self.cw.sendcw(self.process_macro(self.F3.toolTip()))
 
     def sendf4(self):
         """Sends CW macro"""
-        self.sendcw(self.process_macro(self.F4.toolTip()))
+        if self.cw:
+            self.cw.sendcw(self.process_macro(self.F4.toolTip()))
 
     def sendf5(self):
         """Sends CW macro"""
-        self.sendcw(self.process_macro(self.F5.toolTip()))
+        if self.cw:
+            self.cw.sendcw(self.process_macro(self.F5.toolTip()))
 
     def sendf6(self):
         """Sends CW macro"""
-        self.sendcw(self.process_macro(self.F6.toolTip()))
+        if self.cw:
+            self.cw.sendcw(self.process_macro(self.F6.toolTip()))
 
     def sendf7(self):
         """Sends CW macro"""
-        self.sendcw(self.process_macro(self.F7.toolTip()))
+        if self.cw:
+            self.cw.sendcw(self.process_macro(self.F7.toolTip()))
 
     def sendf8(self):
         """Sends CW macro"""
-        self.sendcw(self.process_macro(self.F8.toolTip()))
+        if self.cw:
+            self.cw.sendcw(self.process_macro(self.F8.toolTip()))
 
     def sendf9(self):
         """Sends CW macro"""
-        self.sendcw(self.process_macro(self.F9.toolTip()))
+        if self.cw:
+            self.cw.sendcw(self.process_macro(self.F9.toolTip()))
 
     def sendf10(self):
         """Sends CW macro"""
-        self.sendcw(self.process_macro(self.F10.toolTip()))
+        if self.cw:
+            self.cw.sendcw(self.process_macro(self.F10.toolTip()))
 
     def sendf11(self):
         """Sends CW macro"""
-        self.sendcw(self.process_macro(self.F11.toolTip()))
+        if self.cw:
+            self.cw.sendcw(self.process_macro(self.F11.toolTip()))
 
     def sendf12(self):
         """Sends CW macro"""
-        self.sendcw(self.process_macro(self.F12.toolTip()))
+        if self.cw:
+            self.cw.sendcw(self.process_macro(self.F12.toolTip()))
 
     def clearinputs(self):
         """Clears the text input fields and sets focus to callsign field."""
@@ -736,8 +862,8 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         Sets the internal power level used for logging to the onscreen dropdown value.
         """
-        self.power = str(self.power_selector.value())
-        self.oldrfpower = self.power
+        self.preference["power"] = str(self.power_selector.value())
+        self.oldrfpower = self.preference["power"]
         self.writepreferences()
 
     def changemycall(self):
@@ -752,6 +878,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 ).upper()
                 self.mycallEntry.setText(cleaned)
         self.mycall = self.mycallEntry.text()
+        self.preference["mycallsign"] = self.mycall
+        logging.info("%s", self.preference)
         if self.mycall != "":
             self.mycallEntry.setStyleSheet("border: 1px solid green;")
         else:
@@ -768,6 +896,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 cleaned = "".join(ch for ch in text if ch.isalnum()).upper()
                 self.myclassEntry.setText(cleaned)
         self.myclass = self.myclassEntry.text()
+        self.preference["myclass"] = self.myclass
         if self.myclass != "":
             self.myclassEntry.setStyleSheet("border: 1px solid green;")
         else:
@@ -784,6 +913,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 cleaned = "".join(ch for ch in text if ch.isalpha()).upper()
                 self.mysectionEntry.setText(cleaned)
         self.mysection = self.mysectionEntry.text()
+        self.preference["mysection"] = self.mysection
         if self.mysection != "":
             self.mysectionEntry.setStyleSheet("border: 1px solid green;")
         else:
@@ -952,118 +1082,6 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             return ""
 
-    def readpreferences(self):
-        """
-        Read preferences if they exist, otherwise create some sane defaults.
-        """
-        try:
-            with sqlite3.connect(self.database) as conn:
-                cursor = conn.cursor()
-                cursor.execute("select * from preferences where id = 1")
-                pref = cursor.fetchall()
-                if len(pref) > 0:
-                    for preferences in pref:
-                        (
-                            _,
-                            self.mycall,
-                            self.myclass,
-                            self.mysection,
-                            self.power,
-                            self.altpower,
-                            self.outdoors,
-                            self.notathome,
-                            self.satellite,
-                            self.qrzname,
-                            self.qrzpass,
-                            self.qrzurl,
-                            self.cloudlogapi,
-                            self.cloudlogurl,
-                            useqrz,
-                            usecloudlog,
-                            userigcontrol,
-                            self.rigctrlhost,
-                            self.rigctrlport,
-                            self.markerfile,
-                            self.usemarker,
-                            self.usehamdb,
-                        ) = preferences
-                        self.altpower = bool(self.altpower)
-                        self.altpowerButton.setStyleSheet(
-                            self.highlighted(self.altpower)
-                        )
-                        self.outdoors = bool(self.outdoors)
-                        self.outdoorsButton.setStyleSheet(
-                            self.highlighted(self.outdoors)
-                        )
-                        self.notathome = bool(self.notathome)
-                        self.notathomeButton.setStyleSheet(
-                            self.highlighted(self.notathome)
-                        )
-                        self.satellite = bool(self.satellite)
-                        self.satelliteButton.setStyleSheet(
-                            self.highlighted(self.satellite)
-                        )
-                        self.mycallEntry.setText(self.mycall)
-                        self.myclassEntry.setText(self.myclass)
-                        self.mysectionEntry.setText(self.mysection)
-                        self.power_selector.setValue(int(self.power))
-                        self.usecloudlog = bool(usecloudlog)
-                        self.useqrz = bool(useqrz)
-                        self.flrig = False
-                        self.userigctl = False
-                        if userigcontrol == 1:
-                            self.flrig = False
-                            self.userigctl = True
-                        if userigcontrol == 2:
-                            self.flrig = True
-                            self.userigctl = False
-                        self.usemarker = bool(self.usemarker)
-                        self.usehamdb = bool(self.usehamdb)
-                else:
-                    sql = (
-                        "INSERT INTO preferences(id, mycallsign, myclass, "
-                        "mysection, power, altpower, outdoors, notathome, "
-                        "satellite, markerfile, usemarker, usehamdb) "
-                        f"VALUES(1,'{self.mycall}','{self.myclass}',"
-                        f"'{self.mysection}','{self.power}',"
-                        f"{int(self.altpower)},{int(self.outdoors)},"
-                        f"{int(self.notathome)},{int(self.satellite)},"
-                        f"'{self.markerfile}',{int(self.usemarker)},"
-                        f"{int(self.usehamdb)})"
-                    )
-                    cursor.execute(sql)
-                    conn.commit()
-                    self.power_selector.setValue(int(self.power))
-        except sqlite3.Error as exception:
-            logging.critical("readpreferences: %s", exception)
-
-    def writepreferences(self):
-        """
-        Stores preferences into the 'preferences' sql table.
-        """
-        try:
-            with sqlite3.connect(self.database) as conn:
-                sql = (
-                    f"UPDATE preferences SET "
-                    f"mycallsign = '{self.mycall}', "
-                    f"myclass = '{self.myclass}', "
-                    f"mysection = '{self.mysection}', "
-                    f"power = '{self.power_selector.value()}', "
-                    f"altpower = {int(self.altpower)}, "
-                    f"outdoors = {int(self.outdoors)}, "
-                    f"notathome = {int(self.notathome)}, "
-                    f"satellite = {int(self.satellite)}, "
-                    f"markerfile = '{self.markerfile}', "
-                    f"usemarker = {int(self.usemarker)}, "
-                    f"usehamdb = {int(self.usehamdb)} "
-                    "WHERE id = 1"
-                )
-                cur = conn.cursor()
-                cur.execute(sql)
-                conn.commit()
-        except sqlite3.Error as exception:
-            logging.critical("writepreferences: %s", exception)
-
     def log_contact(self):
         """Log a contact to the db."""
         if (
@@ -1173,10 +1191,10 @@ class MainWindow(QtWidgets.QMainWindow):
         # 2022 rules, bonuses down from 1500 to 500 each.
         self.score = (
             self.score
-            + (500 * self.altpower)
-            + (500 * self.outdoors)
-            + (500 * self.notathome)
-            + (500 * self.satellite)
+            + (500 * self.preference["altpower"])
+            + (500 * self.preference["outdoors"])
+            + (500 * self.preference["notathome"])
+            + (500 * self.preference["satellite"])
         )
         return self.score
 
@@ -1499,41 +1517,33 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def claim_alt_power(self, _) -> None:
         """is called when the Alt Power button is pressed."""
-        if self.altpower:
-            self.altpower = False
-        else:
-            self.altpower = True
-        self.altpowerButton.setStyleSheet(self.highlighted(self.altpower))
+        self.preference["altpower"] = not self.preference["altpower"]
+        self.altpowerButton.setStyleSheet(self.highlighted(self.preference["altpower"]))
         self.writepreferences()
         self.stats()
 
     def claim_outdoors(self, _) -> None:
         """Is called when the Outdoors button is pressed."""
-        if self.outdoors:
-            self.outdoors = False
-        else:
-            self.outdoors = True
-        self.outdoorsButton.setStyleSheet(self.highlighted(self.outdoors))
+        self.preference["outdoors"] = not self.preference["outdoors"]
+        self.outdoorsButton.setStyleSheet(self.highlighted(self.preference["outdoors"]))
         self.writepreferences()
         self.stats()
 
     def claim_not_at_home(self, _) -> None:
         """Is called when the Not At Home button is pressed."""
-        if self.notathome:
-            self.notathome = False
-        else:
-            self.notathome = True
-        self.notathomeButton.setStyleSheet(self.highlighted(self.notathome))
+        self.preference["notathome"] = not self.preference["notathome"]
+        self.notathomeButton.setStyleSheet(
+            self.highlighted(self.preference["notathome"])
+        )
         self.writepreferences()
         self.stats()
 
     def claim_satellite(self, _) -> None:
         """Is called when the satellite button is pressed."""
-        if self.satellite:
-            self.satellite = False
-        else:
-            self.satellite = True
-        self.satelliteButton.setStyleSheet(self.highlighted(self.satellite))
+        self.preference["satellite"] = not self.preference["satellite"]
+        self.satelliteButton.setStyleSheet(
+            self.highlighted(self.preference["satellite"])
+        )
         self.writepreferences()
         self.stats()
 
@@ -1933,28 +1943,28 @@ class MainWindow(QtWidgets.QMainWindow):
                     end="\r\n",
                     file=file_descriptor,
                 )
-                if self.altpower:
+                if self.preference["altpower"]:
                     print(
                         "SOAPBOX: 500 points for not using commercial power",
                         end="\r\n",
                         file=file_descriptor,
                     )
                     bonuses = bonuses + 500
-                if self.outdoors:
+                if self.preference["outdoors"]:
                     print(
                         "SOAPBOX: 500 points for setting up outdoors",
                         end="\r\n",
                         file=file_descriptor,
                     )
                     bonuses = bonuses + 500
-                if self.notathome:
+                if self.preference["notathome"]:
                     print(
                         "SOAPBOX: 500 points for setting up away from home",
                         end="\r\n",
                         file=file_descriptor,
                     )
                     bonuses = bonuses + 500
-                if self.satellite:
+                if self.preference["satellite"]:
                     print(
                         "SOAPBOX: 500 points for working satellite",
                         end="\r\n",
@@ -2100,74 +2110,73 @@ class EditQsoDialog(QtWidgets.QDialog):
         self.change.lineChanged.emit()
         self.close()
 
+    # class Settings(QtWidgets.QDialog):
+    #     """
+    #     Setup settings dialog. Reads and stores settings to an sqlite db.
+    #     Call setup() with filename of db.
+    #     """
 
-class Settings(QtWidgets.QDialog):
-    """
-    Setup settings dialog. Reads and stores settings to an sqlite db.
-    Call setup() with filename of db.
-    """
+    #     def __init__(self, parent=None):
+    #         super().__init__(parent)
+    #         uic.loadUi(self.relpath("settings.ui"), self)
+    #         self.buttonBox.accepted.connect(self.save_changes)
+    #         self.database = None
 
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        uic.loadUi(self.relpath("settings.ui"), self)
-        self.buttonBox.accepted.connect(self.save_changes)
-        self.database = None
-
-    def setup(self, thedatabase: str) -> None:
-        """Loads the local variables with data in the db that was passed in."""
-        self.database = thedatabase
-        try:
-            with sqlite3.connect(self.database) as conn:
-                cursor = conn.cursor()
-                cursor.execute("select * from preferences where id = 1")
-                record = cursor.fetchall()
-        except sqlite3.Error as exception:
-            logging.critical("settings setup: db error: %s", exception)
-            return
-        if len(record) > 0:
-            for data in record:
-                (
-                    _,
-                    _,
-                    _,
-                    _,
-                    _,
-                    _,
-                    _,
-                    _,
-                    _,
-                    qrzname,
-                    qrzpass,
-                    qrzurl,
-                    cloudlogapi,
-                    cloudlogurl,
-                    useqrz,
-                    usecloudlog,
-                    userigcontrol,
-                    rigctrlhost,
-                    rigctrlport,
-                    markerfile,
-                    usemarker,
-                    usehamdb,
-                ) = data
-                self.qrzname_field.setText(qrzname)
-                self.qrzpass_field.setText(qrzpass)
-                self.qrzurl_field.setText(qrzurl)
-                self.cloudlogapi_field.setText(cloudlogapi)
-                self.cloudlogurl_field.setText(cloudlogurl)
-                self.rigcontrolip_field.setText(rigctrlhost)
-                self.rigcontrolport_field.setText(rigctrlport)
-                self.usecloudlog_checkBox.setChecked(bool(usecloudlog))
-                self.useqrz_checkBox.setChecked(bool(useqrz))
-                if userigcontrol == 0:
-                    self.radioButton_none.setChecked(True)
-                if userigcontrol == 1:
-                    self.radioButton_rigctld.setChecked(True)
-                if userigcontrol == 2:
-                    self.radioButton_flrig.setChecked(True)
-                self.markerfile_field.setText(markerfile)
-                self.generatemarker_checkbox.setChecked(bool(usemarker))
-                self.usehamdb_checkBox.setChecked(bool(usehamdb))
+    #     def setup(self, thedatabase: str) -> None:
+    #         """Loads the local variables with data in the db that was passed in."""
+    #         self.database = thedatabase
+    #         try:
+    #             with sqlite3.connect(self.database) as conn:
+    #                 cursor = conn.cursor()
+    #                 cursor.execute("select * from preferences where id = 1")
+    #                 record = cursor.fetchall()
+    #         except sqlite3.Error as exception:
+    #             logging.critical("settings setup: db error: %s", exception)
+    #             return
+    #         if len(record) > 0:
+    #             for data in record:
+    #                 (
+    #                     _,
+    #                     _,
+    #                     _,
+    #                     _,
+    #                     _,
+    #                     _,
+    #                     _,
+    #                     _,
+    #                     _,
+    #                     qrzname,
+    #                     qrzpass,
+    #                     qrzurl,
+    #                     cloudlogapi,
+    #                     cloudlogurl,
+    #                     useqrz,
+    #                     usecloudlog,
+    #                     userigcontrol,
+    #                     rigctrlhost,
+    #                     rigctrlport,
+    #                     markerfile,
+    #                     usemarker,
+    #                     usehamdb,
+    #                 ) = data
+    #                 # self.qrzname_field.setText(qrzname)
+    #                 # self.qrzpass_field.setText(qrzpass)
+    #                 # self.qrzurl_field.setText(qrzurl)
+    #                 self.cloudlogapi_field.setText(cloudlogapi)
+    #                 self.cloudlogurl_field.setText(cloudlogurl)
+    #                 self.rigcontrolip_field.setText(rigctrlhost)
+    #                 self.rigcontrolport_field.setText(rigctrlport)
+    #                 self.usecloudlog_checkBox.setChecked(bool(usecloudlog))
+    #                 self.useqrz_checkBox.setChecked(bool(useqrz))
+    #                 if userigcontrol == 0:
+    #                     self.radioButton_none.setChecked(True)
+    #                 if userigcontrol == 1:
+    #                     self.radioButton_rigctld.setChecked(True)
+    #                 if userigcontrol == 2:
+    #                     self.radioButton_flrig.setChecked(True)
+    #                 self.markerfile_field.setText(markerfile)
+    #                 self.generatemarker_checkbox.setChecked(bool(usemarker))
+    #                 self.usehamdb_checkBox.setChecked(bool(usehamdb))
 
     @staticmethod
     def relpath(filename: str) -> str:
@@ -2279,29 +2288,48 @@ def startup_dialog_finished():
 
 if __name__ == "__main__":
     if Path("./debug").exists():
-        logging.basicConfig(level=logging.DEBUG)
+        logging.basicConfig(
+            format=(
+                "[%(asctime)s] %(levelname)s %(module)s - "
+                "%(funcName)s Line %(lineno)d:\n%(message)s"
+            ),
+            datefmt="%H:%M:%S",
+            level=logging.INFO,
+        )
     else:
-        logging.basicConfig(level=logging.WARNING)
+        logging.basicConfig(
+            format=(
+                "[%(asctime)s] %(levelname)s %(module)s - "
+                "%(funcName)s Line %(lineno)d:\n%(message)s"
+            ),
+            datefmt="%H:%M:%S",
+            level=logging.WARNING,
+        )
     app = QtWidgets.QApplication(sys.argv)
     app.setStyle("Fusion")
     font_dir = relpath("font")
     families = load_fonts_from_dir(os.fspath(font_dir))
     logging.info(families)
     window = MainWindow()
+    window.setWindowTitle(f"K6GTE Winter Field Day Logger v{__version__}")
     window.show()
-    window.create_db()
+    window.read_cw_macros()
+    # window.create_db()
     window.changeband()
     window.changemode()
-    window.readpreferences()
-    if window.mycall == "" or window.myclass == "" or window.mysection == "":
+    if (
+        window.preference["mycallsign"] == ""
+        or window.preference["myclass"] == ""
+        or window.preference["mysection"] == ""
+    ):
         startupdialog = Startup()
         startupdialog.accepted.connect(startup_dialog_finished)
         startupdialog.open()
-        startupdialog.set_callsign(window.mycall)
-        startupdialog.set_class(window.myclass)
-        startupdialog.set_section(window.mysection)
+        startupdialog.set_callsign(window.preference["mycallsign"])
+        startupdialog.set_class(window.preference["myclass"])
+        startupdialog.set_section(window.preference["mysection"])
     window.read_cw_macros()
-    window.setup_qrz()
+    # window.setup_qrz()
     window.cloudlogauth()
     window.stats()
     window.read_sections()
