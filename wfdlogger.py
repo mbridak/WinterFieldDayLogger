@@ -214,7 +214,7 @@ class MainWindow(QtWidgets.QMainWindow):
             "CAT_port": 4532,
             "cloudlog": 0,
             "cloudlogapi": "c01234567890123456789",
-            "cloudlogurl": "https://www.cloudlog.com/Cloudlog/index.php/api/",
+            "cloudlogurl": "https://www.cloudlog.com/Cloudlog/index.php/api",
             "cloudlogstationid": "",
             "usemarker": 0,
             "markerfile": ".xplanet/markers/ham",
@@ -401,17 +401,47 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def settingspressed(self) -> None:
         """
-        Get settings changes, Authorize to QRZ and Cloudlog if needed.
+        Show settings dialog
         """
         settingsdialog = Settings(self)
-        # settingsdialog.setup(self.database)
         settingsdialog.exec()
         self.infobox.clear()
         self.look_up = None
         self.cat_control = None
         self.readpreferences()
-        # self.setup_qrz()
-        # self.cloudlogauth()
+        if self.preference["useqrz"]:
+            self.look_up = QRZlookup(
+                self.preference["lookupusername"], self.preference["lookuppassword"]
+            )
+        if self.preference["usehamdb"]:
+            self.look_up = HamDBlookup()
+        if self.preference["usehamqth"]:
+            self.look_up = HamQTH(
+                self.preference["lookupusername"],
+                self.preference["lookuppassword"],
+            )
+        if self.preference["useflrig"]:
+            self.cat_control = CAT(
+                "flrig", self.preference["CAT_ip"], self.preference["CAT_port"]
+            )
+        if self.preference["userigctld"]:
+            self.cat_control = CAT(
+                "rigctld", self.preference["CAT_ip"], self.preference["CAT_port"]
+            )
+
+        if self.preference["cloudlog"]:
+            cloudlogapi = self.preference["cloudlogapi"]
+            cloudlogurl = self.preference["cloudlogurl"]
+
+            payload = "/validate/key=" + cloudlogapi
+            logging.info("%s", cloudlogurl + payload)
+            try:
+                result = requests.get(cloudlogurl + payload)
+                self.cloudlogauthenticated = False
+                if result.status_code == 200 or result.status_code == 400:
+                    self.cloudlogauthenticated = True
+            except requests.exceptions.ConnectionError as exception:
+                logging.warning("cloudlog authentication: %s", exception)
 
     def readpreferences(self):
         """
@@ -683,18 +713,18 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         Checks to see if rigctld daemon is running.
         """
-        if self.userigctl:
-            self.rigonline = True
-            try:
-                self.server = xmlrpc.client.ServerProxy(
-                    f"http://{self.rigctrlhost}:{self.rigctrlport}"
-                )
-                self.radio_icon.setPixmap(self.radio_red)
-            except Error:
-                self.rigonline = False
-                self.radio_icon.setPixmap(self.radio_grey)
-        else:
-            self.rigonline = False
+        # if self.userigctl:
+        #     self.rigonline = True
+        #     try:
+        #         self.server = xmlrpc.client.ServerProxy(
+        #             f"http://{self.rigctrlhost}:{self.rigctrlport}"
+        #         )
+        #         self.radio_icon.setPixmap(self.radio_red)
+        #     except Error:
+        #         self.rigonline = False
+        #         self.radio_icon.setPixmap(self.radio_grey)
+        # else:
+        #     self.rigonline = False
 
     def radio(self):
         """

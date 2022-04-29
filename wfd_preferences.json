@@ -14,7 +14,7 @@
     "CAT_port": 4532,
     "cloudlog": 0,
     "cloudlogapi": "c01234567890123456789",
-    "cloudlogurl": "https://www.cloudlog.com/Cloudlog/index.php/api/",
+    "cloudlogurl": "https://www.cloudlog.com/Cloudlog/index.php/api",
     "cloudlogstationid": "",
     "usemarker": 0,
     "markerfile": ".xplanet/markers/ham",
