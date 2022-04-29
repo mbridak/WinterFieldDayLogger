@@ -1595,18 +1595,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.infobox.setTextColor(QtGui.QColor(211, 215, 207))
         self.infobox.insertPlainText(f"Saving ADIF to: {logname}\n")
         app.processEvents()
-        try:
-            with sqlite3.connect(self.database) as conn:
-                cursor = conn.cursor()
-                cursor.execute("select * from contacts order by date_time ASC")
-                log = cursor.fetchall()
-        except sqlite3.Error as exception:
-            logging.critical("adif: db error: %s", exception)
-            return
+        log = self.db.fetch_all_contacts_asc()
         grid = False
         opname = False
         try:
-            with open(logname, "w", encoding="ascii") as file_descriptor:
+            with open(logname, "w", encoding="utf-8") as file_descriptor:
                 print("<ADIF_VER:5>2.2.0", end="\r\n", file=file_descriptor)
                 print("<EOH>", end="\r\n", file=file_descriptor)
                 for contact in log:
@@ -1669,8 +1662,8 @@ class MainWindow(QtWidgets.QMainWindow):
                         f"<RST_RCVD:{len(rst)}>{rst}", end="\r\n", file=file_descriptor
                     )
                     print(
-                        f"<STX_STRING:{len(self.myclass + ' ' + self.mysection)}>"
-                        f"{self.myclass + ' ' + self.mysection}",
+                        f"<STX_STRING:{len(self.preference['myclass'] + ' ' + self.preference['mysection'])}>"
+                        f"{self.preference['myclass'] + ' ' + self.preference['mysection']}",
                         end="\r\n",
                         file=file_descriptor,
                     )
