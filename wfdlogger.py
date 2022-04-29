@@ -8,8 +8,8 @@ GPL V3
 # Nothing to see here move along.
 # xplanet -body earth -window -longitude -117 -latitude 38 -config Default -projection azmithal -radius 200 -wait 5
 
-from types import NoneType
-import xmlrpc.client
+# from types import NoneType
+# import xmlrpc.client
 from math import radians, sin, cos, atan2, sqrt, asin, pi
 import sys
 import sqlite3
@@ -1113,20 +1113,15 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def log_contact(self):
         """Log a contact to the db."""
+
         if (
             len(self.callsign_entry.text()) == 0
             or len(self.class_entry.text()) == 0
             or len(self.section_entry.text()) == 0
         ):
+            logging.info("Incomplete fields")
             return
-        if self.useqrz:
-            grid, opname, _, error = self.qrz.lookup(self.callsign_entry.text())
-        if error:
-            logging.info("log_contact: lookup error %s", error)
-        if not grid:
-            grid = ""
-        if not opname:
-            opname = ""
+
         contact = (
             self.callsign_entry.text(),
             self.class_entry.text(),
@@ -1134,23 +1129,10 @@ class MainWindow(QtWidgets.QMainWindow):
             self.band,
             self.mode,
             int(self.power_selector.value()),
-            grid,
-            opname,
+            self.contactlookup["grid"],
+            self.contactlookup["name"],
         )
-        try:
-            with sqlite3.connect(self.database) as conn:
-                sql = (
-                    "INSERT INTO "
-                    "contacts(callsign, class, section, date_time, "
-                    "band, mode, power, grid, opname) "
-                    "VALUES(?,?,?,datetime('now'),?,?,?,?,?)"
-                )
-                cur = conn.cursor()
-                logging.info("log_contact: %s : %s", sql, contact)
-                cur.execute(sql, contact)
-                conn.commit()
-        except sqlite3.Error as exception:
-            logging.critical("log_ontact: %s", exception)
+        self.db.log_contact(contact)
         self.sections()
         self.stats()
         self.updatemarker()
@@ -1213,7 +1195,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.qrp:
             self.powermult = 4
             self.score = self.score * 4
-        elif not (self.highpower):
+        elif not self.highpower:
             self.powermult = 2
             self.score = self.score * 2
         self.score = self.score * self.bandmodemult
@@ -1252,7 +1234,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 )
                 log = cursor.fetchall()
                 self.highpower = bool(list(log[0])[0])
-                self.qrp = not (qrpc + qrpp + qrpd)
+                self.qrp = not qrpc + qrpp + qrpd
         except Error as exception:
             logging.critical("qrpcheck: %s", exception)
 
@@ -2138,117 +2120,6 @@ class EditQsoDialog(QtWidgets.QDialog):
             logging.critical("delete_contact: db error: %s", exception)
         self.change.lineChanged.emit()
         self.close()
-
-    # class Settings(QtWidgets.QDialog):
-    #     """
-    #     Setup settings dialog. Reads and stores settings to an sqlite db.
-    #     Call setup() with filename of db.
-    #     """
-
-    #     def __init__(self, parent=None):
-    #         super().__init__(parent)
-    #         uic.loadUi(self.relpath("settings.ui"), self)
-    #         self.buttonBox.accepted.connect(self.save_changes)
-    #         self.database = None
-
-    #     def setup(self, thedatabase: str) -> None:
-    #         """Loads the local variables with data in the db that was passed in."""
-    #         self.database = thedatabase
-    #         try:
-    #             with sqlite3.connect(self.database) as conn:
-    #                 cursor = conn.cursor()
-    #                 cursor.execute("select * from preferences where id = 1")
-    #                 record = cursor.fetchall()
-    #         except sqlite3.Error as exception:
-    #             logging.critical("settings setup: db error: %s", exception)
-    #             return
-    #         if len(record) > 0:
-    #             for data in record:
-    #                 (
-    #                     _,
-    #                     _,
-    #                     _,
-    #                     _,
-    #                     _,
-    #                     _,
-    #                     _,
-    #                     _,
-    #                     _,
-    #                     qrzname,
-    #                     qrzpass,
-    #                     qrzurl,
-    #                     cloudlogapi,
-    #                     cloudlogurl,
-    #                     useqrz,
-    #                     usecloudlog,
-    #                     userigcontrol,
-    #                     rigctrlhost,
-    #                     rigctrlport,
-    #                     markerfile,
-    #                     usemarker,
-    #                     usehamdb,
-    #                 ) = data
-    #                 # self.qrzname_field.setText(qrzname)
-    #                 # self.qrzpass_field.setText(qrzpass)
-    #                 # self.qrzurl_field.setText(qrzurl)
-    #                 self.cloudlogapi_field.setText(cloudlogapi)
-    #                 self.cloudlogurl_field.setText(cloudlogurl)
-    #                 self.rigcontrolip_field.setText(rigctrlhost)
-    #                 self.rigcontrolport_field.setText(rigctrlport)
-    #                 self.usecloudlog_checkBox.setChecked(bool(usecloudlog))
-    #                 self.useqrz_checkBox.setChecked(bool(useqrz))
-    #                 if userigcontrol == 0:
-    #                     self.radioButton_none.setChecked(True)
-    #                 if userigcontrol == 1:
-    #                     self.radioButton_rigctld.setChecked(True)
-    #                 if userigcontrol == 2:
-    #                     self.radioButton_flrig.setChecked(True)
-    #                 self.markerfile_field.setText(markerfile)
-    #                 self.generatemarker_checkbox.setChecked(bool(usemarker))
-    #                 self.usehamdb_checkBox.setChecked(bool(usehamdb))
-
-    @staticmethod
-    def relpath(filename: str) -> str:
-        """
-        Checks to see if program has been packaged with pyinstaller.
-        If so base dir is in a temp folder.
-        """
-        if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
-            base_path = getattr(sys, "_MEIPASS")
-        else:
-            base_path = os.path.abspath(".")
-        return os.path.join(base_path, filename)
-
-    def save_changes(self):
-        """Saves any changes back to the preferences table in the db."""
-        try:
-            with sqlite3.connect(self.database) as conn:
-                userigcontrol = 0
-                if self.radioButton_rigctld.isChecked():
-                    userigcontrol = 1
-                if self.radioButton_flrig.isChecked():
-                    userigcontrol = 2
-                sql = (
-                    f"UPDATE preferences SET qrzusername = '{self.qrzname_field.text()}', "
-                    f"qrzpassword = '{self.qrzpass_field.text()}', "
-                    f"qrzurl = '{self.qrzurl_field.text()}', "
-                    f"cloudlogapi = '{self.cloudlogapi_field.text()}', "
-                    f"cloudlogurl = '{self.cloudlogurl_field.text()}', "
-                    f"rigcontrolip = '{self.rigcontrolip_field.text()}', "
-                    f"rigcontrolport = '{self.rigcontrolport_field.text()}', "
-                    f"useqrz = '{int(self.useqrz_checkBox.isChecked())}', "
-                    f"usecloudlog = '{int(self.usecloudlog_checkBox.isChecked())}', "
-                    f"userigcontrol = '{userigcontrol}', "
-                    f"markerfile = '{self.markerfile_field.text()}', "
-                    f"usemarker = '{int(self.generatemarker_checkbox.isChecked())}', "
-                    f"usehamdb = '{int(self.usehamdb_checkBox.isChecked())}'  where id=1;"
-                )
-
-                cur = conn.cursor()
-                cur.execute(sql)
-                conn.commit()
-        except sqlite3.Error as exception:
-            logging.critical("settings save_changes: db error: %s", exception)
 
 
 class Startup(QtWidgets.QDialog):

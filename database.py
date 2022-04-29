@@ -36,6 +36,7 @@ class DataBase:
         Inserts a contact into the db.
         pass in (hiscall, hisclass, hissection, band, mode, int(power))
         """
+        logging.info("%s", logme)
         try:
             with sqlite3.connect(self.database) as conn:
                 sql = (
@@ -44,11 +45,12 @@ class DataBase:
                     "band, mode, power, grid, opname) "
                     "VALUES(?,?,?,datetime('now'),?,?,?,?,?)"
                 )
+                logging.info("%s", sql)
                 cur = conn.cursor()
                 cur.execute(sql, logme)
                 conn.commit()
         except sqlite3.Error as exception:
-            logging.debug("DataBase log_contact: %s", exception)
+            logging.info("DataBase log_contact: %s", exception)
 
     def delete_contact(self, contact) -> None:
         """Deletes a contact from the db."""
@@ -60,7 +62,7 @@ class DataBase:
                     cur.execute(sql)
                     conn.commit()
             except sqlite3.Error as exception:
-                logging.debug("DataBase delete_contact: %s", exception)
+                logging.info("DataBase delete_contact: %s", exception)
 
     def change_contact(self, qso):
         """Update an existing contact."""
@@ -75,7 +77,7 @@ class DataBase:
                 cur.execute(sql)
                 conn.commit()
         except sqlite3.Error as exception:
-            logging.debug("DataBase change_contact: %s", exception)
+            logging.info("DataBase change_contact: %s", exception)
 
     def stats(self) -> tuple:
         """
