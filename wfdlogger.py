@@ -5,6 +5,8 @@ Email: michael.bridak@gmail.com
 GPL V3
 """
 
+# pylint: disable=invalid-name
+
 # Nothing to see here move along.
 # xplanet -body earth -window -longitude -117 -latitude 38 -config Default -projection azmithal -radius 200 -wait 5
 
@@ -1154,32 +1156,13 @@ class MainWindow(QtWidgets.QMainWindow):
         Return our current score based on operating power,
         band / mode multipliers and types of contacts.
         """
-        self.qrpcheck()
-        try:
-            with sqlite3.connect(self.database) as conn:
-                cursor = conn.cursor()
-                cursor.execute("select count(*) as cw from contacts where mode = 'CW'")
-                morse = str(cursor.fetchone()[0])
-                cursor.execute("select count(*) as ph from contacts where mode = 'PH'")
-                phone = str(cursor.fetchone()[0])
-                cursor.execute("select count(*) as di from contacts where mode = 'DI'")
-                digital = str(cursor.fetchone()[0])
-                cursor.execute("select distinct band, mode from contacts")
-                self.bandmodemult = len(cursor.fetchall())
-        except Error as exception:
-            logging.critical("calcscore: %s", exception)
-            return 0
-        self.score = (int(morse) * 2) + int(phone) + (int(digital) * 2)
-        self.basescore = self.score
-        self.powermult = 0  # 2022 rules, no highpower allowed
-        if self.qrp:
-            self.powermult = 4
+        cw, ph, di, bandmodemult, _, _, highpower, qrp = self.db.stats()
+        self.score = (int(cw) * 2) + int(ph) + (int(di) * 2)
+        if qrp:
             self.score = self.score * 4
-        elif not self.highpower:
-            self.powermult = 2
+        elif not highpower:
             self.score = self.score * 2
-        self.score = self.score * self.bandmodemult
-        # 2022 rules, bonuses down from 1500 to 500 each.
+        self.score = self.score * bandmodemult
         self.score = (
             self.score
             + (500 * self.preference["altpower"])
