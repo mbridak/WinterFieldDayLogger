@@ -326,13 +326,6 @@ class MainWindow(QtWidgets.QMainWindow):
         arrgh = 6372.8  # Radius of earth in kilometers.
         return cee * arrgh
 
-    # def setup_qrz(self) -> None:
-    #     """
-    #     Setup QRZ
-    #     """
-    #     if self.useqrz:
-    #         self.qrz = QRZlookup(self.qrzname, self.qrzpass)
-
     def read_cw_macros(self) -> None:
         """
         Reads in the CW macros, firsts it checks to see if the file exists. If it does not,
@@ -430,20 +423,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.cat_control = CAT(
                 "rigctld", self.preference["CAT_ip"], self.preference["CAT_port"]
             )
-
-        if self.preference["cloudlog"]:
-            cloudlogapi = self.preference["cloudlogapi"]
-            cloudlogurl = self.preference["cloudlogurl"]
-
-            payload = "/validate/key=" + cloudlogapi
-            logging.info("%s", cloudlogurl + payload)
-            try:
-                result = requests.get(cloudlogurl + payload)
-                self.cloudlogauthenticated = False
-                if result.status_code == 200 or result.status_code == 400:
-                    self.cloudlogauthenticated = True
-            except requests.exceptions.ConnectionError as exception:
-                logging.warning("cloudlog authentication: %s", exception)
 
     def readpreferences(self):
         """
@@ -565,10 +544,14 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         self.cloudlog_icon.setPixmap(self.cloud_grey)
         self.cloudlogauthenticated = False
-        if self.usecloudlog:
+        if self.preference["cloudlog"]:
             try:
                 self.cloudlog_icon.setPixmap(self.cloud_red)
-                test = self.cloudlogurl[:-3] + "auth/" + self.cloudlogapi
+                test = (
+                    self.preference["cloudlogurl"]
+                    + "/auth/"
+                    + self.preference["cloudlogapi"]
+                )
                 result = requests.get(test, params={}, timeout=2.0)
                 if result.status_code == 200 and result.text.find("<status>") > 0:
                     if (
@@ -583,7 +566,7 @@ class MainWindow(QtWidgets.QMainWindow):
                         logging.info("Cloudlog: Authenticated.")
                 else:
                     logging.warning(
-                        "Cloudlog: %s Unable to authenticate.", result.status_code
+                        "%s Unable to authenticate.\n%s", result.status_code, test
                     )
             except requests.exceptions.RequestException as exception:
                 self.infobox.insertPlainText(
