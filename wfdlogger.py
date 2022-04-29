@@ -1508,14 +1508,7 @@ class MainWindow(QtWidgets.QMainWindow):
         Returns a list of bands worked, and an empty list if none worked.
         """
         bandlist = []
-        try:
-            with sqlite3.connect(self.database) as conn:
-                cursor = conn.cursor()
-                cursor.execute("select DISTINCT band from contacts")
-                result = cursor.fetchall()
-        except Error as exception:
-            logging.critical("getbands: %s", exception)
-            return []
+        result = self.db.get_bands()
         if result:
             for returned_band in result:
                 bandlist.append(returned_band[0])
@@ -1595,10 +1588,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.usemarker:
             filename = str(Path.home()) + "/" + self.markerfile
             try:
-                with sqlite3.connect(self.database) as conn:
-                    cursor = conn.cursor()
-                    cursor.execute("select DISTINCT grid from contacts")
-                    grids = cursor.fetchall()
+                grids = self.db.get_unique_grids()
                 if grids:
                     lastcolor = ""
                     with open(filename, "w", encoding="ascii") as file_descriptor:
@@ -1619,8 +1609,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 )
                 self.infobox.setTextColor(QtGui.QColor(245, 121, 0))
                 self.infobox.insertPlainText(f"Unable to write to {filename}\n")
-            except Error as exception:
-                logging.critical("updatemarker: db error: %s", exception)
 
     def adif(self):
         """
