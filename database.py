@@ -201,3 +201,10 @@ class DataBase:
             cursor = conn.cursor()
             cursor.execute("select * from contacts where id=" + record)
             return cursor.fetchall()
+
+    def get_unique_grids(self) -> tuple:
+        """returns a tuple of unique gridsquares worked."""
+        with sqlite3.connect(self.database) as conn:
+            cursor = conn.cursor()
+            cursor.execute("select DISTINCT grid from contacts")
+            return cursor.fetchall()
