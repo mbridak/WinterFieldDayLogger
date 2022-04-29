@@ -134,8 +134,7 @@ class MainWindow(QtWidgets.QMainWindow):
     oldrfpower = 0
     basescore = 0
     powermult = 0
-    fkeys = dict()
-    # keyerserver = "http://localhost:8000"
+    fkeys = {}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -496,6 +495,20 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.preference["cwip"],
                     self.preference["cwport"],
                 )
+
+            self.altpowerButton.setStyleSheet(
+                self.highlighted(self.preference["altpower"])
+            )
+            self.outdoorsButton.setStyleSheet(
+                self.highlighted(self.preference["outdoors"])
+            )
+            self.notathomeButton.setStyleSheet(
+                self.highlighted(self.preference["notathome"])
+            )
+            self.satelliteButton.setStyleSheet(
+                self.highlighted(self.preference["satellite"])
+            )
+
         except KeyError as err:
             logging.warning("Corrupt preference, %s, loading clean version.", err)
             self.preference = self.reference_preference.copy()
