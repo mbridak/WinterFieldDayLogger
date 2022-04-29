@@ -1146,6 +1146,7 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         cw, ph, di, bandmodemult, _, _, highpower, qrp = self.db.stats()
         self.score = (int(cw) * 2) + int(ph) + (int(di) * 2)
+        self.basescore = self.score
         if qrp:
             self.score = self.score * 4
         elif not highpower:
@@ -1794,26 +1795,21 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         Generates a cabrillo log file.
         """
-        filename = f"{self.mycall.upper()}.log"
+        filename = f"{self.preference['mycallsign'].upper()}.log"
         self.infobox.setTextColor(QtGui.QColor(211, 215, 207))
         self.infobox.insertPlainText(f"Saving cabrillo to: {filename}")
         app.processEvents()
         bonuses = 0
-        try:
-            with sqlite3.connect(self.database) as conn:
-                cursor = conn.cursor()
-                cursor.execute("select * from contacts order by date_time ASC")
-                log = cursor.fetchall()
-        except sqlite3.Error as exception:
-            logging.critical("cabrillo: db error: %s", exception)
-            self.infobox.insertPlainText(" Failed\n\n")
-            app.processEvents()
-            return
+        log = self.db.fetch_all_contacts_asc()
         catpower = ""
-        if self.qrp:
+        _, _, _, _, _, _, highpower, qrp = self.db.stats()
+        self.powermult = 0
+        if qrp:
             catpower = "QRP"
-        elif self.highpower:
+            self.powermult = 4
+        elif highpower:
             catpower = "HIGH"
+            self.powermult = 2
         else:
             catpower = "LOW"
         try:
@@ -1825,12 +1821,22 @@ class MainWindow(QtWidgets.QMainWindow):
                     file=file_descriptor,
                 )
                 print("CONTEST: WFD", end="\r\n", file=file_descriptor)
-                print(f"CALLSIGN: {self.mycall}", end="\r\n", file=file_descriptor)
+                print(
+                    f"CALLSIGN: {self.preference['mycallsign']}",
+                    end="\r\n",
+                    file=file_descriptor,
+                )
                 print("LOCATION:", end="\r\n", file=file_descriptor)
                 print(
-                    f"ARRL-SECTION: {self.mysection}", end="\r\n", file=file_descriptor
+                    f"ARRL-SECTION: {self.preference['mysection']}",
+                    end="\r\n",
+                    file=file_descriptor,
                 )
-                print(f"CATEGORY: {self.myclass}", end="\r\n", file=file_descriptor)
+                print(
+                    f"CATEGORY: {self.preference['myclass']}",
+                    end="\r\n",
+                    file=file_descriptor,
+                )
                 print(f"CATEGORY-POWER: {catpower}", end="\r\n", file=file_descriptor)
                 print(
                     f"SOAPBOX: QSO Points {self.basescore}",
@@ -1883,7 +1889,11 @@ class MainWindow(QtWidgets.QMainWindow):
                     end="\r\n",
                     file=file_descriptor,
                 )
-                print(f"OPERATORS: {self.mycall}", end="\r\n", file=file_descriptor)
+                print(
+                    f"OPERATORS: {self.preference['mycallsign']}",
+                    end="\r\n",
+                    file=file_descriptor,
+                )
                 print("NAME: ", end="\r\n", file=file_descriptor)
                 print("ADDRESS: ", end="\r\n", file=file_descriptor)
                 print("ADDRESS-CITY: ", end="\r\n", file=file_descriptor)
