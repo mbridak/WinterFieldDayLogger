@@ -1194,7 +1194,7 @@ class MainWindow(QtWidgets.QMainWindow):
         item = self.listWidget.currentItem()
         self.linetopass = item.text()
         dialog = EditQsoDialog(self)
-        dialog.setup(self.linetopass, self.database)
+        dialog.setup(self.linetopass, self.db)
         dialog.change.lineChanged.connect(self.qsoedited)
         dialog.open()
 
@@ -1963,6 +1963,7 @@ class EditQsoDialog(QtWidgets.QDialog):
         date_time = thedate + " " + thetime
         now = QtCore.QDateTime.fromString(date_time, "yyyy-MM-dd hh:mm:ss")
         self.editDateTime.setDateTime(now)
+        self.database = thedatabase
 
     @staticmethod
     def relpath(filename: str) -> str:
@@ -1978,34 +1979,22 @@ class EditQsoDialog(QtWidgets.QDialog):
 
     def save_changes(self):
         """Update edited contact in the db."""
-        try:
-            with sqlite3.connect(self.database) as conn:
-                sql = (
-                    f"update contacts set callsign = '{self.editCallsign.text().upper()}', "
-                    f"class = '{self.editClass.text().upper()}', "
-                    f"section = '{self.editSection.text().upper()}', "
-                    f"date_time = '{self.editDateTime.text()}', "
-                    f"band = '{self.editBand.currentText()}', "
-                    f"mode = '{self.editMode.currentText()}', "
-                    f"power = '{self.editPower.value()}'  where id={self.theitem}"
-                )
-                cur = conn.cursor()
-                cur.execute(sql)
-                conn.commit()
-        except sqlite3.Error as exception:
-            logging.critical("save_changes: db error: %s", exception)
+        qso = (
+            self.editCallsign.text().upper(),
+            self.editClass.text().upper(),
+            self.editSection.text().upper(),
+            self.editDateTime.text(),
+            self.editBand.currentText(),
+            self.editMode.currentText(),
+            self.editPower.value(),
+            self.theitem,
+        )
+        self.database.change_contact(qso)
         self.change.lineChanged.emit()
 
     def delete_contact(self):
         """Delete a contact from the db."""
-        try:
-            with sqlite3.connect(self.database) as conn:
-                sql = f"delete from contacts where id={self.theitem}"
-                cur = conn.cursor()
-                cur.execute(sql)
-                conn.commit()
-        except sqlite3.Error as exception:
-            logging.critical("delete_contact: db error: %s", exception)
+        self.database.delete_contact(self.theitem)
         self.change.lineChanged.emit()
         self.close()
 

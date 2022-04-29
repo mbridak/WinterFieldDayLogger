@@ -69,10 +69,11 @@ class DataBase:
         try:
             with sqlite3.connect(self.database) as conn:
                 sql = (
-                    f"update contacts set callsign = '{qso[1]}', class = '{qso[2]}', "
-                    f"section = '{qso[3]}', date_time = '{qso[4]}', band = '{qso[5]}', "
-                    f"mode = '{qso[6]}', power = '{qso[7]}'  where id='{qso[0]}'"
+                    f"update contacts set callsign = '{qso[0]}', class = '{qso[1]}', "
+                    f"section = '{qso[2]}', date_time = '{qso[3]}', band = '{qso[4]}', "
+                    f"mode = '{qso[5]}', power = '{qso[6]}'  where id='{qso[7]}'"
                 )
+                logging.info("%s\n%s", sql, qso)
                 cur = conn.cursor()
                 cur.execute(sql)
                 conn.commit()
