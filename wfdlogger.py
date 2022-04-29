@@ -1186,16 +1186,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def logwindow(self):
         """Populated the log window with contacts stored in the database."""
-
         self.listWidget.clear()
-        try:
-            with sqlite3.connect(self.database) as conn:
-                cursor = conn.cursor()
-                cursor.execute("select * from contacts order by date_time desc")
-                log = cursor.fetchall()
-        except Error as exception:
-            logging.critical("logwindow: %s", exception)
-            return
+        log = self.db.fetch_all_contacts_desc()
         for x in log:
             (
                 logid,
