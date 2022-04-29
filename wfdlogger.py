@@ -1155,35 +1155,6 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         return self.score
 
-    def qrpcheck(self):
-        """qrp = 5W cw, 10W ph and di, highpower greater than 100W"""
-        try:
-            with sqlite3.connect(self.database) as conn:
-                cursor = conn.cursor()
-                cursor.execute(
-                    "select count(*) as qrpc from contacts where mode = 'CW' and power > 5"
-                )
-                log = cursor.fetchall()
-                qrpc = list(log[0])[0]
-                cursor.execute(
-                    "select count(*) as qrpp from contacts where mode = 'PH' and power > 10"
-                )
-                log = cursor.fetchall()
-                qrpp = list(log[0])[0]
-                cursor.execute(
-                    "select count(*) as qrpd from contacts where mode = 'DI' and power > 10"
-                )
-                log = cursor.fetchall()
-                qrpd = list(log[0])[0]
-                cursor.execute(
-                    "select count(*) as highpower from contacts where power > 100"
-                )
-                log = cursor.fetchall()
-                self.highpower = bool(list(log[0])[0])
-                self.qrp = not qrpc + qrpp + qrpd
-        except Error as exception:
-            logging.critical("qrpcheck: %s", exception)
-
     def logwindow(self):
         """Populated the log window with contacts stored in the database."""
         self.listWidget.clear()
