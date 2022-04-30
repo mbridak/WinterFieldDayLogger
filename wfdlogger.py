@@ -16,10 +16,10 @@ import sqlite3
 import socket
 import os
 import logging
+import threading
 
 from json import dumps, loads
 from datetime import datetime
-
 from pathlib import Path
 from shutil import copyfile
 
@@ -76,6 +76,7 @@ class MainWindow(QtWidgets.QMainWindow):
     mycall = ""
     myclass = ""
     mysection = ""
+    mygrid=""
     power = "100"
     band = "40"
     mode = "CW"
@@ -250,6 +251,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.contactlookup["error"] = ""
         self.contactlookup["distance"] = ""
         self.contactlookup["bearing"] = ""
+
+    def lookupmygrid(self):
+        """lookup my own gridsquare"""
+        global mygrid
+        if self.look_up:
+            self.mygrid, _, _, _ = self.look_up.lookup(self.preference["mycallsign"])
+            logging.info("my grid: %s", self.mygrid)
 
     def lazy_lookup(self, acall: str):
         """El Lookup De Lazy"""
@@ -463,27 +471,27 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.look_up = QRZlookup(
                     self.preference["lookupusername"], self.preference["lookuppassword"]
                 )
-                self.callbook_icon.setText("QRZ")
+                # self.callbook_icon.setText("QRZ")
                 if self.look_up.session:
-                    self.callbook_icon.setStyleSheet("color: rgb(128, 128, 0);")
+                    self.QRZ_icon.setStyleSheet("color: rgb(128, 128, 0);")
                 else:
-                    self.callbook_icon.setStyleSheet("color: rgb(136, 138, 133);")
+                    self.QRZ_icon.setStyleSheet("color: rgb(136, 138, 133);")
 
             if self.preference["usehamdb"]:
                 self.look_up = HamDBlookup()
-                self.callbook_icon.setText("HamDB")
-                self.callbook_icon.setStyleSheet("color: rgb(128, 128, 0);")
+                # self.QRZ_icon.setText("HamDB")
+                self.QRZ_icon.setStyleSheet("color: rgb(128, 128, 0);")
 
             if self.preference["usehamqth"]:
                 self.look_up = HamQTH(
                     self.preference["lookupusername"],
                     self.preference["lookuppassword"],
                 )
-                self.callbook_icon.setText("HamQTH")
+                # self.callbook_icon.setText("HamQTH")
                 if self.look_up.session:
-                    self.callbook_icon.setStyleSheet("color: rgb(128, 128, 0);")
+                    self.QRZ_icon.setStyleSheet("color: rgb(128, 128, 0);")
                 else:
-                    self.callbook_icon.setStyleSheet("color: rgb(136, 138, 133);")
+                    self.QRZ_icon.setStyleSheet("color: rgb(136, 138, 133);")
 
             self.cloudlogauth()
 
@@ -769,6 +777,13 @@ class MainWindow(QtWidgets.QMainWindow):
                     if cse[0] == ".":
                         self.keyboardcommand(cse)
                         return
+                    else:
+                        _thethread = threading.Thread(
+                            target=self.lazy_lookup,
+                            args=(self.callsign_entry.text(),),
+                            daemon=True,
+                        )
+                        _thethread.start()
                 self.class_entry.setFocus()
                 self.class_entry.deselect()
                 self.class_entry.end(False)
@@ -901,6 +916,11 @@ class MainWindow(QtWidgets.QMainWindow):
         logging.info("%s", self.preference)
         if self.mycall != "":
             self.mycallEntry.setStyleSheet("border: 1px solid green;")
+            _thethread = threading.Thread(
+                target=self.lookupmygrid,
+                daemon=True,
+            )
+            _thethread.start()
         else:
             self.mycallEntry.setStyleSheet("border: 1px solid red;")
         self.writepreferences()
@@ -1034,6 +1054,12 @@ class MainWindow(QtWidgets.QMainWindow):
                     if stripped[0] == ".":
                         self.keyboardcommand(stripped)
                         return
+                _thethread = threading.Thread(
+                    target=self.lazy_lookup,
+                    args=(self.callsign_entry.text(),),
+                    daemon=True,
+                )
+                _thethread.start()
                 self.class_entry.setFocus()
                 self.class_entry.deselect()
             else:
@@ -1722,15 +1748,6 @@ class MainWindow(QtWidgets.QMainWindow):
         if (not self.preference["cloudlog"]) or (not self.cloudlogauthenticated):
             return
         contact = self.db.fetch_last_contact()
-        # try:
-        #     with sqlite3.connect(self.database) as conn:
-        #         cursor = conn.cursor()
-        #         cursor.execute("select * from contacts order by id DESC")
-        #         contact = cursor.fetchone()
-        # except sqlite3.Error as exception:
-        #     logging.critical("postcloudlog: db error: %s", exception)
-        #     return
-        # fixme
         (
             _,
             hiscall,

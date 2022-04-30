@@ -21,9 +21,9 @@ class HamDBlookup:
 
     def lookup(self, call: str) -> tuple:
         """
-        Lookup a call on QRZ
+        Lookup a call on HamDB
         """
-        logging.info("Hamdblookup-lookup: %s", call)
+        logging.info("%s", call)
         grid = False
         name = False
         error_text = False
@@ -39,14 +39,14 @@ class HamDBlookup:
             return grid, name, nickname, exception
         if query_result.status_code == 200:
             self.error = False
-            root = bs(query_result.text, "xml")
+            root = bs(query_result.text, "lxml-xml")
             if root.messages.find("status"):
                 error_text = root.messages.status.text
-                logging.debug("HamDB: %s", error_text)
+                logging.info("%s", error_text)
                 if error_text != "OK":
                     self.error = False
             if root.find("callsign"):
-                logging.debug("HamDB: found callsign field")
+                logging.info("found callsign field")
                 if root.callsign.find("grid"):
                     grid = root.callsign.grid.text
                 if root.callsign.find("fname"):
@@ -61,7 +61,7 @@ class HamDBlookup:
         else:
             self.error = True
             error_text = str(query_result.status_code)
-        logging.info("HamDB-lookup: %s %s %s %s", grid, name, nickname, error_text)
+        logging.info("%s %s %s %s", grid, name, nickname, error_text)
         return grid, name, nickname, error_text
 
 
@@ -90,32 +90,35 @@ class QRZlookup:
         Error messages returned by QRZ will be in class variable 'error'
         Other messages returned will be in class variable 'message'
         """
-        logging.info("QRZlookup-getsession:")
+        logging.info("Getting QRZ session.")
         self.error = False
         self.message = False
         self.session = False
         try:
             payload = {"username": self.username, "password": self.password}
             query_result = requests.get(self.qrzurl, params=payload, timeout=10.0)
-            root = bs(query_result.text, "xml")
-            if root.session.find("key"):
-                self.session = root.session.key.text
-            if root.session.find("subexp"):
-                self.expiration = root.session.subexp.text
-            if root.session.find("error"):
-                self.error = root.session.error.text
-            if root.session.find("message"):
-                self.message = root.session.message.text
+            root = bs(query_result.text, "lxml-xml")
+            logging.info("\n\n%s\n\n", query_result.text)
+            if root.Session.find("Key"):
+                self.session = root.Session.Key.text
+            if root.Session.find("SubExp"):
+                self.expiration = root.Session.SubExp.text
+            if root.Session.find("Error"):
+                self.error = root.Session.Error.text
+            if root.Session.find("Message"):
+                self.message = root.Session.Message.text
             logging.info(
-                "QRZlookup-getsession: key:%s error:%s message:%s",
+                "key:%s error:%s message:%s",
                 self.session,
                 self.error,
                 self.message,
             )
         except requests.exceptions.RequestException as exception:
-            logging.info("QRZlookup-getsession: %s", exception)
+            logging.info("%s", exception)
             self.session = False
             self.error = f"{exception}"
+        except AttributeError as err:
+            logging.critical("Attribute Error %s : \n\n%s\n\n",err,locals())
 
     def lookup(self, call: str) -> tuple:
         """
@@ -133,8 +136,8 @@ class QRZlookup:
             except requests.exceptions.Timeout as exception:
                 self.error = True
                 return grid, name, nickname, exception
-            root = bs(query_result.text, "xml")
-            if not root.session.key:  # key expired get a new one
+            root = bs(query_result.text, "lxml-xml")
+            if not root.Session.Key:  # key expired get a new one
                 logging.info("QRZlookup-lookup: no key, getting new one.")
                 self.getsession()
                 if self.session:
@@ -151,30 +154,29 @@ class QRZlookup:
         Returns gridsquare and name for a callsign looked up by qrz or hamdb.
         Or False for both if none found or error.
         """
-        logging.info("QRZlookup-parse_lookup:")
         grid = False
         name = False
         error_text = False
         nickname = False
         if query_result.status_code == 200:
-            root = bs(query_result.text, "xml")
-            if root.session.find("error"):
-                error_text = root.session.error.text
+            root = bs(query_result.text, "lxml-xml")
+            if root.Session.find("Error"):
+                error_text = root.Session.Error.text
                 self.error = error_text
-            if root.find("callsign"):
-                if root.callsign.find("grid"):
-                    grid = root.callsign.grid.text
-                if root.callsign.find("fname"):
-                    name = root.callsign.fname.text
-                if root.find("name"):
+            if root.find("Callsign"):
+                if root.Callsign.find("grid"):
+                    grid = root.Callsign.grid.text
+                if root.Callsign.find("fname"):
+                    name = root.Callsign.fname.text
+                if root.Callsign.find("name"):
                     if not name:
-                        name = root.find("name").string
+                        name = root.Callsign.find("name").string
                     else:
-                        name = f"{name} {root.find('name').string}"
-                if root.callsign.find("nickname"):
-                    nickname = root.callsign.nickname.text
+                        name = f"{name} {root.Callsign.find('name').string}"
+                if root.Callsign.find("nickname"):
+                    nickname = root.Callsign.nickname.text
         logging.info(
-            "QRZlookup-parse_lookup: %s %s %s %s", grid, name, nickname, error_text
+            "%s %s %s %s", grid, name, nickname, error_text
         )
         return grid, name, nickname, error_text
 
