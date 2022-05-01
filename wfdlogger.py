@@ -76,7 +76,7 @@ class MainWindow(QtWidgets.QMainWindow):
     mycall = ""
     myclass = ""
     mysection = ""
-    mygrid=""
+    mygrid = ""
     power = "100"
     band = "40"
     mode = "CW"
@@ -254,7 +254,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def lookupmygrid(self):
         """lookup my own gridsquare"""
-        global mygrid
         if self.look_up:
             self.mygrid, _, _, _ = self.look_up.lookup(self.preference["mycallsign"])
             logging.info("my grid: %s", self.mygrid)
@@ -493,6 +492,13 @@ class MainWindow(QtWidgets.QMainWindow):
                 else:
                     self.QRZ_icon.setStyleSheet("color: rgb(136, 138, 133);")
 
+            if self.look_up and self.preference["mycallsign"] != "":
+                _thethread = threading.Thread(
+                    target=self.lookupmygrid,
+                    daemon=True,
+                )
+                _thethread.start()
+
             self.cloudlogauth()
 
             if self.preference["cwtype"] == 0:
@@ -596,30 +602,34 @@ class MainWindow(QtWidgets.QMainWindow):
         logging.info("getband: %s %s", type(freq), freq)
         if freq.isnumeric():
             frequency = int(float(freq))
-            if frequency > 1800000 and frequency < 2000000:
+            if 2000000 > frequency > 1800000:
                 return "160"
-            if frequency > 3500000 and frequency < 4000000:
+            if 4000000 > frequency > 3500000:
                 return "80"
-            if frequency > 5330000 and frequency < 5406000:
+            if 5406000 > frequency > 5330000:
                 return "60"
-            if frequency > 7000000 and frequency < 7300000:
+            if 7300000 > frequency > 7000000:
                 return "40"
-            if frequency > 10100000 and frequency < 10150000:
+            if 10150000 > frequency > 10100000:
                 return "30"
-            if frequency > 14000000 and frequency < 14350000:
+            if 14350000 > frequency > 14000000:
                 return "20"
-            if frequency > 18068000 and frequency < 18168000:
+            if 18168000 > frequency > 18068000:
                 return "17"
-            if frequency > 21000000 and frequency < 21450000:
+            if 21450000 > frequency > 21000000:
                 return "15"
-            if frequency > 24890000 and frequency < 24990000:
+            if 24990000 > frequency > 24890000:
                 return "12"
-            if frequency > 28000000 and frequency < 29700000:
+            if 29700000 > frequency > 28000000:
                 return "10"
-            if frequency > 50000000 and frequency < 54000000:
+            if 54000000 > frequency > 50000000:
                 return "6"
-            if frequency > 144000000 and frequency < 148000000:
+            if 148000000 > frequency > 144000000:
                 return "2"
+            if 225000000 > frequency > 222000000:
+                return "222"
+            if 450000000 > frequency > 420000000:
+                return "432"
         else:
             return "0"
 
@@ -628,9 +638,9 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         Change what rigctld returned for the mode to the cabrillo mode for logging.
         """
-        if rigmode == "CW" or rigmode == "CWR":
+        if rigmode in ("CW", "CWR"):
             return "CW"
-        if rigmode == "USB" or rigmode == "LSB" or rigmode == "FM" or rigmode == "AM":
+        if rigmode in ("USB", "LSB", "FM", "AM"):
             return "PH"
         return "DI"  # All else digital
 
