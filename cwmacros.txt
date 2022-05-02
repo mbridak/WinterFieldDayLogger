@@ -1,6 +1,6 @@
-F1|Run CQ|cq wfd {MYCALL} {MYCALL} k
+F1|Run CQ|cq wfd {MYCALL} {MYCALL} wfd
 F2|Run Exch|{HISCALL} {MYCLASS} {MYSECT}
-F3|Run TU|tu {MYCALL} qrz
+F3|Run TU|tu {MYCALL} wfd
 F4|MyCall|{MYCALL}
 F5|Exch|{MYCLASS} {MYSECT}
 F6|MyClass|{MYCLASS}
