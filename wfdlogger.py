@@ -226,7 +226,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.cw = None
         self.readpreferences()
         self.radiochecktimer = QtCore.QTimer()
-        self.radiochecktimer.timeout.connect(self.radio)
+        self.radiochecktimer.timeout.connect(self.poll_radio)
         self.radiochecktimer.start(1000)
 
     @staticmethod
@@ -662,84 +662,41 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         Poll rigctld to get band.
         """
-        pass
-        # if self.flrig:
-        #     try:
-        #         newfreq = self.server.rig.get_vfo()
-        #         newmode = self.server.rig.get_mode()
-        #         self.radio_icon.setPixmap(self.radio_green)
-        #         if newfreq != self.oldfreq or newmode != self.oldmode:
-        #             self.oldfreq = newfreq
-        #             self.oldmode = newmode
-        #             self.setband(str(self.getband(newfreq)))
-        #             self.setmode(str(self.getmode(newmode)))
-        #     except socket.error as exception:
-        #         self.radio_icon.setPixmap(self.radio_red)
-        #         logging.warning("poll_radio: flrig: %s", exception)
-        #     return
-        # if self.rigonline:
-        #     try:
-        #         self.rigctrlsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        #         self.rigctrlsocket.connect((self.rigctrlhost, int(self.rigctrlport)))
-        #         self.rigctrlsocket.settimeout(0.5)
-        #         self.rigctrlsocket.send(b"f\n")
-        #         newfreq = self.rigctrlsocket.recv(1024).decode().strip()
-        #         self.rigctrlsocket.send(b"m\n")
-        #         newmode = self.rigctrlsocket.recv(1024).decode().strip().split()[0]
-        #         self.radio_icon.setPixmap(self.radio_green)
-        #         self.rigctrlsocket.shutdown(socket.SHUT_RDWR)
-        #         self.rigctrlsocket.close()
-        #         if newfreq != self.oldfreq or newmode != self.oldmode:
-        #             self.oldfreq = newfreq
-        #             self.oldmode = newmode
-        #             self.setband(str(self.getband(newfreq)))
-        #             self.setmode(str(self.getmode(newmode)))
-        #     except ConnectionRefusedError:
-        #         logging.warning("poll_radio: ConnectionRefusedError")
+        if self.cat_control is None:
+            self.radio_icon.setPixmap(self.radio_grey)
+            return
 
-    # def poll_radio(self):
-    #    if self.rigonline:
-    #        try:
-    #            newfreq = self.server.rig.get_vfo()
-    #            newmode = self.server.rig.get_mode()
-    #            self.radio_icon.setPixmap(
-    #                QtGui.QPixmap(self.relpath("icon/radio_green.png"))
-    #            )
-    #            # or newrfpower != self.oldrfpower:
-    #            if newfreq != self.oldfreq or newmode != self.oldmode:
-    #                self.oldfreq = newfreq
-    #                self.oldmode = newmode
-    #                self.setband(str(self.getband(newfreq)))
-    #                self.setmode(str(self.getmode(newmode)))
-    #        except:
-    #            self.rigonline = False
-    #            self.radio_icon.setPixmap(
-    #                QtGui.QPixmap(self.relpath("icon/radio_red.png"))
-    #            )
-
-    def check_radio(self):
-        """
-        Checks to see if rigctld daemon is running.
-        """
-        # if self.userigctl:
-        #     self.rigonline = True
-        #     try:
-        #         self.server = xmlrpc.client.ServerProxy(
-        #             f"http://{self.rigctrlhost}:{self.rigctrlport}"
-        #         )
-        #         self.radio_icon.setPixmap(self.radio_red)
-        #     except Error:
-        #         self.rigonline = False
-        #         self.radio_icon.setPixmap(self.radio_grey)
-        # else:
-        #     self.rigonline = False
-
-    def radio(self):
-        """
-        Check for connection to rigctld. if it's there, poll it for radio status.
-        """
-        self.check_radio()
-        self.poll_radio()
+        if not self.cat_control.online:
+            self.radio_icon.setPixmap(self.radio_red)
+            if self.preference["useflrig"]:
+                self.cat_control = CAT(
+                    "flrig",
+                    self.preference["CAT_ip"],
+                    self.preference["CAT_port"],
+                )
+            if self.preference["userigctld"]:
+                self.cat_control = CAT(
+                    "rigctld",
+                    self.preference["CAT_ip"],
+                    self.preference["CAT_port"],
+                )
+        if self.cat_control.online:
+            self.radio_icon.setPixmap(self.radio_green)
+            newfreq = self.cat_control.get_vfo()
+            newmode = self.cat_control.get_mode()
+            # newpwr = self.cat_control.get_power()
+            logging.info("F:%s M:%s", newfreq, newmode)
+            # newpwr = int(float(rigctrlsocket.recv(1024).decode().strip()) * 100)
+            if (
+                newfreq != self.oldfreq or newmode != self.oldmode
+            ):  # or newpwr != oldpwr
+                self.oldfreq = newfreq
+                self.oldmode = newmode
+                # self.oldpwr = newpwr
+                self.setband(str(self.getband(newfreq)))
+                self.setmode(str(self.getmode(newmode)))
+                # setpower(str(newpwr))
+                # self.setfreq(str(newfreq))
 
     def flash(self):
         """
