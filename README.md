@@ -12,10 +12,6 @@ The logger will generate a cabrillo for submission, An ADIF file so you can merg
 
 ![Snapshot of main screen](pics/loggerscreenshot.png)
 
-## :skull_and_crossbones: !!!!Development Branch!!!! :skull_and_crossbones:
-
-### Lots of breaking stuff in here.
-
 ## Caveats
 
 This is a simple logger ment for single op, it's not usable for clubs.
@@ -57,6 +53,8 @@ WFD only has a generic digital mode designator 'DI', which gets exported to the 
 * Someone, You know who by now, for some, I'm sure, completely valid reason, does not use flrig, and thought it would be nice to have a choice between it, and rigctld. I agree. So I put it back. But given the lack of testing, I'm leaving it in the development branch until after WFD.
 
 * Corrected the TAB focus order of the edit dialog.
+
+* Moved many functions out into Classes.
  
 
 ## Running the binary
