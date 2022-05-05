@@ -17,50 +17,10 @@ The logger will generate a cabrillo for submission, An ADIF file so you can merg
 This is a simple logger ment for single op, it's not usable for clubs.
 WFD only has a generic digital mode designator 'DI', which gets exported to the cabrillo file. But ADIF and CloudLog needed something else, So I Chose RTTY. Feel free to change it to what ever you will use. Just search for the two places in the code 'RTTY' is used and Bob's your dads brother.
 
-## Changes since 22.1.14 Don't you test this stuff?
+## Tagged a release.
 
-* ReImplimented TAB focus behavior to deselect text on field focus.
-* Edit cursor position in field no longer resets to the end after validation. This reduces the amount of swearing emitted by the operator.
-* Someone with an aversion towards mice, whose name starts with Russ, requested keyboard shortcuts to rarely used interface items. So, adding quick commands to the callsign entry field. Enter the command then press the spacebar. Limited list so far:
-
-
-`.Q` Quits.
+Full Changelog: https://github.com/mbridak/WinterFieldDayLogger/compare/22.4.4...22.5.5
  
-`.B#` set current band. So `.B20` changes you to 20M.
-
-`.P#` set power level. `.P10` sets your logged power to 10 watts.
- 
-`.MCW .MPH .MDI` sets you to CW Phone and Digital respectively.
- 
-`.E#` Edit contact. `.E10` would edit contact #010.
-
-`.K` Change your callsign. `.KK6GTE` would change it to K6GTE.
-
-`.C` Change your class. `.C1O` would change it to 1O.
-
-`.S` Change your section. `.SORG` would change it to ORG.
-
-`.1` Toggles Claim for alt-power.
-
-`.2` Toggles Claim for outdoors.
-
-`.3` Toggles Claim for not at home.
-
-`.4` Toggles Claim for satellite contact.
-
-`.L` To generate a log.
-
-* Someone, You know who by now, for some, I'm sure, completely valid reason, does not use flrig, and thought it would be nice to have a choice between it, and rigctld. I agree. So I put it back. But given the lack of testing, I'm leaving it in the development branch until after WFD.
-
-* Corrected the TAB focus order of the edit dialog.
-
-* Moved many functions out into Classes.
- 
-
-## Running the binary
-
-In the [releases](https://github.com/mbridak/WinterFieldDayLogger/releases) you will find binaries for Linux, Windows and Raspberry Pi.
-
 ## Running from source
 
 Install Python 3, then two required libs via pip.
@@ -90,11 +50,11 @@ Build the binary.
 
 For Linux and Raspberry PI:
 
-`pyinstaller -F linux.spec`
+`pyinstaller linux.spec`
 
 For Windows:
 
-`pyinstaller -F windows.spec`
+`pyinstaller windows.spec`
 
 You will find the binary in the newly created dist directory.
 
