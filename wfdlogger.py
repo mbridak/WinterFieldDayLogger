@@ -136,12 +136,15 @@ class MainWindow(QtWidgets.QMainWindow):
     basescore = 0
     powermult = 0
     fkeys = {}
+    run_state = False
+
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         uic.loadUi(self.relpath("main.ui"), self)
         self.db = DataBase(self.database)
         self.listWidget.itemDoubleClicked.connect(self.qsoclicked)
+        self.run_button.clicked.connect(self.run_button_pressed)
         self.altpowerButton.clicked.connect(self.claim_alt_power)
         self.outdoorsButton.clicked.connect(self.claim_outdoors)
         self.notathomeButton.clicked.connect(self.claim_not_at_home)
@@ -324,6 +327,16 @@ class MainWindow(QtWidgets.QMainWindow):
         arrgh = 6372.8  # Radius of earth in kilometers.
         return cee * arrgh
 
+    def run_button_pressed(self):
+        """The run/S&P button was pressed."""
+        if self.run_button.text() == "Run":
+            self.run_state = False
+            self.run_button.setText("SP")
+        else:
+            self.run_state = True
+            self.run_button.setText("Run")
+        self.read_cw_macros()
+
     def read_cw_macros(self) -> None:
         """
         Reads in the CW macros, firsts it checks to see if the file exists. If it does not,
@@ -341,10 +354,13 @@ class MainWindow(QtWidgets.QMainWindow):
         with open("./cwmacros.txt", "r", encoding="utf-8") as file_descriptor:
             for line in file_descriptor:
                 try:
-                    fkey, buttonname, cwtext = line.split("|")
-                    self.fkeys[fkey.strip()] = (buttonname.strip(), cwtext.strip())
-                except ValueError:
-                    break
+                    mode, fkey, buttonname, cwtext = line.split("|")
+                    if mode.strip().upper() == "R" and self.run_state:
+                        self.fkeys[fkey.strip()] = (buttonname.strip(), cwtext.strip())
+                    if mode.strip().upper() != "R" and not self.run_state:
+                        self.fkeys[fkey.strip()] = (buttonname.strip(), cwtext.strip())
+                except ValueError as err:
+                    logging.info("read_cw_macros: %s", err)
         keys = self.fkeys.keys()
         if "F1" in keys:
             self.F1.setText(f"F1: {self.fkeys['F1'][0]}")
