@@ -17,9 +17,9 @@ The logger will generate a cabrillo for submission, An ADIF file so you can merg
 This is a simple logger ment for single op, it's not usable for clubs.
 WFD only has a generic digital mode designator 'DI', which gets exported to the cabrillo file. But ADIF and CloudLog needed something else, So I Chose RTTY. Feel free to change it to what ever you will use. Just search for the two places in the code 'RTTY' is used and Bob's your dads brother.
 
-## Tagged a release.
+## Changes since last release.
 
-Full Changelog: https://github.com/mbridak/WinterFieldDayLogger/compare/22.4.4...22.5.5
+Full Changelog: https://github.com/mbridak/WinterFieldDayLogger/compare/22.5.5...main
  
 ## Running from source
 
