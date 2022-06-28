@@ -3030,7 +3030,7 @@ color: rgb(0, 0, 0);</string>
      <rect>
       <x>10</x>
       <y>533</y>
-      <width>81</width>
+      <width>61</width>
       <height>25</height>
      </rect>
     </property>
@@ -3043,7 +3043,7 @@ color: rgb(0, 0, 0);</string>
      </font>
     </property>
     <property name="text">
-     <string>Bonuses:</string>
+     <string>Bonus:</string>
     </property>
    </widget>
    <widget class="QLabel" name="label_14">
@@ -3298,7 +3298,7 @@ color: rgb(0, 0, 0);</string>
    <widget class="QPushButton" name="altpowerButton">
     <property name="geometry">
      <rect>
-      <x>90</x>
+      <x>71</x>
       <y>533</y>
       <width>80</width>
       <height>25</height>
@@ -3322,7 +3322,7 @@ color: rgb(0, 0, 0);</string>
    <widget class="QPushButton" name="outdoorsButton">
     <property name="geometry">
      <rect>
-      <x>170</x>
+      <x>151</x>
       <y>533</y>
       <width>80</width>
       <height>25</height>
@@ -3346,7 +3346,7 @@ color: rgb(0, 0, 0);</string>
    <widget class="QPushButton" name="notathomeButton">
     <property name="geometry">
      <rect>
-      <x>250</x>
+      <x>231</x>
       <y>533</y>
       <width>98</width>
       <height>25</height>
@@ -3370,7 +3370,7 @@ color: rgb(0, 0, 0);</string>
    <widget class="QPushButton" name="satelliteButton">
     <property name="geometry">
      <rect>
-      <x>348</x>
+      <x>329</x>
       <y>533</y>
       <width>80</width>
       <height>25</height>
@@ -3549,7 +3549,7 @@ color: rgb(0, 0, 0);</string>
      <rect>
       <x>448</x>
       <y>533</y>
-      <width>111</width>
+      <width>120</width>
       <height>25</height>
      </rect>
     </property>
@@ -3923,6 +3923,19 @@ color: rgb(0, 0, 0);</string>
     </property>
     <property name="text">
      <string>F10</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="run_button">
+    <property name="geometry">
+     <rect>
+      <x>414</x>
+      <y>533</y>
+      <width>30</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>SP</string>
     </property>
    </widget>
   </widget>
