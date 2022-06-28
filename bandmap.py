@@ -20,8 +20,28 @@ Advanced or Extra make sure this is true. If you're a general like me, make it f
 No use in seeing spots you can respond to...
 """
 
+# pylint: disable=too-many-lines
+# pylint: disable=invalid-name
+# pylint: disable=no-member
+# pylint: disable=no-name-in-module
+
 import logging
+import xmlrpc.client
+import sqlite3
+import re
+import time
+import argparse
+from telnetlib import Telnet
+from math import radians, sin, cos, atan2, sqrt
+from threading import Thread, Lock
+from sqlite3 import Error
+import requests
+
 from rich.logging import RichHandler
+from rich.traceback import install
+from rich.console import Console
+from rich import print
+from bs4 import BeautifulSoup as bs
 
 logging.basicConfig(
     level="CRITICAL",
@@ -29,25 +49,7 @@ logging.basicConfig(
     datefmt="[%X]",
     handlers=[RichHandler(rich_tracebacks=True)],
 )
-from rich.traceback import install
-
 install(show_locals=True)
-
-import xmlrpc.client
-import requests
-import sqlite3
-import re
-import time
-import argparse
-
-from threading import Thread, Lock
-from sqlite3 import Error
-from telnetlib import Telnet
-from rich.console import Console
-from rich import print
-from bs4 import BeautifulSoup as bs
-from math import radians, sin, cos, atan2, sqrt
-
 parser = argparse.ArgumentParser(
     description="Pull RBN spots, filter spotters w/ in a certain distance."
 )
@@ -442,6 +444,7 @@ def showspots(lock):
 
 
 def getrbn(lock):
+    """Get Spots"""
     with Telnet(rbn, rbnport) as tn:
         while True:
             stream = tn.read_until(b"\r\n", timeout=1.0)
@@ -467,7 +470,7 @@ def getrbn(lock):
                 freq = float(parsed[0][1])
                 band = getband(freq)
                 callsign = parsed[0][2]
-                if not inband(float(freq)) and showoutofband == False:
+                if not inband(float(freq)) and showoutofband is False:
                     continue
                 if band in limitband:
                     with lock:

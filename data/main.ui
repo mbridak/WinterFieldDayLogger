@@ -3658,7 +3658,7 @@ color: rgb(0, 0, 0);</string>
     </property>
     <property name="icon">
      <iconset>
-      <normaloff>icon/gear16x16.png</normaloff>icon/gear16x16.png</iconset>
+      <normaloff>../icon/gear16x16.png</normaloff>../icon/gear16x16.png</iconset>
     </property>
    </widget>
    <widget class="QPushButton" name="F1">
@@ -3933,6 +3933,9 @@ color: rgb(0, 0, 0);</string>
       <width>30</width>
       <height>25</height>
      </rect>
+    </property>
+    <property name="focusPolicy">
+     <enum>Qt::NoFocus</enum>
     </property>
     <property name="text">
      <string>SP</string>

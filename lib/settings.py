@@ -13,7 +13,7 @@ class Settings(QtWidgets.QDialog):
     def __init__(self, parent=None):
         """initialize dialog"""
         super().__init__(parent)
-        uic.loadUi(self.relpath("settings.ui"), self)
+        uic.loadUi(self.relpath("data/settings.ui"), self)
         self.reference_preference = {
             "mycallsign": "",
             "myclass": "",

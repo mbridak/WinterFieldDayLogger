@@ -5,7 +5,10 @@ Email: michael.bridak@gmail.com
 GPL V3
 """
 
+# pylint: disable=too-many-lines
 # pylint: disable=invalid-name
+# pylint: disable=no-member
+# pylint: disable=no-name-in-module
 
 # Nothing to see here move along.
 # xplanet -body earth -window -longitude -117 -latitude 38 -config Default -projection azmithal -radius 200 -wait 5
@@ -28,12 +31,12 @@ from PyQt5.QtCore import QDir, Qt
 from PyQt5.QtGui import QFontDatabase
 
 import requests
-from settings import Settings
-from database import DataBase
-from lookup import HamDBlookup, HamQTH, QRZlookup
-from cat_interface import CAT
-from cwinterface import CW
-from version import __version__
+from lib.settings import Settings
+from lib.database import DataBase
+from lib.lookup import HamDBlookup, HamQTH, QRZlookup
+from lib.cat_interface import CAT
+from lib.cwinterface import CW
+from lib.version import __version__
 
 
 def relpath(filename: str) -> str:
@@ -141,7 +144,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        uic.loadUi(self.relpath("main.ui"), self)
+        uic.loadUi(self.relpath("data/main.ui"), self)
         self.db = DataBase(self.database)
         self.listWidget.itemDoubleClicked.connect(self.qsoclicked)
         self.run_button.clicked.connect(self.run_button_pressed)
@@ -344,13 +347,10 @@ class MainWindow(QtWidgets.QMainWindow):
         temp directory this is running from... In theory.
         """
 
-        if (
-            getattr(sys, "frozen", False)
-            and hasattr(sys, "_MEIPASS")
-            and not Path("./cwmacros.txt").exists()
+        if (not Path("./cwmacros.txt").exists()
         ):
             logging.debug("read_cw_macros: copying default macro file.")
-            copyfile(relpath("cwmacros.txt"), "./cwmacros.txt")
+            copyfile(relpath("data/cwmacros.txt"), "./cwmacros.txt")
         with open("./cwmacros.txt", "r", encoding="utf-8") as file_descriptor:
             for line in file_descriptor:
                 try:
@@ -1219,7 +1219,7 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         try:
             with open(
-                self.relpath("arrl_sect.dat"), "r", encoding="utf-8"
+                self.relpath("data/arrl_sect.dat"), "r", encoding="utf-8"
             ) as file_descriptor:  # read section data
                 while 1:
                     line = (
@@ -1262,7 +1262,7 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         try:
             with open(
-                self.relpath("MASTER.SCP"), "r", encoding="utf-8"
+                self.relpath("data/MASTER.SCP"), "r", encoding="utf-8"
             ) as file_descriptor:
                 self.scp = file_descriptor.readlines()
                 self.scp = list(map(lambda x: x.strip(), self.scp))
@@ -1670,15 +1670,15 @@ class MainWindow(QtWidgets.QMainWindow):
                     print(
                         f"<RST_RCVD:{len(rst)}>{rst}", end="\r\n", file=file_descriptor
                     )
+                    myexch = f"{self.preference['myclass']} {self.preference['mysection']}"
                     print(
-                        f"<STX_STRING:{len(self.preference['myclass'] + ' ' + self.preference['mysection'])}>"
-                        f"{self.preference['myclass'] + ' ' + self.preference['mysection']}",
+                        f"<STX_STRING:{len(myexch)}>{myexch}",
                         end="\r\n",
                         file=file_descriptor,
                     )
+                    hisexch = f"{hisclass} {hissection}"
                     print(
-                        f"<SRX_STRING:{len(hisclass + ' ' + hissection)}>"
-                        f"{hisclass + ' ' + hissection}",
+                        f"<SRX_STRING:{len(hisexch)}>{hisexch}",
                         end="\r\n",
                         file=file_descriptor,
                     )
@@ -1949,7 +1949,7 @@ class EditQsoDialog(QtWidgets.QDialog):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        uic.loadUi(self.relpath("dialog.ui"), self)
+        uic.loadUi(self.relpath("data/dialog.ui"), self)
         self.deleteButton.clicked.connect(self.delete_contact)
         self.buttonBox.accepted.connect(self.save_changes)
         self.change = QSOEdit()
@@ -2020,7 +2020,7 @@ class Startup(QtWidgets.QDialog):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        uic.loadUi(self.relpath("startup.ui"), self)
+        uic.loadUi(self.relpath("data/startup.ui"), self)
         self.continue_pushButton.clicked.connect(self.store)
 
     @staticmethod
