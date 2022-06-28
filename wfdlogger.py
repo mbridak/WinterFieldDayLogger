@@ -525,6 +525,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.preference["cwip"],
                     self.preference["cwport"],
                 )
+                self.cw.speed = 20
 
             self.altpowerButton.setStyleSheet(
                 self.highlighted(self.preference["altpower"])
@@ -738,9 +739,23 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def keyPressEvent(self, event):
         """This overrides Qt key event."""
-        if event.key() == Qt.Key_Escape:
+        modifier = event.modifiers()
+        if event.key() == Qt.Key.Key_Escape:
             self.clearinputs()
-        if event.key() == Qt.Key_Tab:
+            if self.cw is not None and modifier == Qt.ControlModifier:
+                if self.cw.servertype == 1:
+                    self.cw.sendcw("\x1b4")
+        if event.key() == Qt.Key.Key_PageUp:
+            if self.cw is not None:
+                if self.cw.servertype == 1:
+                    self.cw.speed += 1
+                    self.cw.sendcw(f"\x1b2{self.cw.speed}")
+        if event.key() == Qt.Key.Key_PageDown:
+            if self.cw is not None:
+                if self.cw.servertype == 1:
+                    self.cw.speed -= 1
+                    self.cw.sendcw(f"\x1b2{self.cw.speed}")
+        if event.key() == Qt.Key.Key_Tab:
             if self.section_entry.hasFocus():
                 logging.debug("From section")
                 self.callsign_entry.setFocus()

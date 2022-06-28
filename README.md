@@ -160,6 +160,16 @@ of the screen.
 This can also be used to reload the macros if you edit them while the program
 is running.
 
+## cwdaemon speed changes and stop sending.
+
+If you are using cwedaemon for sending, you can use:
+
+`CTRL+Esc` to abort sending.
+
+`PgUp` Increase sending speed.
+
+`PgDown` Decrease sending speed.
+
 # When the event is over
 
 After the big weekend, once you've swept up all the broken beer bottles and wiped the BBQ sauce off your chin, go ahead and click the Generate Logs button.
