@@ -3934,6 +3934,9 @@ color: rgb(0, 0, 0);</string>
       <height>25</height>
      </rect>
     </property>
+    <property name="focusPolicy">
+     <enum>Qt::NoFocus</enum>
+    </property>
     <property name="text">
      <string>SP</string>
     </property>
