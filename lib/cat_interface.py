@@ -46,7 +46,7 @@ class CAT:
         self.online = False
         if self.interface == "flrig":
             target = f"http://{host}:{port}"
-            logging.debug("cat_init: %s", target)
+            logging.debug("%s", target)
             self.server = xmlrpc.client.ServerProxy(target)
         if self.interface == "rigctld":
             self.__initialize_rigctrld()
@@ -54,27 +54,26 @@ class CAT:
     def __initialize_rigctrld(self):
         try:
             self.rigctrlsocket = socket.socket()
-            self.rigctrlsocket.settimeout(0.1)
+            self.rigctrlsocket.settimeout(0.5)
             self.rigctrlsocket.connect((self.host, self.port))
-            logging.debug("CAT __initialize_rigctrld: good")
+            logging.debug("Connected to rigctrld")
             self.online = True
         except ConnectionRefusedError as exception:
             self.rigctrlsocket = None
             self.online = False
-            logging.debug("CAT __initialize_rigctrld: %s", exception)
+            logging.debug("%s", exception)
 
     def get_vfo(self) -> str:
         """Poll the radio for current vfo using the interface"""
         vfo = ""
         if self.interface == "flrig":
             vfo = self.__getvfo_flrig()
-            logging.debug("get_vfo: %s", vfo)
+            logging.debug("%s", vfo)
         if self.interface == "rigctld":
             vfo = self.__getvfo_rigctld()
-            logging.debug("get_vfo: %s", vfo)
-            if vfo == "RPRT -1":
+            logging.debug("%s", vfo)
+            if "RPRT -" in vfo:
                 vfo = ""
-                self.rigctrlsocket = None
         return vfo
 
     def __getvfo_flrig(self) -> str:
@@ -92,8 +91,7 @@ class CAT:
         if self.rigctrlsocket:
             try:
                 self.online = True
-                self.rigctrlsocket.settimeout(0.5)
-                self.rigctrlsocket.send(b"f\n")
+                self.rigctrlsocket.send(b"\nf\n")
                 return self.rigctrlsocket.recv(1024).decode().strip()
             except socket.error as exception:
                 self.online = False
@@ -106,11 +104,13 @@ class CAT:
 
     def get_mode(self) -> str:
         """Returns the current mode filter width of the radio"""
+        mode = ""
         if self.interface == "flrig":
-            return self.__getmode_flrig()
+            mode = self.__getmode_flrig()
         if self.interface == "rigctld":
-            return self.__getmode_rigctld()
-        return ""
+            mode = self.__getmode_rigctld()
+        logging.debug("%s", mode)
+        return mode
 
     def __getmode_flrig(self) -> str:
         """Returns mode via flrig"""
@@ -119,7 +119,7 @@ class CAT:
             return self.server.rig.get_mode()
         except ConnectionRefusedError as exception:
             self.online = False
-            logging.debug("getmode_flrig: %s", exception)
+            logging.debug("%s", exception)
         return ""
 
     def __getmode_rigctld(self) -> str:
@@ -127,12 +127,16 @@ class CAT:
         if self.rigctrlsocket:
             try:
                 self.online = True
-                self.rigctrlsocket.settimeout(0.5)
                 self.rigctrlsocket.send(b"m\n")
-                return self.rigctrlsocket.recv(1024).decode().strip().split()[0]
+                mode = self.rigctrlsocket.recv(1024).decode()
+                logging.debug("%s", mode)
+                mode = mode.strip().split()[0]
+                return mode
+            except IndexError as exception:
+                logging.debug("%s", exception)
             except socket.error as exception:
                 self.online = False
-                logging.debug("getmode_rigctld: %s", exception)
+                logging.debug("%s", exception)
                 self.rigctrlsocket = None
             return ""
         self.__initialize_rigctrld()
@@ -159,7 +163,6 @@ class CAT:
         if self.rigctrlsocket:
             try:
                 self.online = True
-                self.rigctrlsocket.settimeout(0.5)
                 self.rigctrlsocket.send(b"l RFPOWER\n")
                 return int(float(self.rigctrlsocket.recv(1024).decode().strip()) * 100)
             except socket.error as exception:
@@ -191,7 +194,6 @@ class CAT:
         if self.rigctrlsocket:
             try:
                 self.online = True
-                self.rigctrlsocket.settimeout(0.5)
                 self.rigctrlsocket.send(bytes(f"F {freq}\n", "utf-8"))
                 _ = self.rigctrlsocket.recv(1024).decode().strip()
                 return True
@@ -226,7 +228,6 @@ class CAT:
         if self.rigctrlsocket:
             try:
                 self.online = True
-                self.rigctrlsocket.settimeout(0.5)
                 self.rigctrlsocket.send(bytes(f"M {mode} 0\n", "utf-8"))
                 _ = self.rigctrlsocket.recv(1024).decode().strip()
                 return True
