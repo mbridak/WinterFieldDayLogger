@@ -277,12 +277,12 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.contactlookup["nickname"],
                 self.contactlookup["error"],
             ) = self.look_up.lookup(acall)
-            if self.contactlookup["grid"] and self.mygrid:
+            if self.contactlookup.get("grid") and self.mygrid:
                 self.contactlookup["distance"] = self.distance(
-                    self.mygrid, self.contactlookup["grid"]
+                    self.mygrid, self.contactlookup.get("grid")
                 )
                 self.contactlookup["bearing"] = self.bearing(
-                    self.mygrid, self.contactlookup["grid"]
+                    self.mygrid, self.contactlookup.get("grid")
                 )
             logging.info("%s", self.contactlookup)
 
@@ -460,55 +460,52 @@ class MainWindow(QtWidgets.QMainWindow):
         except IOError as exception:
             logging.critical("Error: %s", exception)
         try:
-            self.mycallEntry.setText(self.preference["mycallsign"])
-            if self.preference["mycallsign"] != "":
+            self.mycallEntry.setText(self.preference.get("mycallsign"))
+            if self.preference.get("mycallsign"):
                 self.mycallEntry.setStyleSheet("border: 1px solid green;")
-            self.myclassEntry.setText(self.preference["myclass"])
-            if self.preference["myclass"] != "":
+            self.myclassEntry.setText(self.preference.get("myclass"))
+            if self.preference.get("myclass"):
                 self.myclassEntry.setStyleSheet("border: 1px solid green;")
-            self.mysectionEntry.setText(self.preference["mysection"])
-            if self.preference["mysection"] != "":
+            self.mysectionEntry.setText(self.preference.get("mysection"))
+            if self.preference.get("mysection"):
                 self.mysectionEntry.setStyleSheet("border: 1px solid green;")
-
-            self.power_selector.setValue(int(self.preference["power"]))
+            if self.preference.get("power"):
+                self.power_selector.setValue(int(self.preference.get("power")))
 
             self.cat_control = None
-            if self.preference["useflrig"]:
+            if self.preference.get("useflrig"):
                 self.cat_control = CAT(
-                    "flrig", self.preference["CAT_ip"], self.preference["CAT_port"]
+                    "flrig", self.preference.get("CAT_ip"), self.preference.get("CAT_port")
                 )
-            if self.preference["userigctld"]:
+            if self.preference.get("userigctld"):
                 self.cat_control = CAT(
-                    "rigctld", self.preference["CAT_ip"], self.preference["CAT_port"]
+                    "rigctld", self.preference.get("CAT_ip"), self.preference.get("CAT_port")
                 )
 
-            if self.preference["useqrz"]:
+            if self.preference.get("useqrz"):
                 self.look_up = QRZlookup(
-                    self.preference["lookupusername"], self.preference["lookuppassword"]
+                    self.preference.get("lookupusername"), self.preference.get("lookuppassword")
                 )
-                # self.callbook_icon.setText("QRZ")
                 if self.look_up.session:
                     self.QRZ_icon.setStyleSheet("color: rgb(128, 128, 0);")
                 else:
                     self.QRZ_icon.setStyleSheet("color: rgb(136, 138, 133);")
 
-            if self.preference["usehamdb"]:
+            if self.preference.get("usehamdb"):
                 self.look_up = HamDBlookup()
-                # self.QRZ_icon.setText("HamDB")
                 self.QRZ_icon.setStyleSheet("color: rgb(128, 128, 0);")
 
-            if self.preference["usehamqth"]:
+            if self.preference.get("usehamqth"):
                 self.look_up = HamQTH(
-                    self.preference["lookupusername"],
-                    self.preference["lookuppassword"],
+                    self.preference.get("lookupusername"),
+                    self.preference.get("lookuppassword"),
                 )
-                # self.callbook_icon.setText("HamQTH")
                 if self.look_up.session:
                     self.QRZ_icon.setStyleSheet("color: rgb(128, 128, 0);")
                 else:
                     self.QRZ_icon.setStyleSheet("color: rgb(136, 138, 133);")
 
-            if self.look_up and self.preference["mycallsign"] != "":
+            if self.look_up and self.preference.get("mycallsign"):
                 _thethread = threading.Thread(
                     target=self.lookupmygrid,
                     daemon=True,
@@ -517,27 +514,27 @@ class MainWindow(QtWidgets.QMainWindow):
 
             self.cloudlogauth()
 
-            if self.preference["cwtype"] == 0:
+            if self.preference.get("cwtype") == 0:
                 self.cw = None
             else:
                 self.cw = CW(
-                    self.preference["cwtype"],
-                    self.preference["cwip"],
-                    self.preference["cwport"],
+                    self.preference.get("cwtype"),
+                    self.preference.get("cwip"),
+                    self.preference.get("cwport"),
                 )
                 self.cw.speed = 20
 
             self.altpowerButton.setStyleSheet(
-                self.highlighted(self.preference["altpower"])
+                self.highlighted(self.preference.get("altpower"))
             )
             self.outdoorsButton.setStyleSheet(
-                self.highlighted(self.preference["outdoors"])
+                self.highlighted(self.preference.get("outdoors"))
             )
             self.notathomeButton.setStyleSheet(
-                self.highlighted(self.preference["notathome"])
+                self.highlighted(self.preference.get("notathome"))
             )
             self.satelliteButton.setStyleSheet(
-                self.highlighted(self.preference["satellite"])
+                self.highlighted(self.preference.get("satellite"))
             )
 
         except KeyError as err:
@@ -580,13 +577,13 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         self.cloudlog_icon.setPixmap(self.cloud_grey)
         self.cloudlogauthenticated = False
-        if self.preference["cloudlog"]:
+        if self.preference.get("cloudlog"):
             try:
                 self.cloudlog_icon.setPixmap(self.cloud_red)
                 test = (
-                    self.preference["cloudlogurl"]
+                    self.preference.get("cloudlogurl")
                     + "/auth/"
-                    + self.preference["cloudlogapi"]
+                    + self.preference.get("cloudlogapi")
                 )
                 result = requests.get(test, params={}, timeout=2.0)
                 if result.status_code == 200 and result.text.find("<status>") > 0:
@@ -685,17 +682,17 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if not self.cat_control.online:
             self.radio_icon.setPixmap(self.radio_red)
-            if self.preference["useflrig"]:
+            if self.preference.get("useflrig"):
                 self.cat_control = CAT(
                     "flrig",
-                    self.preference["CAT_ip"],
-                    self.preference["CAT_port"],
+                    self.preference.get("CAT_ip"),
+                    self.preference.get("CAT_port"),
                 )
-            if self.preference["userigctld"]:
+            if self.preference.get("userigctld"):
                 self.cat_control = CAT(
                     "rigctld",
-                    self.preference["CAT_ip"],
-                    self.preference["CAT_port"],
+                    self.preference.get("CAT_ip"),
+                    self.preference.get("CAT_port"),
                 )
         if self.cat_control.online:
             self.radio_icon.setPixmap(self.radio_green)
@@ -895,7 +892,7 @@ class MainWindow(QtWidgets.QMainWindow):
         Sets the internal power level used for logging to the onscreen dropdown value.
         """
         self.preference["power"] = str(self.power_selector.value())
-        self.oldrfpower = self.preference["power"]
+        self.oldrfpower = self.preference.get("power")
         self.writepreferences()
 
     def changemycall(self):
@@ -1130,8 +1127,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.band,
             self.mode,
             int(self.power_selector.value()),
-            self.contactlookup["grid"],
-            self.contactlookup["name"],
+            self.contactlookup.get("grid"),
+            self.contactlookup.get("name"),
         )
         self.db.log_contact(contact)
         self.sections()
@@ -1178,10 +1175,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.score = self.score * bandmodemult
         self.score = (
             self.score
-            + (500 * self.preference["altpower"])
-            + (500 * self.preference["outdoors"])
-            + (500 * self.preference["notathome"])
-            + (500 * self.preference["satellite"])
+            + (500 * self.preference.get("altpower"))
+            + (500 * self.preference.get("outdoors"))
+            + (500 * self.preference.get("notathome"))
+            + (500 * self.preference.get("satellite"))
         )
         return self.score
 
@@ -1467,32 +1464,32 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def claim_alt_power(self, _) -> None:
         """is called when the Alt Power button is pressed."""
-        self.preference["altpower"] = not self.preference["altpower"]
-        self.altpowerButton.setStyleSheet(self.highlighted(self.preference["altpower"]))
+        self.preference["altpower"] = not self.preference.get("altpower")
+        self.altpowerButton.setStyleSheet(self.highlighted(self.preference.get("altpower")))
         self.writepreferences()
         self.stats()
 
     def claim_outdoors(self, _) -> None:
         """Is called when the Outdoors button is pressed."""
-        self.preference["outdoors"] = not self.preference["outdoors"]
-        self.outdoorsButton.setStyleSheet(self.highlighted(self.preference["outdoors"]))
+        self.preference["outdoors"] = not self.preference.get("outdoors")
+        self.outdoorsButton.setStyleSheet(self.highlighted(self.preference.get("outdoors")))
         self.writepreferences()
         self.stats()
 
     def claim_not_at_home(self, _) -> None:
         """Is called when the Not At Home button is pressed."""
-        self.preference["notathome"] = not self.preference["notathome"]
+        self.preference["notathome"] = not self.preference.get("notathome")
         self.notathomeButton.setStyleSheet(
-            self.highlighted(self.preference["notathome"])
+            self.highlighted(self.preference.get("notathome"))
         )
         self.writepreferences()
         self.stats()
 
     def claim_satellite(self, _) -> None:
         """Is called when the satellite button is pressed."""
-        self.preference["satellite"] = not self.preference["satellite"]
+        self.preference["satellite"] = not self.preference.get("satellite")
         self.satelliteButton.setStyleSheet(
-            self.highlighted(self.preference["satellite"])
+            self.highlighted(self.preference.get("satellite"))
         )
         self.writepreferences()
         self.stats()
@@ -1547,12 +1544,9 @@ class MainWindow(QtWidgets.QMainWindow):
         Returns the US state a section is in, or Bool False if none was found.
         !todo rewrite this probably with 'if state in self.secState:'
         """
-        try:
-            state = self.secState[section]
-            if state != "--":
-                return state
-        except IndexError:
-            return False
+        state = self.secState.get(section)
+        if state not in ("--", None):
+            return state
         return False
 
     def gridtolatlon(self, maiden):
@@ -1673,11 +1667,11 @@ class MainWindow(QtWidgets.QMainWindow):
                     )
                     try:
                         print(
-                            f"<FREQ:{len(self.dfreq[band])}>{self.dfreq[band]}",
+                            f"<FREQ:{len(self.dfreq.get(band))}>{self.dfreq.get(band)}",
                             end="\r\n",
                             file=file_descriptor,
                         )
-                    except IndexError:
+                    except TypeError:
                         pass  # This is bad form... I can't remember why this is in a try block
                     print(
                         f"<RST_SENT:{len(rst)}>{rst}", end="\r\n", file=file_descriptor
@@ -1685,7 +1679,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     print(
                         f"<RST_RCVD:{len(rst)}>{rst}", end="\r\n", file=file_descriptor
                     )
-                    myexch = f"{self.preference['myclass']} {self.preference['mysection']}"
+                    myexch = f"{self.preference.get('myclass')} {self.preference.get('mysection')}"
                     print(
                         f"<STX_STRING:{len(myexch)}>{myexch}",
                         end="\r\n",
@@ -1743,7 +1737,7 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         Log contact to Cloudlog: https://github.com/magicbug/Cloudlog
         """
-        if (not self.preference["cloudlog"]) or (not self.cloudlogauthenticated):
+        if (not self.preference.get("cloudlog")) or (not self.cloudlogauthenticated):
             return
         contact = self.db.fetch_last_contact()
         (
@@ -1776,11 +1770,11 @@ class MainWindow(QtWidgets.QMainWindow):
             f"<CALL:{len(hiscall)}>{hiscall}"
             f"<MODE:{len(mode)}>{mode}"
             f"<BAND:{len(band + 'M')}>{band + 'M'}"
-            f"<FREQ:{len(self.dfreq[band])}>{self.dfreq[band]}"
+            f"<FREQ:{len(self.dfreq.get(band))}>{self.dfreq.get(band)}"
             f"<RST_SENT:{len(rst)}>{rst}"
             f"<RST_RCVD:{len(rst)}>{rst}"
-            f"<STX_STRING:{len(self.preference['myclass'] + ' ' + self.preference['mysection'])}>"
-            f"{self.preference['myclass'] + ' ' + self.preference['mysection']}"
+            f"<STX_STRING:{len(self.preference.get('myclass') + ' ' + self.preference.get('mysection'))}>"
+            f"{self.preference.get('myclass') + ' ' + self.preference.get('mysection')}"
             f"<SRX_STRING:{len(hisclass + ' ' + hissection)}>"
             f"{hisclass + ' ' + hissection}"
             f"<ARRL_SECT:{len(hissection)}>{hissection}"
@@ -1798,18 +1792,18 @@ class MainWindow(QtWidgets.QMainWindow):
         adifq += "<EOR>"
 
         payload_dict = {
-            "key": self.preference["cloudlogapi"],
+            "key": self.preference.get("cloudlogapi"),
             "type": "adif",
             "string": adifq,
         }
         jason_data = dumps(payload_dict)
-        _ = requests.post(self.preference["cloudlogurl"] + "/qso/", jason_data)
+        _ = requests.post(self.preference.get("cloudlogurl") + "/qso/", jason_data)
 
     def cabrillo(self):
         """
         Generates a cabrillo log file.
         """
-        filename = f"{self.preference['mycallsign'].upper()}.log"
+        filename = f"{self.preference.get('mycallsign').upper()}.log"
         self.infobox.setTextColor(QtGui.QColor(211, 215, 207))
         self.infobox.insertPlainText(f"Saving cabrillo to: {filename}")
         app.processEvents()
@@ -1836,18 +1830,18 @@ class MainWindow(QtWidgets.QMainWindow):
                 )
                 print("CONTEST: WFD", end="\r\n", file=file_descriptor)
                 print(
-                    f"CALLSIGN: {self.preference['mycallsign']}",
+                    f"CALLSIGN: {self.preference.get('mycallsign')}",
                     end="\r\n",
                     file=file_descriptor,
                 )
                 print("LOCATION:", end="\r\n", file=file_descriptor)
                 print(
-                    f"ARRL-SECTION: {self.preference['mysection']}",
+                    f"ARRL-SECTION: {self.preference.get('mysection')}",
                     end="\r\n",
                     file=file_descriptor,
                 )
                 print(
-                    f"CATEGORY: {self.preference['myclass']}",
+                    f"CATEGORY: {self.preference.get('myclass')}",
                     end="\r\n",
                     file=file_descriptor,
                 )
@@ -1867,28 +1861,28 @@ class MainWindow(QtWidgets.QMainWindow):
                     end="\r\n",
                     file=file_descriptor,
                 )
-                if self.preference["altpower"]:
+                if self.preference.get("altpower"):
                     print(
                         "SOAPBOX: 500 points for not using commercial power",
                         end="\r\n",
                         file=file_descriptor,
                     )
                     bonuses = bonuses + 500
-                if self.preference["outdoors"]:
+                if self.preference.get("outdoors"):
                     print(
                         "SOAPBOX: 500 points for setting up outdoors",
                         end="\r\n",
                         file=file_descriptor,
                     )
                     bonuses = bonuses + 500
-                if self.preference["notathome"]:
+                if self.preference.get("notathome"):
                     print(
                         "SOAPBOX: 500 points for setting up away from home",
                         end="\r\n",
                         file=file_descriptor,
                     )
                     bonuses = bonuses + 500
-                if self.preference["satellite"]:
+                if self.preference.get("satellite"):
                     print(
                         "SOAPBOX: 500 points for working satellite",
                         end="\r\n",
@@ -1904,7 +1898,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     file=file_descriptor,
                 )
                 print(
-                    f"OPERATORS: {self.preference['mycallsign']}",
+                    f"OPERATORS: {self.preference.get('mycallsign')}",
                     end="\r\n",
                     file=file_descriptor,
                 )
@@ -2123,16 +2117,16 @@ if __name__ == "__main__":
     window.changeband()
     window.changemode()
     if (
-        window.preference["mycallsign"] == ""
-        or window.preference["myclass"] == ""
-        or window.preference["mysection"] == ""
+        window.preference.get("mycallsign") == ""
+        or window.preference.get("myclass") == ""
+        or window.preference.get("mysection") == ""
     ):
         startupdialog = Startup()
         startupdialog.accepted.connect(startup_dialog_finished)
         startupdialog.open()
-        startupdialog.set_callsign(window.preference["mycallsign"])
-        startupdialog.set_class(window.preference["myclass"])
-        startupdialog.set_section(window.preference["mysection"])
+        startupdialog.set_callsign(window.preference.get("mycallsign"))
+        startupdialog.set_class(window.preference.get("myclass"))
+        startupdialog.set_section(window.preference.get("mysection"))
     window.read_cw_macros()
     # window.cloudlogauth()
     window.stats()
