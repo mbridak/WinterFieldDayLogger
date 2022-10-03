@@ -9,9 +9,11 @@ GPL V3
 # pylint: disable=invalid-name
 # pylint: disable=no-member
 # pylint: disable=no-name-in-module
+# pylint: disable=c-extension-no-member
 
 # Nothing to see here move along.
-# xplanet -body earth -window -longitude -117 -latitude 38 -config Default -projection azmithal -radius 200 -wait 5
+# xplanet -body earth -window -longitude -117 -latitude 38 -config Default
+# -projection azmithal -radius 200 -wait 5
 
 from math import radians, sin, cos, atan2, sqrt, asin, pi
 import sys
@@ -140,7 +142,6 @@ class MainWindow(QtWidgets.QMainWindow):
     powermult = 0
     fkeys = {}
     run_state = False
-
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -347,8 +348,7 @@ class MainWindow(QtWidgets.QMainWindow):
         temp directory this is running from... In theory.
         """
 
-        if (not Path("./cwmacros.txt").exists()
-        ):
+        if not Path("./cwmacros.txt").exists():
             logging.debug("read_cw_macros: copying default macro file.")
             copyfile(relpath("data/cwmacros.txt"), "./cwmacros.txt")
         with open("./cwmacros.txt", "r", encoding="utf-8") as file_descriptor:
@@ -475,16 +475,21 @@ class MainWindow(QtWidgets.QMainWindow):
             self.cat_control = None
             if self.preference.get("useflrig"):
                 self.cat_control = CAT(
-                    "flrig", self.preference.get("CAT_ip"), self.preference.get("CAT_port")
+                    "flrig",
+                    self.preference.get("CAT_ip"),
+                    self.preference.get("CAT_port"),
                 )
             if self.preference.get("userigctld"):
                 self.cat_control = CAT(
-                    "rigctld", self.preference.get("CAT_ip"), self.preference.get("CAT_port")
+                    "rigctld",
+                    self.preference.get("CAT_ip"),
+                    self.preference.get("CAT_port"),
                 )
 
             if self.preference.get("useqrz"):
                 self.look_up = QRZlookup(
-                    self.preference.get("lookupusername"), self.preference.get("lookuppassword")
+                    self.preference.get("lookupusername"),
+                    self.preference.get("lookuppassword"),
                 )
                 if self.look_up.session:
                     self.QRZ_icon.setStyleSheet("color: rgb(128, 128, 0);")
@@ -964,7 +969,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if text[1] == "P":
                 self.power_selector.setValue(int(text[2:]))
                 return
-            if text[1] == "E":
+            if text[1] == "E":  # FIXME not using the database class
                 qtoedit = int(text[2:])
                 try:
                     with sqlite3.connect(self.database) as conn:
@@ -1293,7 +1298,7 @@ class MainWindow(QtWidgets.QMainWindow):
             for match in matches:
                 self.infobox.insertPlainText(match + " ")
 
-    def dup_check(self) -> None:
+    def dup_check(self) -> None:  # FIXME not using the database class
         """checks to see if a contact you're entering will be a dup."""
         acall = self.callsign_entry.text()
         self.infobox.clear()
@@ -1323,7 +1328,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.infobox.setTextColor(QtGui.QColor(211, 215, 207))
             self.infobox.insertPlainText(f"{hiscall}: {hisband} {hismode}{dupetext}\n")
 
-    def sections_worked(self) -> None:
+    def sections_worked(self) -> None:  # FIXME not using the database class
         """Generates a list of sections worked."""
         try:
             with sqlite3.connect(self.database) as conn:
@@ -1465,14 +1470,18 @@ class MainWindow(QtWidgets.QMainWindow):
     def claim_alt_power(self, _) -> None:
         """is called when the Alt Power button is pressed."""
         self.preference["altpower"] = not self.preference.get("altpower")
-        self.altpowerButton.setStyleSheet(self.highlighted(self.preference.get("altpower")))
+        self.altpowerButton.setStyleSheet(
+            self.highlighted(self.preference.get("altpower"))
+        )
         self.writepreferences()
         self.stats()
 
     def claim_outdoors(self, _) -> None:
         """Is called when the Outdoors button is pressed."""
         self.preference["outdoors"] = not self.preference.get("outdoors")
-        self.outdoorsButton.setStyleSheet(self.highlighted(self.preference.get("outdoors")))
+        self.outdoorsButton.setStyleSheet(
+            self.highlighted(self.preference.get("outdoors"))
+        )
         self.writepreferences()
         self.stats()
 
@@ -1763,6 +1772,9 @@ class MainWindow(QtWidgets.QMainWindow):
             rst = "59"
         loggeddate = the_date_and_time[:10]
         loggedtime = the_date_and_time[11:13] + the_date_and_time[14:16]
+        stx = (
+            f"{self.preference.get('myclass') + ' ' + self.preference.get('mysection')}"
+        )
         adifq = (
             f"<QSO_DATE:{len(''.join(loggeddate.split('-')))}:d>"
             f"{''.join(loggeddate.split('-'))}"
@@ -1773,8 +1785,8 @@ class MainWindow(QtWidgets.QMainWindow):
             f"<FREQ:{len(self.dfreq.get(band))}>{self.dfreq.get(band)}"
             f"<RST_SENT:{len(rst)}>{rst}"
             f"<RST_RCVD:{len(rst)}>{rst}"
-            f"<STX_STRING:{len(self.preference.get('myclass') + ' ' + self.preference.get('mysection'))}>"
-            f"{self.preference.get('myclass') + ' ' + self.preference.get('mysection')}"
+            f"<STX_STRING:{len(stx)}>"
+            f"{stx}"
             f"<SRX_STRING:{len(hisclass + ' ' + hissection)}>"
             f"{hisclass + ' ' + hissection}"
             f"<ARRL_SECT:{len(hissection)}>{hissection}"
@@ -1797,7 +1809,9 @@ class MainWindow(QtWidgets.QMainWindow):
             "string": adifq,
         }
         jason_data = dumps(payload_dict)
-        _ = requests.post(self.preference.get("cloudlogurl") + "/qso/", jason_data)
+        _ = requests.post(
+            self.preference.get("cloudlogurl") + "/qso/", jason_data, timeout=5
+        )
 
     def cabrillo(self):
         """
