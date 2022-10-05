@@ -21,6 +21,10 @@ import socket
 import os
 import logging
 import threading
+import uuid
+import queue
+import time
+from itertools import chain
 
 from json import dumps, loads
 from datetime import datetime
@@ -141,11 +145,16 @@ class MainWindow(QtWidgets.QMainWindow):
     powermult = 0
     fkeys = {}
     run_state = False
+    people = {}
+    groupcall = None
+    server_commands = []
+    server_seen = None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         uic.loadUi(self.relpath("data/main.ui"), self)
         self.db = DataBase(self.database)
+        self.udp_fifo = queue.Queue()
         self.listWidget.itemDoubleClicked.connect(self.qsoclicked)
         self.run_button.clicked.connect(self.run_button_pressed)
         self.altpowerButton.clicked.connect(self.claim_alt_power)
@@ -176,6 +185,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.radio_icon.setPixmap(self.radio_grey)
         self.cloudlog_icon.setPixmap(self.cloud_grey)
         self.QRZ_icon.setStyleSheet("color: rgb(136, 138, 133);")
+        self.chat_window.hide()
+        self.group_call_indicator.hide()
         self.settingsbutton.clicked.connect(self.settingspressed)
         self.F1.clicked.connect(self.sendf1)
         self.F2.clicked.connect(self.sendf2)
@@ -225,15 +236,267 @@ class MainWindow(QtWidgets.QMainWindow):
             "outdoors": False,
             "notathome": False,
             "satellite": False,
+            "useserver": 0,
+            "multicast_group": "224.1.1.1",
+            "multicast_port": 2239,
+            "interface_ip": "0.0.0.0",
         }
         self.reference_preference = self.preference.copy()
         self.look_up = None
         self.cat_control = None
         self.cw = None
+        self.connect_to_server = False
+        self.multicast_group = None
+        self.multicast_port = None
+        self.interface_ip = None
+        self._udpwatch = None
         self.readpreferences()
         self.radiochecktimer = QtCore.QTimer()
         self.radiochecktimer.timeout.connect(self.poll_radio)
         self.radiochecktimer.start(1000)
+
+    def show_people(self):
+        """Display operators"""
+        rev_dict = {}
+        for key, value in self.people.items():
+            rev_dict.setdefault(value, set()).add(key)
+        result = set(
+            chain.from_iterable(
+                values for key, values in rev_dict.items() if len(values) > 1
+            )
+        )
+        self.users_list.clear()
+        self.users_list.insertPlainText("    Operators\n")
+        for op_callsign in self.people:
+            if op_callsign in result:
+                self.users_list.setTextColor(QtGui.QColor(245, 121, 0))
+                self.users_list.insertPlainText(
+                    f"{op_callsign.rjust(6,' ')} {self.people.get(op_callsign).rjust(6, ' ')}\n"
+                )
+                self.users_list.setTextColor(QtGui.QColor(211, 215, 207))
+            else:
+                self.users_list.insertPlainText(
+                    f"{op_callsign.rjust(6,' ')} {self.people.get(op_callsign).rjust(6, ' ')}\n"
+                )
+
+    def show_dirty_records(self):
+        """Checks for dirty records, Changes Generate Log button to give visual indication."""
+        if self.connect_to_server:
+            result = self.db.count_all_dirty_contacts()
+            all_dirty_count = result.get("alldirty")
+            if all_dirty_count:
+                self.genLogButton.setStyleSheet("background-color: red;")
+                self.genLogButton.setText(f"UnVfyd: {all_dirty_count}")
+            else:
+                self.genLogButton.setStyleSheet("background-color: rgb(92, 53, 102);")
+                self.genLogButton.setText("Generate Logs")
+
+    def resolve_dirty_records(self):
+        """Go through dirty records and submit them to the server."""
+        if self.connect_to_server:
+            records = self.db.fetch_all_dirty_contacts()
+            self.infobox.setTextColor(QtGui.QColor(211, 215, 207))
+            self.infobox.insertPlainText(f"Resolving {len(records)} unsent contacts.\n")
+            app.processEvents()
+            if records:
+                for count, dirty_contact in enumerate(records):
+                    contact = {}
+                    contact["cmd"] = "POST"
+                    contact["station"] = self.preference.get("mycall")
+                    stale = datetime.now() + timedelta(seconds=30)
+                    contact["expire"] = stale.isoformat()
+                    contact["unique_id"] = dirty_contact.get("unique_id")
+                    contact["hiscall"] = dirty_contact.get("callsign")
+                    contact["class"] = dirty_contact.get("class")
+                    contact["section"] = dirty_contact.get("section")
+                    contact["date_and_time"] = dirty_contact.get("date_time")
+                    contact["frequency"] = dirty_contact.get("frequency")
+                    contact["band"] = dirty_contact.get("band")
+                    contact["mode"] = dirty_contact.get("mode")
+                    contact["power"] = dirty_contact.get("power")
+                    contact["grid"] = dirty_contact.get("grid")
+                    contact["opname"] = dirty_contact.get("opname")
+                    self.server_commands.append(contact)
+                    bytesToSend = bytes(dumps(contact), encoding="ascii")
+                    try:
+                        self.server_udp.sendto(
+                            bytesToSend,
+                            (self.multicast_group, int(self.multicast_port)),
+                        )
+                    except OSError as err:
+                        logging.warning("%s", err)
+                    time.sleep(0.1)  # Do I need this?
+                    self.infobox.insertPlainText(f"Sending {count}\n")
+                    app.processEvents()
+
+    def clear_dirty_flag(self, unique_id):
+        """clear the dirty flag on record once response is returned from server."""
+        self.db.clear_dirty_flag(unique_id)
+        self.show_dirty_records()
+
+    def remove_confirmed_commands(self, data):
+        """Removed confirmed commands from the sent commands list."""
+        for index, item in enumerate(self.server_commands):
+            if item.get("unique_id") == data.get("unique_id") and item.get(
+                "cmd"
+            ) == data.get("subject"):
+                self.server_commands.pop(index)
+                self.clear_dirty_flag(data.get("unique_id"))
+                self.infoline.setText(f"Confirmed {data.get('subject')}")
+
+    def check_for_stale_commands(self):
+        """
+        Check through server commands to see if there has not been a reply in 30 seconds.
+        Resubmits those that are stale.
+        """
+        if self.connect_to_server:
+            for index, item in enumerate(self.server_commands):
+                expired = datetime.strptime(item.get("expire"), "%Y-%m-%dT%H:%M:%S.%f")
+                if datetime.now() > expired:
+                    newexpire = datetime.now() + timedelta(seconds=30)
+                    self.server_commands[index]["expire"] = newexpire.isoformat()
+                    bytesToSend = bytes(dumps(item), encoding="ascii")
+                    try:
+                        self.server_udp.sendto(
+                            bytesToSend,
+                            (self.multicast_group, int(self.multicast_port)),
+                        )
+                    except OSError as err:
+                        logging.warning("%s", err)
+
+    def send_chat(self):
+        """Sends UDP chat packet with text entered in chat_entry field."""
+        message = self.chat_entry.text()
+        packet = {"cmd": "CHAT"}
+        packet["sender"] = self.preference.get("mycall")
+        packet["message"] = message
+        bytesToSend = bytes(dumps(packet), encoding="ascii")
+        try:
+            self.server_udp.sendto(
+                bytesToSend, (self.multicast_group, int(self.multicast_port))
+            )
+        except OSError as err:
+            logging.warning("%s", err)
+        self.chat_entry.setText("")
+
+    def display_chat(self, sender, body):
+        """Displays the chat history."""
+        if self.preference.get("mycall") in body.upper():
+            self.chatlog.setTextColor(QtGui.QColor(245, 121, 0))
+        self.chatlog.insertPlainText(f"\n{sender}: {body}")
+        self.chatlog.setTextColor(QtGui.QColor(211, 215, 207))
+        self.chatlog.ensureCursorVisible()
+
+    def watch_udp(self):
+        """Puts UDP datagrams in a FIFO queue"""
+        while True:
+            if self.connect_to_server:
+                try:
+                    datagram = self.server_udp.recv(1500)
+                except socket.timeout:
+                    time.sleep(1)
+                    continue
+                if datagram:
+                    self.udp_fifo.put(datagram)
+            else:
+                time.sleep(1)
+
+    def check_udp_queue(self):
+        """checks the UDP datagram queue."""
+        if self.server_seen:
+            if datetime.now() > self.server_seen:
+                self.group_call_indicator.setStyleSheet(
+                    "border: 1px solid green;\nbackground-color: red;\ncolor: yellow;"
+                )
+        while not self.udp_fifo.empty():
+            datagram = self.udp_fifo.get()
+            try:
+                json_data = loads(datagram.decode())
+            except UnicodeDecodeError as err:
+                the_error = f"Not Unicode: {err}\n{datagram}"
+                logging.info(the_error)
+                continue
+            except JSONDecodeError as err:
+                the_error = f"Not JSON: {err}\n{datagram}"
+                logging.info(the_error)
+                continue
+            logging.info("%s", json_data)
+
+            if json_data.get("cmd") == "PING":
+                if json_data.get("station"):
+                    band_mode = f"{json_data.get('band')} {json_data.get('mode')}"
+                    if self.people.get(json_data.get("station")) != band_mode:
+                        self.people[json_data.get("station")] = band_mode
+                    self.show_people()
+                if json_data.get("host"):
+                    self.server_seen = datetime.now() + timedelta(seconds=30)
+                    self.group_call_indicator.setStyleSheet("border: 1px solid green;")
+                continue
+
+            if json_data.get("cmd") == "RESPONSE":
+                if json_data.get("recipient") == self.preference.get("mycall"):
+                    if json_data.get("subject") == "HOSTINFO":
+                        self.groupcall = str(json_data.get("groupcall"))
+                        self.myclassEntry.setText(str(json_data.get("groupclass")))
+                        self.mysectionEntry.setText(str(json_data.get("groupsection")))
+                        self.group_call_indicator.setText(self.groupcall)
+                        self.changemyclass()
+                        self.changemysection()
+                        self.mycallEntry.hide()
+                        self.server_seen = datetime.now() + timedelta(seconds=30)
+                        self.group_call_indicator.setStyleSheet(
+                            "border: 1px solid green;"
+                        )
+                        return
+                    if json_data.get("subject") == "LOG":
+                        self.infoline.setText("Server Generated Log.")
+                    self.remove_confirmed_commands(json_data)
+                    continue
+
+            if json_data.get("cmd") == "CHAT":
+                self.display_chat(json_data.get("sender"), json_data.get("message"))
+                continue
+
+            if json_data.get("cmd") == "GROUPQUERY":
+                if self.groupcall:
+                    self.send_status_udp()
+
+    def query_group(self):
+        """Sends request to server asking for group call/class/section."""
+        update = {
+            "cmd": "GROUPQUERY",
+            "station": self.preference["mycall"],
+        }
+        bytesToSend = bytes(dumps(update), encoding="ascii")
+        try:
+            self.server_udp.sendto(
+                bytesToSend, (self.multicast_group, int(self.multicast_port))
+            )
+        except OSError as err:
+            logging.warning("%s", err)
+
+    def send_status_udp(self):
+        """Send status update to server informing of our band and mode"""
+        if self.connect_to_server:
+            if self.groupcall is None and self.preference["mycall"] != "":
+                self.query_group()
+                return
+
+            update = {
+                "cmd": "PING",
+                "mode": self.mode,
+                "band": self.band,
+                "station": self.preference["mycall"],
+            }
+            bytesToSend = bytes(dumps(update), encoding="ascii")
+            try:
+                self.server_udp.sendto(
+                    bytesToSend, (self.multicast_group, int(self.multicast_port))
+                )
+            except OSError as err:
+                logging.warning("%s", err)
+
+            self.check_for_stale_commands()
 
     @staticmethod
     def relpath(filename: str) -> str:
