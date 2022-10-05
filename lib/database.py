@@ -101,7 +101,7 @@ class DataBase:
     def stats(self) -> dict:
         """
         returns a dict with some stats:
-        cwcontacts, phonecontacts, digitalcontacts, bandmodemult, last15, lasthour, hignpower, qrp
+        cwcontacts, phonecontacts, digitalcontacts, bandmodemult, last15, lasthour, highpower, qrp
         """
         with sqlite3.connect(self.database) as conn:
             cursor = conn.cursor()
