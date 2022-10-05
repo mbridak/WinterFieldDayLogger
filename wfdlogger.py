@@ -17,7 +17,6 @@ GPL V3
 
 from math import radians, sin, cos, atan2, sqrt, asin, pi
 import sys
-import sqlite3
 import socket
 import os
 import logging
@@ -969,38 +968,31 @@ class MainWindow(QtWidgets.QMainWindow):
             if text[1] == "P":
                 self.power_selector.setValue(int(text[2:]))
                 return
-            if text[1] == "E":  # FIXME not using the database class
-                qtoedit = int(text[2:])
+            if text[1] == "E":
                 try:
-                    with sqlite3.connect(self.database) as conn:
-                        cursor = conn.cursor()
-                        cursor.execute(f"select * from contacts where id={qtoedit}")
-                        log = cursor.fetchone()
-                        (
-                            logid,
-                            hiscall,
-                            hisclass,
-                            hissection,
-                            the_datetime,
-                            band,
-                            mode,
-                            power,
-                            _,
-                            _,
-                        ) = log
-                        self.linetopass = (
-                            f"{str(logid).rjust(3,'0')} {hiscall.ljust(10)} {hisclass.rjust(3)} "
-                            f"{hissection.rjust(3)} {the_datetime} {str(band).rjust(3)} "
-                            f"{mode} {str(power).rjust(3)}"
-                        )
-                        dialog = EditQsoDialog(self)
-                        dialog.setup(self.linetopass, self.database)
-                        dialog.change.lineChanged.connect(self.qsoedited)
-                        dialog.open()
-                except sqlite3.Error:
-                    pass
+                    qtoedit = int(text[2:])
+                except ValueError:
+                    return
+                log = self.db.contact_by_id(qtoedit)
+                if log:
+                    logid = log.get("id")
+                    hiscall = log.get("callsign")
+                    hisclass = log.get("class")
+                    hissection = log.get("section")
+                    the_datetime = log.get("date_time")
+                    band = log.get("band")
+                    mode = log.get("mode")
+                    power = log.get("power")
+                    self.linetopass = (
+                        f"{str(logid).rjust(3,'0')} {hiscall.ljust(10)} {hisclass.rjust(3)} "
+                        f"{hissection.rjust(3)} {the_datetime} {str(band).rjust(3)} "
+                        f"{mode} {str(power).rjust(3)}"
+                    )
+                    dialog = EditQsoDialog(self)
+                    dialog.setup(self.linetopass, self.db)
+                    dialog.change.lineChanged.connect(self.qsoedited)
+                    dialog.open()
                 return
-                # attention
             if text[1] == "M":
                 self.setmode(text[2:])
                 return
@@ -1147,16 +1139,13 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         Get an idea of how you're doing points wise.
         """
-        (
-            cwcontacts,
-            phonecontacts,
-            digitalcontacts,
-            bandmodemult,
-            last15,
-            lasthour,
-            _,
-            _,
-        ) = self.db.stats()
+        results = self.db.stats()
+        cwcontacts = results.get("cwcontacts")
+        phonecontacts = results.get("phonecontacts")
+        digitalcontacts = results.get("digitalcontacts")
+        bandmodemult = results.get("bandmodemult")
+        last15 = results.get("last15")
+        lasthour = results.get("lasthour")
         self.Total_CW.setText(str(cwcontacts))
         self.Total_Phone.setText(str(phonecontacts))
         self.Total_Digital.setText(str(digitalcontacts))
@@ -1170,7 +1159,13 @@ class MainWindow(QtWidgets.QMainWindow):
         Return our current score based on operating power,
         band / mode multipliers and types of contacts.
         """
-        cw, ph, di, bandmodemult, _, _, highpower, qrp = self.db.stats()
+        results = self.db.stats()
+        cw = results.get("cwcontacts")
+        ph = results.get("phonecontacts")
+        di = results.get("digitalcontacts")
+        bandmodemult = results.get("bandmodemult")
+        highpower = results.get("highpower")
+        qrp = results.get("qrp")
         self.score = (int(cw) * 2) + int(ph) + (int(di) * 2)
         self.basescore = self.score
         if qrp:
@@ -1192,18 +1187,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self.listWidget.clear()
         log = self.db.fetch_all_contacts_desc()
         for x in log:
-            (
-                logid,
-                hiscall,
-                hisclass,
-                hissection,
-                the_date_and_time,
-                band,
-                mode,
-                power,
-                _,
-                _,
-            ) = x
+            logid = x.get("id")
+            hiscall = x.get("callsign")
+            hisclass = x.get("class")
+            hissection = x.get("section")
+            the_date_and_time = x.get("date_time")
+            band = x.get("band")
+            mode = x.get("mode")
+            power = x.get("power")
+
             logline = (
                 f"{str(logid).rjust(3,'0')} {hiscall.ljust(10)} {hisclass.rjust(3)} "
                 f"{hissection.rjust(3)} {the_date_and_time} {str(band).rjust(3)} {mode} "
@@ -1298,23 +1290,17 @@ class MainWindow(QtWidgets.QMainWindow):
             for match in matches:
                 self.infobox.insertPlainText(match + " ")
 
-    def dup_check(self) -> None:  # FIXME not using the database class
+    def dup_check(self) -> None:
         """checks to see if a contact you're entering will be a dup."""
         acall = self.callsign_entry.text()
         self.infobox.clear()
-        try:
-            with sqlite3.connect(self.database) as conn:
-                cursor = conn.cursor()
-                cursor.execute(
-                    f"select callsign, class, section, band, mode "
-                    f"from contacts where callsign like '{acall}' order by band"
-                )
-                log = cursor.fetchall()
-        except sqlite3.Error as exception:
-            logging.critical("dup_check: %s", exception)
-            return
+        log = self.db.dup_check(acall)
         for contact in log:
-            hiscall, hisclass, hissection, hisband, hismode = contact
+            hiscall = contact.get("callsign")
+            hisclass = contact.get("class")
+            hissection = contact.get("section")
+            hisband = contact.get("band")
+            hismode = contact.get("mode")
             if len(self.class_entry.text()) == 0:
                 self.class_entry.setText(hisclass)
             if len(self.section_entry.text()) == 0:
@@ -1328,24 +1314,12 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.infobox.setTextColor(QtGui.QColor(211, 215, 207))
             self.infobox.insertPlainText(f"{hiscall}: {hisband} {hismode}{dupetext}\n")
 
-    def sections_worked(self) -> None:  # FIXME not using the database class
+    def sections_worked(self) -> None:
         """Generates a list of sections worked."""
-        try:
-            with sqlite3.connect(self.database) as conn:
-                cursor = conn.cursor()
-                cursor.execute("select distinct section from contacts")
-                all_rows = cursor.fetchall()
-        except sqlite3.Error as exception:
-            logging.critical("sections_worked: %s", exception)
-            return
-        self.wrkdsections = str(all_rows)
-        self.wrkdsections = (
-            self.wrkdsections.replace("('", "")
-            .replace("',), ", ",")
-            .replace("',)]", "")
-            .replace("[", "")
-            .split(",")
-        )
+        result = self.db.sections()
+        self.wrkdsections = []
+        for section in result:
+            self.wrkdsections.append(section.get("section"))
 
     def worked_section(self, section: str) -> str:
         """
@@ -1539,8 +1513,9 @@ class MainWindow(QtWidgets.QMainWindow):
                         dit = self.get_band_mode_tally(band, "DI")
                         pht = self.get_band_mode_tally(band, "PH")
                         print(
-                            f"Band:\t{band}\t{cwt[0]}\t{cwt[1]}\t"
-                            f"{dit[0]}\t{dit[1]}\t{pht[0]}\t{pht[1]}",
+                            f"Band:\t{band}\t{cwt.get('tally')}\t{cwt.get('mpow')}\t"
+                            f"{dit.get('tally')}\t{dit.get('mpow')}\t"
+                            f"{pht.get('tally')}\t{pht.get('mpow')}",
                             end="\r\n",
                             file=file_descriptor,
                         )
@@ -1600,8 +1575,8 @@ class MainWindow(QtWidgets.QMainWindow):
                         for count, grid in enumerate(grids):
                             if count == islast:
                                 lastcolor = "color=Orange"
-                            if len(grid[0]) > 1:
-                                lat, lon = self.gridtolatlon(grid[0])
+                            if len(grid.get("grid")) > 1:
+                                lat, lon = self.gridtolatlon(grid.get("grid"))
                                 print(
                                     f'{lat} {lon} "" {lastcolor}',
                                     end="\r\n",
@@ -1630,18 +1605,16 @@ class MainWindow(QtWidgets.QMainWindow):
                 print("<ADIF_VER:5>2.2.0", end="\r\n", file=file_descriptor)
                 print("<EOH>", end="\r\n", file=file_descriptor)
                 for contact in log:
-                    (
-                        _,
-                        hiscall,
-                        hisclass,
-                        hissection,
-                        the_date_and_time,
-                        band,
-                        mode,
-                        _,
-                        grid,
-                        opname,
-                    ) = contact
+
+                    hiscall = contact.get("callsign")
+                    hisclass = contact.get("class")
+                    hissection = contact.get("section")
+                    the_date_and_time = contact.get("date_time")
+                    band = contact.get("band")
+                    mode = contact.get("mode")
+                    grid = contact.get("grid")
+                    opname = contact.get("opname")
+
                     if mode == "DI":
                         mode = "RTTY"
                     if mode == "PH":
@@ -1749,18 +1722,16 @@ class MainWindow(QtWidgets.QMainWindow):
         if (not self.preference.get("cloudlog")) or (not self.cloudlogauthenticated):
             return
         contact = self.db.fetch_last_contact()
-        (
-            _,
-            hiscall,
-            hisclass,
-            hissection,
-            the_date_and_time,
-            band,
-            mode,
-            _,
-            grid,
-            opname,
-        ) = contact
+
+        hiscall = contact.get("callsign")
+        hisclass = contact.get("class")
+        hissection = contact.get("section")
+        the_date_and_time = contact.get("date_time")
+        band = contact.get("band")
+        mode = contact.get("mode")
+        grid = contact.get("grid")
+        opname = contact.get("opname")
+
         logging.info("%s", contact)
         if mode == "DI":
             mode = "RTTY"
@@ -1824,7 +1795,9 @@ class MainWindow(QtWidgets.QMainWindow):
         bonuses = 0
         log = self.db.fetch_all_contacts_asc()
         catpower = ""
-        _, _, _, _, _, _, highpower, qrp = self.db.stats()
+        result = self.db.stats()
+        highpower = result.get("highpower")
+        qrp = result.get("qrp")
         self.powermult = 0
         if qrp:
             catpower = "QRP"
@@ -1924,18 +1897,14 @@ class MainWindow(QtWidgets.QMainWindow):
                 print("ADDRESS-COUNTRY: ", end="\r\n", file=file_descriptor)
                 print("EMAIL: ", end="\r\n", file=file_descriptor)
                 for contact in log:
-                    (
-                        _,
-                        hiscall,
-                        hisclass,
-                        hissection,
-                        the_date_and_time,
-                        band,
-                        mode,
-                        _,
-                        _,
-                        _,
-                    ) = contact
+
+                    hiscall = contact.get("callsign")
+                    hisclass = contact.get("class")
+                    hissection = contact.get("section")
+                    the_date_and_time = contact.get("date_time")
+                    band = contact.get("band")
+                    mode = contact.get("mode")
+
                     loggeddate = the_date_and_time[:10]
                     loggedtime = the_date_and_time[11:13] + the_date_and_time[14:16]
                     print(
@@ -1968,7 +1937,7 @@ class EditQsoDialog(QtWidgets.QDialog):
     """Edits/deletes a contacts in the database"""
 
     theitem = ""
-    database = ""
+    database = None
 
     def __init__(self, parent=None):
         super().__init__(parent)
