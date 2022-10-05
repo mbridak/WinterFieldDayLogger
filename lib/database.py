@@ -61,7 +61,7 @@ class DataBase:
                     "INSERT INTO contacts"
                     "(callsign, class, section, date_time, "
                     "band, mode, power, grid, opname) "
-                    "VALUES(?,?,?,datetime('now'),?,?,?,?,?)"
+                    "VALUES(?,?,?,datetime('now'),?,?,?,?,?);"
                 )
                 logging.info("%s", sql)
                 cur = conn.cursor()
@@ -75,7 +75,7 @@ class DataBase:
         if contact:
             try:
                 with sqlite3.connect(self.database) as conn:
-                    sql = f"delete from contacts where id={int(contact)}"
+                    sql = f"delete from contacts where id={int(contact)};"
                     cur = conn.cursor()
                     cur.execute(sql)
                     conn.commit()
@@ -89,7 +89,7 @@ class DataBase:
                 sql = (
                     f"update contacts set callsign = '{qso[0]}', class = '{qso[1]}', "
                     f"section = '{qso[2]}', date_time = '{qso[3]}', band = '{qso[4]}', "
-                    f"mode = '{qso[5]}', power = '{qso[6]}'  where id='{qso[7]}'"
+                    f"mode = '{qso[5]}', power = '{qso[6]}'  where id='{qso[7]}';"
                 )
                 logging.info("%s\n%s", sql, qso)
                 cur = conn.cursor()
@@ -105,41 +105,41 @@ class DataBase:
         """
         with sqlite3.connect(self.database) as conn:
             cursor = conn.cursor()
-            cursor.execute("select count(*) from contacts where mode = 'CW'")
+            cursor.execute("select count(*) from contacts where mode = 'CW';")
             cwcontacts = str(cursor.fetchone()[0])
-            cursor.execute("select count(*) from contacts where mode = 'PH'")
+            cursor.execute("select count(*) from contacts where mode = 'PH';")
             phonecontacts = str(cursor.fetchone()[0])
-            cursor.execute("select count(*) from contacts where mode = 'DI'")
+            cursor.execute("select count(*) from contacts where mode = 'DI';")
             digitalcontacts = str(cursor.fetchone()[0])
-            cursor.execute("select distinct band, mode from contacts")
+            cursor.execute("select distinct band, mode from contacts;")
             bandmodemult = len(cursor.fetchall())
             cursor.execute(
                 "SELECT count(*) FROM contacts "
-                "where datetime(date_time) >=datetime('now', '-15 Minutes')"
+                "where datetime(date_time) >=datetime('now', '-15 Minutes');"
             )
             last15 = str(cursor.fetchone()[0])
             cursor.execute(
                 "SELECT count(*) FROM contacts "
-                "where datetime(date_time) >=datetime('now', '-1 Hours')"
+                "where datetime(date_time) >=datetime('now', '-1 Hours');"
             )
             lasthour = str(cursor.fetchone()[0])
             cursor.execute(
-                "select count(*) as qrpc from contacts where mode = 'CW' and power > 5"
+                "select count(*) as qrpc from contacts where mode = 'CW' and power > 5;"
             )
             log = cursor.fetchall()
             qrpc = list(log[0])[0]
             cursor.execute(
-                "select count(*) as qrpp from contacts where mode = 'PH' and power > 10"
+                "select count(*) as qrpp from contacts where mode = 'PH' and power > 10;"
             )
             log = cursor.fetchall()
             qrpp = list(log[0])[0]
             cursor.execute(
-                "select count(*) as qrpd from contacts where mode = 'DI' and power > 10"
+                "select count(*) as qrpd from contacts where mode = 'DI' and power > 10;"
             )
             log = cursor.fetchall()
             qrpd = list(log[0])[0]
             cursor.execute(
-                "select count(*) as highpower from contacts where power > 100"
+                "select count(*) as highpower from contacts where power > 100;"
             )
             log = cursor.fetchall()
             highpower = bool(list(log[0])[0])
@@ -168,7 +168,7 @@ class DataBase:
             cursor = conn.cursor()
             cursor.execute(
                 "select count(*) as tally, MAX(power) as mpow from contacts "
-                f"where band = '{band}' AND mode ='{mode}'"
+                f"where band = '{band}' AND mode ='{mode}';"
             )
             return cursor.fetchone()
 
@@ -177,7 +177,7 @@ class DataBase:
         with sqlite3.connect(self.database) as conn:
             conn.row_factory = self.row_factory
             cursor = conn.cursor()
-            cursor.execute("select DISTINCT band from contacts")
+            cursor.execute("select DISTINCT band from contacts;")
             return cursor.fetchall()
 
     def fetch_all_contacts_asc(self) -> list:
@@ -185,7 +185,7 @@ class DataBase:
         with sqlite3.connect(self.database) as conn:
             conn.row_factory = self.row_factory
             cursor = conn.cursor()
-            cursor.execute("select * from contacts order by date_time ASC")
+            cursor.execute("select * from contacts order by date_time ASC;")
             return cursor.fetchall()
 
     def fetch_all_contacts_desc(self) -> list:
@@ -193,7 +193,7 @@ class DataBase:
         with sqlite3.connect(self.database) as conn:
             conn.row_factory = self.row_factory
             cursor = conn.cursor()
-            cursor.execute("select * from contacts order by date_time desc")
+            cursor.execute("select * from contacts order by date_time desc;")
             return cursor.fetchall()
 
     def fetch_last_contact(self) -> dict:
@@ -201,7 +201,7 @@ class DataBase:
         with sqlite3.connect(self.database) as conn:
             conn.row_factory = self.row_factory
             cursor = conn.cursor()
-            cursor.execute("select * from contacts order by date_time desc")
+            cursor.execute("select * from contacts order by date_time desc;")
             return cursor.fetchone()
 
     def dup_check(self, acall: str) -> list:
@@ -211,7 +211,7 @@ class DataBase:
             cursor = conn.cursor()
             cursor.execute(
                 "select callsign, class, section, band, mode "
-                f"from contacts where callsign like '{acall}' order by band"
+                f"from contacts where callsign like '{acall}' order by band;"
             )
             return cursor.fetchall()
 
@@ -220,7 +220,7 @@ class DataBase:
         with sqlite3.connect(self.database) as conn:
             conn.row_factory = self.row_factory
             cursor = conn.cursor()
-            cursor.execute("select distinct section from contacts")
+            cursor.execute("select distinct section from contacts;")
             return cursor.fetchall()
 
     def contact_by_id(self, record) -> list:
@@ -228,13 +228,13 @@ class DataBase:
         with sqlite3.connect(self.database) as conn:
             conn.row_factory = self.row_factory
             cursor = conn.cursor()
-            cursor.execute("select * from contacts where id=" + record)
-            return cursor.fetchall()
+            cursor.execute(f"select * from contacts where id={record};")
+            return cursor.fetchone()
 
     def get_unique_grids(self) -> list:
         """returns a list of dicts with unique gridsquares worked."""
         with sqlite3.connect(self.database) as conn:
             conn.row_factory = self.row_factory
             cursor = conn.cursor()
-            cursor.execute("select DISTINCT grid from contacts")
+            cursor.execute("select DISTINCT grid from contacts;")
             return cursor.fetchall()
