@@ -24,6 +24,7 @@ No use in seeing spots you can respond to...
 # pylint: disable=invalid-name
 # pylint: disable=no-member
 # pylint: disable=no-name-in-module
+# pylint: disable=global-statement
 
 import logging
 import xmlrpc.client
@@ -149,7 +150,7 @@ else:
     logdb = "WFD.db"
 
 server = xmlrpc.client.ServerProxy(f"http://{flrighost}:{flrigport}")
-conn = False
+# conn = False
 lock = Lock()
 console = Console(width=38)
 localspotters = list()
@@ -308,9 +309,9 @@ def calc_distance(grid1, grid2):
     d_long = radians(long2) - radians(long1)
 
     r_lat1 = radians(lat1)
-    r_long1 = radians(long1)
+    # r_long1 = radians(long1)
     r_lat2 = radians(lat2)
-    r_long2 = radians(long2)
+    # r_long2 = radians(long2)
 
     a = sin(d_lat / 2) * sin(d_lat / 2) + cos(r_lat1) * cos(r_lat2) * sin(
         d_long / 2
@@ -391,13 +392,13 @@ def pruneoldest():
         sql = "select * from spots order by date_time asc"
         c.execute(sql)
         result = c.fetchone()
-        id, _, _, _, _ = result
-        sql = f"delete from spots where id='{id}'"
+        spot_index, _, _, _, _ = result
+        sql = f"delete from spots where id='{spot_index}'"
         c.execute(sql)
         conn.commit()
 
 
-def showspots(lock):
+def showspots(the_lock):
     """
     Show spot list, sorted by frequency.
     Prune the list if it's longer than the window by removing the oldest spots.
@@ -409,18 +410,17 @@ def showspots(lock):
         updatecontactlist()
         console.clear()
         console.rule(f"[bold red]Spots VFO: {vfo}")
-        with lock:
+        with the_lock:
             with sqlite3.connect("spots.db") as conn:
                 c = conn.cursor()
                 sql = "select *, Cast ((JulianDay(datetime('now')) - JulianDay(date_time)) * 24 * 60 * 60 As Integer) from spots order by frequency asc"
                 c.execute(sql)
                 result = c.fetchall()
-        displayed = 2
-        for x, spot in enumerate(result):
+        for displayed, spot in enumerate(result, start=2):
             _, callsign, date_time, frequency, band, delta = spot
             displayed += 1
             if displayed > console.height:
-                with lock:
+                with the_lock:
                     pruneoldest()
             else:
                 if inband(frequency):
@@ -443,7 +443,7 @@ def showspots(lock):
         time.sleep(1)
 
 
-def getrbn(lock):
+def getrbn(the_lock):
     """Get Spots"""
     with Telnet(rbn, rbnport) as tn:
         while True:
@@ -473,8 +473,19 @@ def getrbn(lock):
                 if not inband(float(freq)) and showoutofband is False:
                     continue
                 if band in limitband:
-                    with lock:
+                    with the_lock:
                         addSpot(callsign, freq, band)
+
+
+def setupdb():
+    """Setup DB if it does not exist."""
+    with sqlite3.connect("spots.db") as db_conn:
+        c = db_conn.cursor()
+        sql_table = """CREATE TABLE IF NOT EXISTS spots (id INTEGER PRIMARY KEY, callsign text, date_time text NOT NULL, frequency REAL NOT NULL, band INTEGER);"""
+        c.execute(sql_table)
+        sql = f"delete from spots where Cast ((JulianDay(datetime('now')) - JulianDay(date_time)) * 24 * 60 * 60 As Integer) > {spottoold}"
+        c.execute(sql)
+        db_conn.commit()
 
 
 console.clear()
@@ -487,23 +498,17 @@ soup = bs(page.text, "lxml")
 rows = soup.find_all("tr", {"class": "online"})
 for row in rows:
     datum = row.find_all("td")
-    spotter = datum[0].a.contents[0].strip()
+    the_spotter = datum[0].a.contents[0].strip()
     bands = datum[1].contents[0].strip()
     grid = datum[2].contents[0]
     distance = calc_distance(grid, mygrid) / 1.609
     if distance < maxspotterdistance:
-        localspotters.append(spotter)
+        localspotters.append(the_spotter)
 
 print(f"Spotters with in {maxspotterdistance} mi:")
 print(f"{localspotters}")
 time.sleep(1)
-with sqlite3.connect("spots.db") as conn:
-    c = conn.cursor()
-    sql_table = """CREATE TABLE IF NOT EXISTS spots (id INTEGER PRIMARY KEY, callsign text, date_time text NOT NULL, frequency REAL NOT NULL, band INTEGER);"""
-    c.execute(sql_table)
-    sql = f"delete from spots where Cast ((JulianDay(datetime('now')) - JulianDay(date_time)) * 24 * 60 * 60 As Integer) > {spottoold}"
-    c.execute(sql)
-    conn.commit()
+setupdb()
 
 # Threading Oh my!
 t1 = Thread(target=getrbn, args=(lock,))
