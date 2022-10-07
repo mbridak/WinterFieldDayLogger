@@ -27,7 +27,7 @@ import time
 from itertools import chain
 
 from json import dumps, loads
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from shutil import copyfile
 
@@ -41,6 +41,7 @@ from lib.database import DataBase
 from lib.lookup import HamDBlookup, HamQTH, QRZlookup
 from lib.cat_interface import CAT
 from lib.cwinterface import CW
+from lib.n1mm import N1MM
 from lib.version import __version__
 
 
@@ -245,6 +246,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.look_up = None
         self.cat_control = None
         self.cw = None
+        self.n1mm = None
         self.connect_to_server = False
         self.multicast_group = None
         self.multicast_port = None
@@ -803,6 +805,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.satelliteButton.setStyleSheet(
                 self.highlighted(self.preference.get("satellite"))
             )
+
+            self.n1mm = N1MM(contactport=12061, lookupport=12061)
 
         except KeyError as err:
             logging.warning("Corrupt preference, %s, loading clean version.", err)
