@@ -13,7 +13,7 @@ class N1MM:
     """ "Send N1MM style packets"""
 
     radio_info = {
-        "app": "N1MM",
+        "app": "Not1MM",
         "StationName": "",
         "uNICORNbLOOD": "1",
         "RadioNr": "1",
@@ -31,7 +31,7 @@ class N1MM:
         "IsSplit": "False",
         "ActiveRadioNr": "1",
         "IsTransmitting": "False",
-        "FunctionKeyCaption": "",
+        "FunctionKeyCaption": " ",
         "RadioName": "Little Todd",
         "AuxAntSelected": "-1",
         "AuxAntSelectedName": "",
@@ -90,6 +90,7 @@ class N1MM:
         "call": "",
         "contestnr": "1",
         "StationName": "",
+        "ID": "",
     }
 
     def __init__(
