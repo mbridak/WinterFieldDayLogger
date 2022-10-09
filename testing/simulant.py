@@ -80,18 +80,7 @@ server_commands = []
 
 def generate_class():
     """Generates a valid Field Day class"""
-    suffix = ["A", "B", "C", "D", "E", "F"][random.randint(0, 5)]
-    if "C" in suffix:
-        return "1C"
-    if "D" in suffix:
-        return "1D"
-    if "E" in suffix:
-        return "1E"
-    if "B" in suffix:
-        return str(random.randint(1, 2)) + suffix
-    if "A" in suffix:
-        return str(random.randint(3, 20)) + suffix
-
+    suffix = ["I", "O", "H"][random.randint(0, 2)]
     return str(random.randint(1, 20)) + suffix
 
 
