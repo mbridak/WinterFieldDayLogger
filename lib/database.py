@@ -40,11 +40,14 @@ class DataBase:
                 "class text NOT NULL, "
                 "section text NOT NULL, "
                 "date_time text NOT NULL, "
+                "frequency INTEGER DEFAULT 0, "
                 "band text NOT NULL, "
                 "mode text NOT NULL, "
                 "power INTEGER NOT NULL, "
                 "grid text NOT NULL, "
-                "opname text NOT NULL);"
+                "opname text NOT NULL,"
+                "unique_id text NOT NULL, "
+                "dirty INTEGER DEFAULT 1);"
             )
             cursor.execute(sql_table)
             conn.commit()
@@ -59,9 +62,9 @@ class DataBase:
             with sqlite3.connect(self.database) as conn:
                 sql = (
                     "INSERT INTO contacts"
-                    "(callsign, class, section, date_time, "
-                    "band, mode, power, grid, opname) "
-                    "VALUES(?,?,?,datetime('now'),?,?,?,?,?);"
+                    "(callsign, class, section, frequency, date_time, "
+                    "band, mode, power, grid, opname, unique_id, dirty) "
+                    "VALUES(?,?,?,?,datetime('now'),?,?,?,?,?,?,1);"
                 )
                 logging.info("%s", sql)
                 cur = conn.cursor()
@@ -69,6 +72,32 @@ class DataBase:
                 conn.commit()
         except sqlite3.Error as exception:
             logging.info("DataBase log_contact: %s", exception)
+
+    def clear_dirty_flag(self, unique_id) -> None:
+        """Clears the dirty flag."""
+        if unique_id:
+            try:
+                with sqlite3.connect(self.database) as conn:
+                    sql = f"update contacts set dirty=0 where unique_id='{unique_id}';"
+                    cursor = conn.cursor()
+                    cursor.execute(sql)
+                    conn.commit()
+            except sqlite3.Error as exception:
+                logging.critical("%s", exception)
+
+    def get_unique_id(self, contact) -> str:
+        """get unique id"""
+        unique_id = ""
+        if contact:
+            try:
+                with sqlite3.connect(self.database) as conn:
+                    sql = f"select unique_id from contacts where id={int(contact)}"
+                    cursor = conn.cursor()
+                    cursor.execute(sql)
+                    unique_id = str(cursor.fetchone()[0])
+            except sqlite3.Error as exception:
+                logging.debug("%s", exception)
+        return unique_id
 
     def delete_contact(self, contact) -> None:
         """Deletes a contact from the db."""
@@ -204,6 +233,23 @@ class DataBase:
             cursor.execute("select * from contacts order by date_time desc;")
             return cursor.fetchone()
 
+    def fetch_all_dirty_contacts(self) -> list:
+        """
+        Return a list of dict, containing all contacts still flagged as dirty.\n
+        Example:\n
+        {\n
+            'id': 2, 'callsign': 'N6QW', 'class': '1B', 'section': 'SB', \n
+            'date_time': '2022-09-22 18:44:02', 'frequency': 1830000, 'band': '160', \n
+            'mode': 'CW', 'power': 5, 'grid': 'DM04md', 'opname': 'PETER JULIANO', \n
+            'unique_id': '6fe98693f3ac4250847a6e5ac9da650e', 'dirty': 1\n
+        }\n
+        """
+        with sqlite3.connect(self.database) as conn:
+            conn.row_factory = self.row_factory
+            cursor = conn.cursor()
+            cursor.execute("select * from contacts where dirty=1 order by id")
+            return cursor.fetchall()
+
     def dup_check(self, acall: str) -> list:
         """returns a list of dicts with possible dups"""
         with sqlite3.connect(self.database) as conn:
@@ -214,6 +260,17 @@ class DataBase:
                 f"from contacts where callsign like '{acall}' order by band;"
             )
             return cursor.fetchall()
+
+    def count_all_dirty_contacts(self) -> dict:
+        """
+        Returns a dict containing the count of contacts still flagged as dirty.\n
+        Example: {'alldirty': 3}
+        """
+        with sqlite3.connect(self.database) as conn:
+            conn.row_factory = self.row_factory
+            cursor = conn.cursor()
+            cursor.execute("select count(*) as alldirty from contacts where dirty=1")
+            return cursor.fetchone()
 
     def sections(self) -> list:
         """returns a list of dicts with sections worked."""
