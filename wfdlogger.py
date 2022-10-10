@@ -445,6 +445,7 @@ class MainWindow(QtWidgets.QMainWindow):
                         self.changemysection()
                         self.mycallEntry.hide()
                         self.server_seen = datetime.now() + timedelta(seconds=30)
+                        self.group_call_indicator.show()
                         self.group_call_indicator.setStyleSheet(
                             "border: 1px solid green;"
                         )
@@ -1308,21 +1309,8 @@ class MainWindow(QtWidgets.QMainWindow):
                     return
                 log = self.db.contact_by_id(qtoedit)
                 if log:
-                    logid = log.get("id")
-                    hiscall = log.get("callsign")
-                    hisclass = log.get("class")
-                    hissection = log.get("section")
-                    the_datetime = log.get("date_time")
-                    band = log.get("band")
-                    mode = log.get("mode")
-                    power = log.get("power")
-                    self.linetopass = (
-                        f"{str(logid).rjust(3,'0')} {hiscall.ljust(10)} {hisclass.rjust(3)} "
-                        f"{hissection.rjust(3)} {the_datetime} {str(band).rjust(3)} "
-                        f"{mode} {str(power).rjust(3)}"
-                    )
                     dialog = EditQsoDialog(self)
-                    dialog.setup(self.linetopass, self.db)
+                    dialog.setup(log, self.db)
                     dialog.change.lineChanged.connect(self.qsoedited)
                     dialog.open()
                 return
@@ -1579,9 +1567,10 @@ class MainWindow(QtWidgets.QMainWindow):
         Gets the line of the log clicked on, and passes that line to the edit dialog.
         """
         item = self.listWidget.currentItem()
-        self.linetopass = item.text()
+        contactnumber = item.text().split()[0]
+        result = self.db.contact_by_id(contactnumber)
         dialog = EditQsoDialog(self)
-        dialog.setup(self.linetopass, self.db)
+        dialog.setup(result, self.db)
         dialog.change.lineChanged.connect(self.qsoedited)
         dialog.open()
 
@@ -2308,6 +2297,7 @@ class EditQsoDialog(QtWidgets.QDialog):
 
     theitem = ""
     database = None
+    contact = None
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -2316,30 +2306,21 @@ class EditQsoDialog(QtWidgets.QDialog):
         self.buttonBox.accepted.connect(self.save_changes)
         self.change = QSOEdit()
 
-    def setup(self, linetopass, thedatabase):
+    def setup(self, contact, thedatabase):
         """Loads in the contact information and db to access."""
         self.database = thedatabase
-        (
-            self.theitem,
-            thecall,
-            theclass,
-            thesection,
-            thedate,
-            thetime,
-            theband,
-            themode,
-            thepower,
-        ) = linetopass.split()
-        self.editCallsign.setText(thecall)
-        self.editClass.setText(theclass)
-        self.editSection.setText(thesection)
-        self.editBand.setCurrentIndex(self.editBand.findText(theband))
-        self.editMode.setCurrentIndex(self.editMode.findText(themode))
-        self.editPower.setValue(int(thepower))
-        date_time = thedate + " " + thetime
+        self.contact = contact
+        self.theitem = contact.get("id")
+        self.editCallsign.setText(contact.get("callsign"))
+        self.editClass.setText(contact.get("class"))
+        self.editSection.setText(contact.get("section"))
+        self.editFreq.setText(str(contact.get("frequency")))
+        self.editBand.setCurrentIndex(self.editBand.findText(contact.get("band")))
+        self.editMode.setCurrentIndex(self.editMode.findText(contact.get("mode")))
+        self.editPower.setValue(int(contact.get("power")))
+        date_time = contact.get("date_time")
         now = QtCore.QDateTime.fromString(date_time, "yyyy-MM-dd hh:mm:ss")
         self.editDateTime.setDateTime(now)
-        self.database = thedatabase
 
     @staticmethod
     def relpath(filename: str) -> str:
@@ -2363,6 +2344,7 @@ class EditQsoDialog(QtWidgets.QDialog):
             self.editBand.currentText(),
             self.editMode.currentText(),
             self.editPower.value(),
+            self.editFreq.text(),
             self.theitem,
         )
         self.database.change_contact(qso)
@@ -2378,7 +2360,7 @@ class EditQsoDialog(QtWidgets.QDialog):
             command["mode"] = self.editMode.currentText().upper()
             command["power"] = self.editPower.value()
             command["station"] = window.preference["mycallsign"].upper()
-            command["unique_id"] = self.unique_id
+            command["unique_id"] = self.contact.get("unique_id")
             command["expire"] = stale.isoformat()
             window.server_commands.append(command)
             bytesToSend = bytes(dumps(command), encoding="ascii")
@@ -2397,7 +2379,7 @@ class EditQsoDialog(QtWidgets.QDialog):
             stale = datetime.now() + timedelta(seconds=30)
             command = {}
             command["cmd"] = "DELETE"
-            command["unique_id"] = self.unique_id
+            command["unique_id"] = self.contact.get("unique_id")
             command["station"] = window.preference["mycallsign"].upper()
             command["expire"] = stale.isoformat()
             window.server_commands.append(command)
