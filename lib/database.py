@@ -118,7 +118,7 @@ class DataBase:
                 sql = (
                     f"update contacts set callsign = '{qso[0]}', class = '{qso[1]}', "
                     f"section = '{qso[2]}', date_time = '{qso[3]}', band = '{qso[4]}', "
-                    f"mode = '{qso[5]}', power = '{qso[6]}'  where id='{qso[7]}';"
+                    f"mode = '{qso[5]}', power = '{qso[6]}', frequency = '{qso[7]}' where id='{qso[8]}';"
                 )
                 logging.info("%s\n%s", sql, qso)
                 cur = conn.cursor()
