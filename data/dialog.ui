@@ -125,7 +125,7 @@ color: rgb(211, 215, 207);</string>
    </property>
    <property name="dateTime">
     <datetime>
-     <hour>0</hour>
+     <hour>8</hour>
      <minute>0</minute>
      <second>6</second>
      <year>2000</year>
@@ -264,12 +264,27 @@ color: rgb(255, 255, 255);</string>
    </item>
    <item>
     <property name="text">
+     <string>30</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
      <string>20</string>
     </property>
    </item>
    <item>
     <property name="text">
+     <string>17</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
      <string>15</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>12</string>
     </property>
    </item>
    <item>
