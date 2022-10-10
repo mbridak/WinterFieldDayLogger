@@ -177,6 +177,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.callsign_entry.editingFinished.connect(self.dup_check)
         self.section_entry.textEdited.connect(self.section_check)
         self.genLogButton.clicked.connect(self.generate_logs)
+        self.chat_entry.returnPressed.connect(self.send_chat)
         self.radio_grey = QtGui.QPixmap(self.relpath("icon/radio_grey.png"))
         self.radio_red = QtGui.QPixmap(self.relpath("icon/radio_red.png"))
         self.radio_green = QtGui.QPixmap(self.relpath("icon/radio_green.png"))
