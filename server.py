@@ -268,21 +268,23 @@ def show_people():
 
 def get_stats():
     """Get statistics"""
-    global QRP
-    (
-        cwcontacts,
-        phonecontacts,
-        digitalcontacts,
-        _,
-        last15,
-        lasthour,
-        _,
-        QRP,
-    ) = DB.stats()
+    results = DB.stats()
+    cw = results.get("cwcontacts")
+    ph = results.get("phonecontacts")
+    di = results.get("digitalcontacts")
+    bandmodemult = results.get("bandmodemult")
+    highpower = results.get("highpower")
+    qrp = results.get("qrp")
+    last15 = results.get("last15")
+    lasthour = results.get("lasthour")
 
-    points = (int(cwcontacts) * 2) + (int(digitalcontacts) * 2) + int(phonecontacts)
-
-    score = (((QRP * 3) * BATTERYPOWER) + 2) * points
+    score = (int(cw) * 2) + int(ph) + (int(di) * 2)
+    # basescore = score
+    if qrp:
+        score = score * 4
+    elif not highpower:
+        score = score * 2
+    score = score * bandmodemult
 
     THE_SCREEN.addstr(2, 73, f"{score}", curses.color_pair(7))
     THE_SCREEN.addstr(3, 73, f"{lasthour}", curses.color_pair(7))
