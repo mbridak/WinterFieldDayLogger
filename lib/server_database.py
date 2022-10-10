@@ -152,16 +152,18 @@ class DataBase:
             highpower = bool(list(log[0])[0])
             qrp = not qrpc + qrpp + qrpd
 
-            return (
-                cwcontacts,
-                phonecontacts,
-                digitalcontacts,
-                bandmodemult,
-                last15,
-                lasthour,
-                highpower,
-                qrp,
-            )
+            packaged_stats = {
+                "cwcontacts": cwcontacts,
+                "phonecontacts": phonecontacts,
+                "digitalcontacts": digitalcontacts,
+                "bandmodemult": bandmodemult,
+                "last15": last15,
+                "lasthour": lasthour,
+                "highpower": highpower,
+                "qrp": qrp,
+            }
+
+            return packaged_stats
 
     def contacts_under_101watts(self) -> tuple:
         """return contact tallies for contacts made below 101 watts."""
