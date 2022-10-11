@@ -330,14 +330,28 @@ def calcscore():
     QRP and Low Power (<100W) have base multiplier of 2.
     QRP with Battery Power has base multiplier of 5
     """
-    global QRP
-    QRP, _ = DB.qrp_check()
-    c_dubs, phone, digital = DB.contacts_under_101watts()
-    score = (int(c_dubs) * 2) + int(phone) + (int(digital) * 2)
-    multiplier = 2
-    if QRP and BATTERYPOWER:
-        multiplier = 5
-    score = score * multiplier
+    results = DB.stats()
+    cw = results.get("cwcontacts")
+    ph = results.get("phonecontacts")
+    di = results.get("digitalcontacts")
+    bandmodemult = results.get("bandmodemult")
+    highpower = results.get("highpower")
+    qrp = results.get("qrp")
+    score = (int(cw) * 2) + int(ph) + (int(di) * 2)
+    if qrp:
+        score = score * 4
+    elif not highpower:
+        score = score * 2
+    score = score * bandmodemult
+    if preference.get("altpower"):
+        score += 500
+    if preference.get("outdoors"):
+        score += 500
+    if preference.get("notathome"):
+        score += 500
+    if preference.get("satellite"):
+        score += 500
+
     return score
 
 
@@ -775,25 +789,12 @@ def main(_):
                         )
                         message += line
 
-                    global QRP
-                    (
-                        cwcontacts,
-                        phonecontacts,
-                        digitalcontacts,
-                        _,
-                        last15,
-                        lasthour,
-                        _,
-                        QRP,
-                    ) = DB.stats()
+                    # global QRP
+                    results = DB.stats()
 
-                    points = (
-                        (int(cwcontacts) * 2)
-                        + (int(digitalcontacts) * 2)
-                        + int(phonecontacts)
-                    )
-
-                    score = (((QRP * 3) * BATTERYPOWER) + 2) * points
+                    lasthour = results.get("lasthour")
+                    last15 = results.get("last15")
+                    score = calcscore()
                     message += (
                         f"\nScore {score}\n"
                         f"Last Hour {lasthour}\n"
