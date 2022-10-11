@@ -47,7 +47,7 @@ if Path("./debug").exists():
 else:
     logging.basicConfig(level=logging.CRITICAL)
 
-parser = argparse.ArgumentParser(description="Field Day aggregation server.")
+parser = argparse.ArgumentParser(description="Winter Field Day aggregation server.")
 parser.add_argument("-l", "--log", action="store_true", help="Generate log")
 
 args = parser.parse_args()
@@ -364,7 +364,7 @@ def cabrillo():
                 end="\r\n",
                 file=file_descriptor,
             )
-            print("CONTEST: ARRL-FD", end="\r\n", file=file_descriptor)
+            print("CONTEST: WINTER-FIELD-DAY", end="\r\n", file=file_descriptor)
             print(
                 f"CALLSIGN: {OURCALL}",
                 end="\r\n",
@@ -561,7 +561,7 @@ def main(_):
     curses.noecho()
     curses.cbreak()
     THE_SCREEN.attron(curses.color_pair(8))
-    line = f"Field Day aggregation server v{__version__}".center(width, " ")
+    line = f"Winter Field Day aggregation server v{__version__}".center(width, " ")
     THE_SCREEN.addstr(0, 0, line)
     THE_SCREEN.attron(curses.color_pair(1))
     THE_SCREEN.addstr(
