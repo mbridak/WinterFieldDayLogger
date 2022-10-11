@@ -9,6 +9,12 @@
     "postalcode": "06111",
     "country": "USA",
     "email": "Hiram.Maxim@arrl.net",
+    "bonus": {
+        "altpower": true,
+        "outdoors": true,
+        "notathome": true,
+        "satellite": true
+    },
     "mullticast_group": "224.1.1.1",
     "multicast_port": 2239,
     "interface_ip": "0.0.0.0"
