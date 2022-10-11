@@ -344,7 +344,9 @@ class MainWindow(QtWidgets.QMainWindow):
             ) == data.get("subject"):
                 self.server_commands.pop(index)
                 self.clear_dirty_flag(data.get("unique_id"))
-                # self.infoline.setText(f"Confirmed {data.get('subject')}")
+                self.infobox.insertPlainText(
+                    f"Server Confirmed {data.get('subject')}\n"
+                )
 
     def check_for_stale_commands(self):
         """
@@ -452,7 +454,7 @@ class MainWindow(QtWidgets.QMainWindow):
                         )
                         return
                     if json_data.get("subject") == "LOG":
-                        self.infoline.setText("Server Generated Log.")
+                        self.infobox.insertPlainText("Server Generated Log.\n")
                     self.remove_confirmed_commands(json_data)
                     continue
 
@@ -1841,7 +1843,7 @@ class MainWindow(QtWidgets.QMainWindow):
         result = self.db.get_bands()
         if result:
             for returned_band in result:
-                bandlist.append(returned_band[0])
+                bandlist.append(returned_band.get("band"))
             return bandlist
         return []
 
