@@ -821,6 +821,8 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.multicast_port,
                     self.interface_ip,
                 )
+                self.mycallEntry.hide()
+                self.group_call_indicator.show()
                 self.chat_window.show()
                 self.server_udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                 self.server_udp.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -842,6 +844,7 @@ class MainWindow(QtWidgets.QMainWindow):
             else:
                 self.groupcall = None
                 self.mycallEntry.show()
+                self.group_call_indicator.hide()
                 self.chat_window.hide()
 
         except KeyError as err:
