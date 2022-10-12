@@ -374,7 +374,7 @@ def cabrillo():
         with open(filename, "w", encoding="ascii") as file_descriptor:
             print("START-OF-LOG: 3.0", end="\r\n", file=file_descriptor)
             print(
-                "CREATED-BY: K6GTE Field Day Logger",
+                "CREATED-BY: K6GTE Winter Field Day Logger",
                 end="\r\n",
                 file=file_descriptor,
             )
@@ -421,84 +421,50 @@ def cabrillo():
             )
 
             bonus_title = {
-                "emergency_power": "100% Emergency Power",
-                "media_publicity": "Media Publicity",
-                "public_location": "Public Location",
-                "public_info_table": "Public Information Table",
-                "message_to_section_manager": "Message Origination to Section Manager",
-                "message_handling": "Message Handling",
-                "satellite_qso": "Satellite QSO",
-                "alternate_power": "Alternate Power",
-                "w1aw_bulletin": "W1AW Bulletin",
-                "educational_activity": "Educational activity",
-                "elected_official_visit": "Site Visitation by an elected governmental official",
-                "agency_representative_visit": "Site Visitation by a representative of an agency",
-                "gota": "GOTA",
-                "web_submission": "Web submission",
-                "youth_participation": "Field Day Youth Participation",
-                "social_media": "Social Media",
-                "safety_officer": "Safety Officer",
+                "altpower": "Alternate Power",
+                "outdoors": "Setup Outdoors",
+                "notathome": "Not At Home",
+                "satellite": "Satellite Contact",
             }
 
             bonuses = preference.get("bonus")
             bonus_points = 0
             for bonus in bonuses:
-                if bonus == "emergency_power":
-                    if bonuses.get("emergency_power").get("bool"):
-                        print(
-                            f"SOAPBOX: {bonus_title.get(bonus)} Bonus 100 Points x "
-                            f"{bonuses.get('emergency_power').get('station_count')}",
-                            end="\r\n",
-                            file=file_descriptor,
-                        )
-                        bonus_points += 100 * int(
-                            bonuses.get("emergency_power").get("station_count")
-                        )
-                    continue
-
-                if bonus == "message_handling":
-                    if bonuses.get("message_handling").get("bool"):
-                        print(
-                            f"SOAPBOX: {bonus_title.get(bonus)} Bonus 10 Points x "
-                            f"{bonuses.get('message_handling').get('message_count')}",
-                            end="\r\n",
-                            file=file_descriptor,
-                        )
-                        bonus_points += 10 * int(
-                            bonuses.get("message_handling").get("message_count")
-                        )
-                    continue
-
-                if bonus == "web_submission":
-                    if bonuses[bonus]:
-                        print(
-                            f"SOAPBOX: {bonus_title.get(bonus)} Bonus 50 Points",
-                            end="\r\n",
-                            file=file_descriptor,
-                        )
-                        bonus_points += 50
-                        continue
-
-                if bonus == "youth_participation":
-                    if bonuses.get("youth_participation").get("bool"):
-                        print(
-                            f"SOAPBOX: {bonus_title.get(bonus)} Bonus 20 Points x "
-                            f"{bonuses.get('youth_participation').get('youth_count')}",
-                            end="\r\n",
-                            file=file_descriptor,
-                        )
-                        bonus_points += 20 * int(
-                            bonuses.get("youth_participation").get("youth_count")
-                        )
-                    continue
-
-                if bonuses[bonus]:
+                if bonus == "altpower":
                     print(
-                        f"SOAPBOX: {bonus_title.get(bonus)} Bonus 100 Points",
+                        f"SOAPBOX: {bonus_title.get(bonus)} Bonus 500 Points",
                         end="\r\n",
                         file=file_descriptor,
                     )
-                    bonus_points += 100
+                    bonus_points += 500
+                    continue
+
+                if bonus == "outdoors":
+                    print(
+                        f"SOAPBOX: {bonus_title.get(bonus)} Bonus 500 Points",
+                        end="\r\n",
+                        file=file_descriptor,
+                    )
+                    bonus_points += 500
+                    continue
+
+                if bonus == "notathome":
+                    print(
+                        f"SOAPBOX: {bonus_title.get(bonus)} Bonus 500 Points",
+                        end="\r\n",
+                        file=file_descriptor,
+                    )
+                    bonus_points += 500
+                    continue
+
+                if bonus == "satellite":
+                    print(
+                        f"SOAPBOX: {bonus_title.get(bonus)} Bonus 500 Points",
+                        end="\r\n",
+                        file=file_descriptor,
+                    )
+                    bonus_points += 500
+                    continue
 
             print(
                 f"SOAPBOX: Total bonus points: {bonus_points}",
