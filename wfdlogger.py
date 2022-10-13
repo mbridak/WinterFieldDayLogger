@@ -110,10 +110,13 @@ class MainWindow(QtWidgets.QMainWindow):
     dfreq = {
         "160": "1.830",
         "80": "3.530",
-        "60": "5.340",
+        "60": "5.357",
         "40": "7.030",
+        "30": "10.130",
         "20": "14.030",
+        "17": "18.100",
         "15": "21.030",
+        "12": "24.920",
         "10": "28.030",
         "6": "50.030",
         "2": "144.030",
@@ -202,6 +205,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.F10.clicked.connect(self.sendf10)
         self.F11.clicked.connect(self.sendf11)
         self.F12.clicked.connect(self.sendf12)
+        self.n1mm = N1MM(ip_address="127.0.0.1", radioport=12060, contactport=12061)
         self.contactlookup = {
             "call": "",
             "grid": "",
@@ -1055,6 +1059,13 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.setmode(str(self.getmode(newmode)))
                 # setpower(str(newpwr))
                 # self.setfreq(str(newfreq))
+            self.n1mm.radio_info["StationName"] = "stanley"
+            self.n1mm.radio_info["Freq"] = newfreq[:6]
+            self.n1mm.radio_info["TXFreq"] = newfreq[:6]
+            self.n1mm.radio_info["Mode"] = newmode
+            self.n1mm.radio_info["OpCall"] = self.preference["mycallsign"]
+            self.n1mm.radio_info["IsRunning"] = str(self.run_state)
+            self.n1mm.send_radio()
 
     def flash(self):
         """
@@ -2169,7 +2180,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     end="\r\n",
                     file=file_descriptor,
                 )
-                print("CONTEST: WFD", end="\r\n", file=file_descriptor)
+                print("CONTEST: WINTER-FIELD-DAY", end="\r\n", file=file_descriptor)
                 print(
                     f"CALLSIGN: {self.preference.get('mycallsign')}",
                     end="\r\n",
