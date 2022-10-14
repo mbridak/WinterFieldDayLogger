@@ -18,28 +18,41 @@ class Settings(QtWidgets.QDialog):
             "mycallsign": "",
             "myclass": "",
             "mysection": "",
-            "power": "0",
-            "usehamdb": 0,
-            "useqrz": 0,
-            "usehamqth": 0,
-            "lookupusername": "",
-            "lookuppassword": "",
-            "userigctld": 0,
-            "useflrig": 0,
+            "power": "100",
+            "usehamdb": False,
+            "useqrz": False,
+            "usehamqth": False,
+            "lookupusername": "w1aw",
+            "lookuppassword": "secret",
+            "userigctld": False,
+            "useflrig": False,
             "CAT_ip": "localhost",
-            "CAT_port": 12345,
-            "cloudlog": 0,
+            "CAT_port": 4532,
+            "cloudlog": False,
             "cloudlogapi": "c01234567890123456789",
             "cloudlogurl": "https://www.cloudlog.com/Cloudlog/index.php/api",
             "cloudlogstationid": "",
-            "altpower": 0,
-            "outdoors": 0,
-            "notathome": 0,
-            "satellite": 0,
+            "usemarker": False,
+            "markerfile": ".xplanet/markers/ham",
+            "cwtype": 0,
+            "cwip": "localhost",
+            "cwport": 6789,
+            "altpower": False,
+            "outdoors": False,
+            "notathome": False,
+            "satellite": False,
             "useserver": 0,
             "multicast_group": "224.1.1.1",
             "multicast_port": 2239,
             "interface_ip": "0.0.0.0",
+            "send_n1mm_packets": False,
+            "n1mm_station_name": "20M CW Tent",
+            "n1mm_operator": "Bernie",
+            "n1mm_ip": "127.0.0.1",
+            "n1mm_radioport": 12060,
+            "n1mm_contactport": 12061,
+            "n1mm_lookupport": 12060,
+            "n1mm_scoreport": 12062,
         }
         self.buttonBox.accepted.connect(self.save_changes)
         self.preference = None
@@ -76,6 +89,17 @@ class Settings(QtWidgets.QDialog):
             self.multicast_group.setText(self.preference.get("multicast_group"))
             self.multicast_port.setText(str(self.preference.get("multicast_port")))
             self.interface_ip.setText(self.preference.get("interface_ip"))
+
+            self.send_n1mm_packets.setChecked(
+                bool(self.preference["send_n1mm_packets"])
+            )
+            self.n1mm_station_name.setText(self.preference["n1mm_station_name"])
+            self.n1mm_operator.setText(self.preference["n1mm_operator"])
+            self.n1mm_ip.setText(self.preference.get("n1mm_ip"))
+            self.n1mm_radioport.setText(str(self.preference["n1mm_radioport"]))
+            self.n1mm_contactport.setText(str(self.preference["n1mm_contactport"]))
+            self.n1mm_lookupport.setText(str(self.preference["n1mm_lookupport"]))
+            self.n1mm_scoreport.setText(str(self.preference["n1mm_scoreport"]))
 
     @staticmethod
     def relpath(filename: str) -> str:
@@ -120,6 +144,16 @@ class Settings(QtWidgets.QDialog):
         self.preference["multicast_group"] = self.multicast_group.text()
         self.preference["multicast_port"] = self.multicast_port.text()
         self.preference["interface_ip"] = self.interface_ip.text()
+
+        self.preference["send_n1mm_packets"] = self.send_n1mm_packets.isChecked()
+        self.preference["n1mm_station_name"] = self.n1mm_station_name.text()
+        self.preference["n1mm_operator"] = self.n1mm_operator.text()
+        self.preference["n1mm_ip"] = self.n1mm_ip.text()
+        self.preference["n1mm_radioport"] = self.n1mm_radioport.text()
+        self.preference["n1mm_contactport"] = self.n1mm_contactport.text()
+        self.preference["n1mm_lookupport"] = self.n1mm_lookupport.text()
+        self.preference["n1mm_scoreport"] = self.n1mm_scoreport.text()
+
         try:
             logging.info("save_changes:")
             with open(
