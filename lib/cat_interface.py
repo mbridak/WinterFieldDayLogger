@@ -29,6 +29,8 @@ class CAT:
 
         get_power()
 
+        get_ptt()
+
         set_vfo()
 
         set_mode()
@@ -170,6 +172,40 @@ class CAT:
                 logging.debug("getpower_rigctld: %s", exception)
                 self.rigctrlsocket = None
             return ""
+
+    def get_ptt(self):
+        """Get PTT state"""
+        if self.interface == "flrig":
+            return self.__getptt_flrig()
+        if self.interface == "rigctld":
+            return self.__getptt_rigctld()
+        return False
+
+    def __getptt_flrig(self):
+        """Returns ptt state via flrig"""
+        try:
+            self.online = True
+            return self.server.rig.get_ptt()
+        except ConnectionRefusedError as exception:
+            self.online = False
+            logging.debug("%s", exception)
+        return "0"
+
+    def __getptt_rigctld(self):
+        """Returns ptt state via rigctld"""
+        if self.rigctrlsocket:
+            try:
+                self.online = True
+                self.rigctrlsocket.send(b"t\n")
+                ptt = self.rigctrlsocket.recv(1024).decode()
+                logging.debug("%s", ptt)
+                ptt = ptt.strip()
+                return ptt
+            except socket.error as exception:
+                self.online = False
+                logging.debug("%s", exception)
+                self.rigctrlsocket = None
+        return "0"
 
     def set_vfo(self, freq: str) -> bool:
         """Sets the radios vfo"""
