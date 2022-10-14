@@ -205,7 +205,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.F10.clicked.connect(self.sendf10)
         self.F11.clicked.connect(self.sendf11)
         self.F12.clicked.connect(self.sendf12)
-        self.n1mm = N1MM(ip_address="127.0.0.1", radioport=12060, contactport=12061)
+
         self.contactlookup = {
             "call": "",
             "grid": "",
@@ -246,6 +246,14 @@ class MainWindow(QtWidgets.QMainWindow):
             "multicast_group": "224.1.1.1",
             "multicast_port": 2239,
             "interface_ip": "0.0.0.0",
+            "send_n1mm_packets": True,
+            "n1mm_station_name": "stanley",
+            "n1mm_operator": "Mike",
+            "n1mm_ip": "127.0.0.1",
+            "n1mm_radioport": 12060,
+            "n1mm_contactport": 12061,
+            "n1mm_lookupport": 12060,
+            "n1mm_scoreport": 12060,
         }
         self.reference_preference = self.preference.copy()
         self.look_up = None
@@ -257,6 +265,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.interface_ip = None
         self._udpwatch = None
         self.readpreferences()
+        self.n1mm = N1MM(
+            ip_address=self.preference.get("n1mm_ip"),
+            radioport=self.preference.get("n1mm_radioport"),
+            contactport=self.preference.get("n1mm_contactport"),
+        )
+        self.n1mm.set_station_name(self.preference.get("n1mm_station_name"))
+        self.n1mm.set_operator(self.preference.get("n1mm_operator"))
         self.radiochecktimer = QtCore.QTimer()
         self.radiochecktimer.timeout.connect(self.poll_radio)
         self.radiochecktimer.start(1000)
@@ -1507,6 +1522,29 @@ class MainWindow(QtWidgets.QMainWindow):
                 )
             except OSError as err:
                 logging.warning("%s", err)
+        if self.preference.get("send_n1mm_packets"):
+            self.n1mm.contact_info["rxfreq"] = self.oldfreq[:-1]
+            self.n1mm.contact_info["txfreq"] = self.oldfreq[:-1]
+            self.n1mm.contact_info["mode"] = self.oldmode
+            if self.oldmode in ("CW", "DI"):
+                self.n1mm.contact_info["points"] = "2"
+            else:
+                self.n1mm.contact_info["points"] = "1"
+            self.n1mm.contact_info["band"] = self.band
+            self.n1mm.contact_info["mycall"] = self.preference["mycallsign"]
+            self.n1mm.contact_info["IsRunQSO"] = str(self.run_state)
+            self.n1mm.contact_info["timestamp"] = datetime.utcnow().strftime(
+                "%Y-%m-%d %H:%M:%S"
+            )
+            self.n1mm.contact_info["call"] = self.callsign_entry.text()
+            self.n1mm.contact_info["gridsquare"] = self.contactlookup["grid"]
+            self.n1mm.contact_info["exchange1"] = self.class_entry.text()
+            self.n1mm.contact_info["section"] = self.section_entry.text()
+            self.n1mm.contact_info["name"] = self.contactlookup["name"]
+            self.n1mm.contact_info["power"] = self.power_selector.value()
+            self.n1mm.contact_info["ID"] = unique_id
+            self.n1mm.send_contact_info()
+
         self.sections()
         self.stats()
         self.updatemarker()
@@ -2398,6 +2436,28 @@ class EditQsoDialog(QtWidgets.QDialog):
                 )
             except OSError as err:
                 logging.warning("%s", err)
+        if window.preference.get("send_n1mm_packets"):
+
+            window.n1mm.contact_info["rxfreq"] = self.editFreq.text()[:-1]
+            window.n1mm.contact_info["txfreq"] = self.editFreq.text()[:-1]
+            window.n1mm.contact_info["mode"] = self.editMode.currentText().upper()
+            window.n1mm.contact_info["band"] = self.editBand.currentText()
+            window.n1mm.contact_info["mycall"] = window.preference["mycallsign"]
+            window.n1mm.contact_info["IsRunQSO"] = self.contact.get("IsRunQSO")
+            window.n1mm.contact_info["timestamp"] = self.contact.get("date_time")
+            window.n1mm.contact_info["call"] = self.editCallsign.text().upper()
+            window.n1mm.contact_info["gridsquare"] = self.contact.get("grid")
+            window.n1mm.contact_info["exchange1"] = self.editClass.text().upper()
+            window.n1mm.contact_info["section"] = self.editSection.text().upper()
+            window.n1mm.contact_info["name"] = self.contact.get("opname")
+            window.n1mm.contact_info["power"] = self.editPower.value()
+            window.n1mm.contact_info["ID"] = self.contact.get("unique_id")
+            if window.n1mm.contact_info["mode"] in ("CW", "DI"):
+                window.n1mm.contact_info["points"] = "2"
+            else:
+                window.n1mm.contact_info["points"] = "1"
+            window.n1mm.send_contactreplace()
+
         self.change.lineChanged.emit()
 
     def delete_contact(self):
@@ -2418,6 +2478,13 @@ class EditQsoDialog(QtWidgets.QDialog):
                 )
             except OSError as err:
                 logging.warning("%s", err)
+        if window.preference.get("send_n1mm_packets"):
+            window.n1mm.contactdelete["timestamp"] = datetime.utcnow().strftime(
+                "%Y-%m-%d %H:%M:%S"
+            )
+            window.n1mm.contactdelete["call"] = self.contact.get("callsign")
+            window.n1mm.contactdelete["ID"] = self.contact.get("unique_id")
+            window.n1mm.send_contact_delete()
         self.change.lineChanged.emit()
         self.close()
 
