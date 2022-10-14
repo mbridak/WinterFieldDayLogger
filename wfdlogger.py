@@ -1059,13 +1059,20 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.setmode(str(self.getmode(newmode)))
                 # setpower(str(newpwr))
                 # self.setfreq(str(newfreq))
-            self.n1mm.radio_info["StationName"] = "stanley"
-            self.n1mm.radio_info["Freq"] = newfreq[:6]
-            self.n1mm.radio_info["TXFreq"] = newfreq[:6]
-            self.n1mm.radio_info["Mode"] = newmode
-            self.n1mm.radio_info["OpCall"] = self.preference["mycallsign"]
-            self.n1mm.radio_info["IsRunning"] = str(self.run_state)
-            self.n1mm.send_radio()
+            if self.preference.get("send_n1mm_packets"):
+                self.n1mm.radio_info["StationName"] = self.preference.get(
+                    "n1mm_station_name"
+                )
+                self.n1mm.radio_info["Freq"] = newfreq[:-1]
+                self.n1mm.radio_info["TXFreq"] = newfreq[:-1]
+                self.n1mm.radio_info["Mode"] = newmode
+                self.n1mm.radio_info["OpCall"] = self.preference["mycallsign"]
+                self.n1mm.radio_info["IsRunning"] = str(self.run_state)
+                if self.cat_control.get_ptt() == "0":
+                    self.n1mm.radio_info["IsTransmitting"] = "False"
+                else:
+                    self.n1mm.radio_info["IsTransmitting"] = "True"
+                self.n1mm.send_radio()
 
     def flash(self):
         """
