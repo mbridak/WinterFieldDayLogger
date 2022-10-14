@@ -2,8 +2,9 @@
 """Testing n1mm stuff"""
 
 import socket
-import uuid
-from datetime import datetime
+
+# import uuid
+# from datetime import datetime
 
 # pip3 install -U dicttoxml
 from dicttoxml import dicttoxml
@@ -31,14 +32,15 @@ class N1MM:
         "IsSplit": "False",
         "ActiveRadioNr": "1",
         "IsTransmitting": "False",
-        "FunctionKeyCaption": " ",
+        "FunctionKeyCaption": "",
         "RadioName": "Little Todd",
         "AuxAntSelected": "-1",
         "AuxAntSelectedName": "",
     }
 
     contact_info = {
-        "contestname": "",
+        "app": "Not1MM",
+        "contestname": "Winter Field Day",
         "contestnr": "1",
         "timestamp": "",
         "mycall": "",
