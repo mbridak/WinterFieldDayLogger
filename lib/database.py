@@ -46,6 +46,7 @@ class DataBase:
                 "power INTEGER NOT NULL, "
                 "grid text NOT NULL, "
                 "opname text NOT NULL,"
+                "IsRunQSO INTEGER DEFAULT 0,"
                 "unique_id text NOT NULL, "
                 "dirty INTEGER DEFAULT 1);"
             )
@@ -55,7 +56,8 @@ class DataBase:
     def log_contact(self, logme: tuple) -> None:
         """
         Inserts a contact into the db.
-        pass in (hiscall, hisclass, hissection, band, mode, int(power))
+        pass in (hiscall, hisclass, hissection, frequency,band, mode, int(power),
+        grid, opname, IsRunQSO, unique_id)
         """
         logging.info("%s", logme)
         try:
@@ -63,8 +65,8 @@ class DataBase:
                 sql = (
                     "INSERT INTO contacts"
                     "(callsign, class, section, frequency, date_time, "
-                    "band, mode, power, grid, opname, unique_id, dirty) "
-                    "VALUES(?,?,?,?,datetime('now'),?,?,?,?,?,?,1);"
+                    "band, mode, power, grid, opname, IsRunQSO, unique_id, dirty) "
+                    "VALUES(?,?,?,?,datetime('now'),?,?,?,?,?,?,?,1);"
                 )
                 logging.info("%s", sql)
                 cur = conn.cursor()

@@ -1477,6 +1477,7 @@ class MainWindow(QtWidgets.QMainWindow):
             int(self.power_selector.value()),
             self.contactlookup.get("grid"),
             self.contactlookup.get("name"),
+            self.run_state,
             unique_id,
         )
         self.db.log_contact(contact)
