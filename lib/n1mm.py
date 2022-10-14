@@ -45,7 +45,7 @@ class N1MM:
         "timestamp": "",
         "mycall": "",
         "operator": "",
-        "band:": "",
+        "band": "",
         "rxfreq": "",
         "txfreq": "",
         "mode": "",
@@ -88,6 +88,7 @@ class N1MM:
     }
 
     contactdelete = {
+        "app": "Not1MM",
         "timestamp": "",
         "call": "",
         "contestnr": "1",
@@ -121,6 +122,17 @@ class N1MM:
         self.score_port = scoreport
         self.radio_socket = None
         self.radio_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+        self.contact_info["NetBiosName"] = socket.gethostname()
+
+    def set_station_name(self, name):
+        """Set the station name"""
+        self.radio_info["StationName"] = name
+        self.contact_info["StationName"] = name
+        self.contactdelete["StationName"] = name
+
+    def set_operator(self, name):
+        """Set Operators Name"""
+        self.contact_info["operator"] = name
 
     def send_radio(self):
         """Send XML data"""
@@ -132,11 +144,11 @@ class N1MM:
 
     def send_contactreplace(self):
         """Send replace"""
-        self._send(self.contact_port, self.contactdelete, "contactreplace")
+        self._send(self.contact_port, self.contact_info, "contactreplace")
 
     def send_contact_delete(self):
         """Send Delete"""
-        self._send(self.contact_port, self.contact_info, "contactdelete")
+        self._send(self.contact_port, self.contactdelete, "contactdelete")
 
     def send_lookup(self):
         """Send lookup request"""
