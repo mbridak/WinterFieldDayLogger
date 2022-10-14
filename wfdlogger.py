@@ -246,14 +246,14 @@ class MainWindow(QtWidgets.QMainWindow):
             "multicast_group": "224.1.1.1",
             "multicast_port": 2239,
             "interface_ip": "0.0.0.0",
-            "send_n1mm_packets": True,
-            "n1mm_station_name": "stanley",
-            "n1mm_operator": "Mike",
+            "send_n1mm_packets": False,
+            "n1mm_station_name": "20M CW Tent",
+            "n1mm_operator": "Bernie",
             "n1mm_ip": "127.0.0.1",
             "n1mm_radioport": 12060,
             "n1mm_contactport": 12061,
             "n1mm_lookupport": 12060,
-            "n1mm_scoreport": 12060,
+            "n1mm_scoreport": 12062,
         }
         self.reference_preference = self.preference.copy()
         self.look_up = None
@@ -265,13 +265,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.interface_ip = None
         self._udpwatch = None
         self.readpreferences()
-        self.n1mm = N1MM(
-            ip_address=self.preference.get("n1mm_ip"),
-            radioport=self.preference.get("n1mm_radioport"),
-            contactport=self.preference.get("n1mm_contactport"),
-        )
-        self.n1mm.set_station_name(self.preference.get("n1mm_station_name"))
-        self.n1mm.set_operator(self.preference.get("n1mm_operator"))
+
         self.radiochecktimer = QtCore.QTimer()
         self.radiochecktimer.timeout.connect(self.poll_radio)
         self.radiochecktimer.start(1000)
@@ -867,6 +861,14 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.mycallEntry.show()
                 self.group_call_indicator.hide()
                 self.chat_window.hide()
+
+            self.n1mm = N1MM(
+                ip_address=self.preference.get("n1mm_ip"),
+                radioport=self.preference.get("n1mm_radioport"),
+                contactport=self.preference.get("n1mm_contactport"),
+            )
+            self.n1mm.set_station_name(self.preference.get("n1mm_station_name"))
+            self.n1mm.set_operator(self.preference.get("n1mm_operator"))
 
         except KeyError as err:
             logging.warning("Corrupt preference, %s, loading clean version.", err)
