@@ -59,7 +59,7 @@ color: rgb(211, 215, 207);</string>
      <x>10</x>
      <y>20</y>
      <width>641</width>
-     <height>301</height>
+     <height>331</height>
     </rect>
    </property>
    <property name="font">
@@ -68,7 +68,7 @@ color: rgb(211, 215, 207);</string>
     </font>
    </property>
    <property name="currentIndex">
-    <number>5</number>
+    <number>0</number>
    </property>
    <widget class="QWidget" name="tab_1">
     <attribute name="title">
@@ -914,6 +914,224 @@ color: rgb(211, 215, 207);</string>
      </property>
     </widget>
    </widget>
+   <widget class="QWidget" name="tab_6">
+    <attribute name="title">
+     <string>N1MM</string>
+    </attribute>
+    <widget class="QCheckBox" name="send_n1mm_packets">
+     <property name="geometry">
+      <rect>
+       <x>240</x>
+       <y>20</y>
+       <width>178</width>
+       <height>27</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true"/>
+     </property>
+     <property name="text">
+      <string>Send N1MM packets</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_13">
+     <property name="geometry">
+      <rect>
+       <x>40</x>
+       <y>60</y>
+       <width>117</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Station Name:</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_14">
+     <property name="geometry">
+      <rect>
+       <x>340</x>
+       <y>60</y>
+       <width>126</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Operator Name:</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_15">
+     <property name="geometry">
+      <rect>
+       <x>90</x>
+       <y>100</y>
+       <width>189</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Destination Adderess:</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_16">
+     <property name="geometry">
+      <rect>
+       <x>180</x>
+       <y>140</y>
+       <width>99</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Radio Port:</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_17">
+     <property name="geometry">
+      <rect>
+       <x>160</x>
+       <y>180</y>
+       <width>117</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Contact Port:</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_18">
+     <property name="geometry">
+      <rect>
+       <x>170</x>
+       <y>220</y>
+       <width>108</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Lookup Port:</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_19">
+     <property name="geometry">
+      <rect>
+       <x>180</x>
+       <y>260</y>
+       <width>99</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Score Port:</string>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="n1mm_station_name">
+     <property name="geometry">
+      <rect>
+       <x>160</x>
+       <y>55</y>
+       <width>161</width>
+       <height>29</height>
+      </rect>
+     </property>
+     <property name="placeholderText">
+      <string>20M-CW Tent</string>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="n1mm_operator">
+     <property name="geometry">
+      <rect>
+       <x>470</x>
+       <y>55</y>
+       <width>151</width>
+       <height>29</height>
+      </rect>
+     </property>
+     <property name="placeholderText">
+      <string>Bernie</string>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="n1mm_ip">
+     <property name="geometry">
+      <rect>
+       <x>280</x>
+       <y>96</y>
+       <width>141</width>
+       <height>29</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="placeholderText">
+      <string>127.0.0.1</string>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="n1mm_radioport">
+     <property name="geometry">
+      <rect>
+       <x>280</x>
+       <y>136</y>
+       <width>141</width>
+       <height>29</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="placeholderText">
+      <string>12060</string>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="n1mm_contactport">
+     <property name="geometry">
+      <rect>
+       <x>280</x>
+       <y>176</y>
+       <width>141</width>
+       <height>29</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="placeholderText">
+      <string>12061</string>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="n1mm_lookupport">
+     <property name="geometry">
+      <rect>
+       <x>280</x>
+       <y>216</y>
+       <width>141</width>
+       <height>29</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="placeholderText">
+      <string>12060</string>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="n1mm_scoreport">
+     <property name="geometry">
+      <rect>
+       <x>280</x>
+       <y>256</y>
+       <width>141</width>
+       <height>29</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="placeholderText">
+      <string>12062</string>
+     </property>
+    </widget>
+   </widget>
   </widget>
  </widget>
  <resources/>
@@ -952,7 +1170,7 @@ color: rgb(211, 215, 207);</string>
   </connection>
  </connections>
  <buttongroups>
-  <buttongroup name="buttonGroup"/>
   <buttongroup name="buttonGroup_2"/>
+  <buttongroup name="buttonGroup"/>
  </buttongroups>
 </ui>
