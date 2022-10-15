@@ -128,13 +128,11 @@ dmypy.json
 .pyre/
 
 # Other Stuff
-WFD.db
 Statistics.txt
-*.log
 *.adi
 changes.txt
 README.md.backup
-spots.db
+*.db
 bandmap.md.backup
 .pylintrc
 debug

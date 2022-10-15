@@ -1,13 +1,16 @@
 """
-callsign lookup classes for:
-QRZ
-HamDB
-HamQTH
+K6GTE, Callsign lookup classes for:
+QRZ, HamDB, HamQTH
+Email: michael.bridak@gmail.com
+GPL V3
 """
 
 import logging
 from bs4 import BeautifulSoup as bs
 import requests
+
+if __name__ == "__main__":
+    print("I'm not the program you are looking for.")
 
 
 class HamDBlookup:
@@ -118,7 +121,7 @@ class QRZlookup:
             self.session = False
             self.error = f"{exception}"
         except AttributeError as err:
-            logging.critical("Attribute Error %s : \n\n%s\n\n",err,locals())
+            logging.critical("Attribute Error %s : \n\n%s\n\n", err, locals())
 
     def lookup(self, call: str) -> tuple:
         """
@@ -175,9 +178,7 @@ class QRZlookup:
                         name = f"{name} {root.Callsign.find('name').string}"
                 if root.Callsign.find("nickname"):
                     nickname = root.Callsign.nickname.text
-        logging.info(
-            "%s %s %s %s", grid, name, nickname, error_text
-        )
+        logging.info("%s %s %s %s", grid, name, nickname, error_text)
         return grid, name, nickname, error_text
 
 

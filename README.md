@@ -1,6 +1,7 @@
 # K6GTE Winter Field Day logger (PyQt5)
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)  [![Python: 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)  [![Made With:PyQt5](https://img.shields.io/badge/Made%20with-PyQt5-red)](https://pypi.org/project/PyQt5/)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)  [![Python: 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)  [![Made With:PyQt5](https://img.shields.io/badge/Made%20with-PyQt5-red)](https://pypi.org/project/PyQt5/)
+
 
 [Winter Field Day](https://www.winterfieldday.com/) is a once a year 24hr emergency preparidness event for radio amateurs (Hams). During the event, we try and make as many radio contacts with other Hams in a 24 hour period. Bonus points are awarded for operating outside or using alternate power sources, such as battery/solar/wind. You can find out more about amateur radio by visiting the [ARRL](https://www.arrl.org/).
 
@@ -8,20 +9,26 @@ The logger is written in Python 3, and uses the PyQT5 lib. Qt5 is cross platform
 
 The log is stored in an sqlite3 database file 'WFD.db'. If you need to wipe everything and start clean, just delete this file and re-run wfdlogger
 
-The logger will generate a cabrillo for submission, An ADIF file so you can merge contacts into your normal Log, and a Statistics file with a band mode breakdown.
+The logger client will generate a cabrillo for submission, An ADIF file so you can merge contacts into your normal Log, and a Statistics file with a band mode breakdown.
+
+The server if used, will generate a group cabrillo file to submit.
 
 ![Snapshot of main screen](pics/loggerscreenshot.png)
 
 ## Caveats
 
-This is a simple logger ment for single op, it's not usable for clubs.
 WFD only has a generic digital mode designator 'DI', which gets exported to the cabrillo file. But ADIF and CloudLog needed something else, So I Chose RTTY. Feel free to change it to what ever you will use. Just search for the two places in the code 'RTTY' is used and Bob's your dads brother.
 
 ## Changes since last release.
 
-Full Changelog: https://github.com/mbridak/WinterFieldDayLogger/compare/22.5.5...main
+Added a group contact aggregation server. So multiple clients can participate in
+WFD together.
+
+Added N1MM XML status packets. So you can use [Kyle AA0Z's Node-Red dashboard](https://github.com/kylekrieg/Node-Red-Contesting-Dashboard).
  
 ## Running from source
+
+### The Client
 
 Install Python 3, then two required libs via pip.
 
@@ -34,6 +41,18 @@ Or if you're the Ubuntu/Debian type you can:
 Just make wfdlogger.py executable and run it within the same folder, or type:
 
 `python3 wfdlogger.py`
+
+### The Server
+
+The server is a terminal / curses program and uses standard libraries that
+should already be installed.
+
+Just make server.py executable and run it the same way as the client. 
+
+The server can be run on a stand alone device like a Raspberry Pi, Or on the same computer as one of the clients.
+
+---
+
 
 ### Requirements for bandmap
 The [bandmap](./bandmap.md "Band Map Docs") needs a few more python libraries.
@@ -70,21 +89,30 @@ Okay you've made a contact. Enter the call in the call field. As you type it in,
 
 # Features
 
-## Radio Polling via flrig
+## Radio Polling via flrig or rigctld
 
-If you run flrig on a computer connected to the radio, it can be polled for band/mode updates automatically. Click the gear icon at the bottom of the screen to set the IP and port for flrig. There is a radio icon at the bottom of the logging window to indicate polling status.
+If you run flrig or rigctld on a computer connected to the radio, it can be polled for band/mode updates automatically. Click the gear icon at the bottom of the screen to set the IP and port. There is a radio icon at the bottom of the logging window to indicate polling status.
 
-![Snapshot of settings dialog](pics/loggerSettingsDialog.png)
+![Snapshot of settings dialog](pics/catSettings.png)
 
-## Cloudlog, QRZ, HamDB useage
+## Cloudlog, QRZ, HamDB, HamQTH useage
 
-If you use either Cloudlog logging or QRZ/HamDB lookup you can click the gear icon to enter your credentials. Q's are pushed to CloudLog as soon as they are logged.
+If you use either Cloudlog logging or QRZ/HamDB/HamQTH lookup you can click the gear icon to enter your credentials. 
 
-The QRZ/HamDB lookup is only used to get the Op name and gridsquare for the call. Mainly because when a Q is pushed to CloudLog it will not show as a pin on the map unless it has a gridsquare. So this is a scratch my own itch feature. HAMDB.org is used by default since it's free. If both are checked it will it will use QRZ then fallback to HAMDB.
+Q's are pushed to CloudLog as soon as they are logged.
+
+The QRZ/HamDB/HamQTH lookup is only used to get the Op name and gridsquare for the call. Mainly because when a Q is pushed to CloudLog it will not show as a pin on the map unless it has a gridsquare. So this is a scratch my own itch feature. HAMDB.org is used by default since it's free. If both are checked it will it will use QRZ then fallback to HAMDB.
+
+## N1MM packets for Node-Red Dashboard
+
+If you wish to use Kyle AA0Z's Node-Red contest dashboard, edit these settings.
+
+![N1MM settings](pics/n1mm_settings.png)
+
 
 ## XPlanet marker file
 
-If you use QRZ/HamdDB lookups you can also generate an [XPlanet](http://xplanet.sourceforge.net/) markerfile which will show little pips on the map as contacts are logged.
+If you use QRZ/HamdDB/HamQTH lookups you can also generate an [XPlanet](http://xplanet.sourceforge.net/) markerfile which will show little pips on the map as contacts are logged.
 
 ![Snapshot of xplanet window](pics/xplanet.png)
 
@@ -183,6 +211,182 @@ An ADIF log 'WFD.adi'.
 A Cabrillo log 'Yourcall.log'. Which you edit to fill in your address etc. If your not using Windows, you must ensure whatever editor you use uses CR/LF line endings. Cause whatever they use at the Winter Field Day society will choke with out them. To be safe you might want to run it through 'unix2dos' before submitting it.
 
 A 'Statistics.txt' file which breaks down your band mode usage. Each unique band/mode combo is a multiplier.
+
+
+---
+## Group / Club logging
+
+I have added a group contact aggrigating server. This can be run on the same
+computer as the client program, or on a separate dedicated PC or Raspberry Pi
+on the same network.
+
+![Picture showing main server screen](pics/server_pic.png)
+
+### Server configuration
+
+The configuration file for the server is a JSON file 'server_preferences.json'.
+
+```
+{
+    "ourcall": "W1AW",
+    "ourclass": "3O",
+    "oursection": "ORG",
+    "name": "Hiram Maxim",
+    "address": "225 Main Street",
+    "city": "Newington",
+    "state": "CT",
+    "postalcode": "06111",
+    "country": "USA",
+    "email": "Hiram.Maxim@arrl.net",
+    "bonus": {
+        "altpower": true,
+        "outdoors": true,
+        "notathome": true,
+        "satellite": true
+    },
+    "mullticast_group": "224.1.1.1",
+    "multicast_port": 2239,
+    "interface_ip": "0.0.0.0"
+}
+```
+
+Go ahead and edit this file before running the server. Feel free to leave the
+last 3 items as they are unless you have good reason not too. The rest should
+be straight forward.
+
+Under the bonuses section, if your group qualifies for a bonus, put true next 
+to the type of bonus.
+
+### Client configuration for groups
+
+In the settings dialog there is now a tab labeled 'Group Operation'.
+
+![Picture showing settings dialog tab](pics/group_server_settings.png)
+
+Go ahead and place a check next to 'Connect to server'. Rejoyce and let
+merriment be had by all. Be sure and have your callsign already set before
+checking this. If you forgot, Uncheck it, set your callsign and then check it.
+
+A couple of things will change on the client when this is done. You will see
+that your callsign will disappear and be replaced with your clubs call that the
+server reports. The portion of the screen where all the different ARRL sections
+are displayed will be replaced by a group chat window and a column showing the
+station call, band and mode of other participants.
+
+![Picture showing logger screen changes](pics/group_chat.png)
+
+If more than one operator is on the same band/mode, their names will be
+highlighted in the operators list. Feel free to yell at eachother in the chat.
+
+![Picture showing band and mode conflict](pics/band_conflict_client.png)
+
+### Chat Window
+
+The chat window is pretty straight forward. If someone mentions you in the chat
+that line will be highlighted with an accent color. If you find the font size
+does not work for you, can adjust the size by: Placing your mouse cursor in the
+chat window, then rotate your mouse wheel while holding down the Control key.
+
+There is one command you can type into the chat window that may be of use.
+if you type @stats into the window the server will dump out the groups stats 
+into the chat.
+
+```
+Server: 
+Band   CW    PH    DI
+ 160     0     0     0
+  80     0     0    25
+  40     0   159     0
+  20     1   162   126
+  15     0     0     0
+  10     0     0     0
+   6     0    17     0
+   2     0     0     0
+
+Score: 1284
+Last Hour: 271
+Last 15: 81
+```
+
+Since most people will not be able to see the screen of the server, if it has
+one at all. You may find this useful.
+
+### How to know the server is there.
+
+Most likely, the server will be in some other tent/building/area of the room.
+Every 10 seconds or so the server will send out a UDP network packet saying
+it's there. As long as your client keeps seeing these packets the group call
+indicator at the bottom of the screen will look like:
+
+![Picture showing server status](pics/server_okay.png) 
+
+But if about 30 seconds go by with no update from the server, the indicator
+will change to:
+
+![Picture showing server status](pics/server_not_pinging.png)
+
+Go check on it.
+
+### Logging reliability
+
+As mentioned before, We're using UDP traffic to pass data back and forth to the
+server. UDP traffic is a 'Fire and forget' method. Akin to a bunch of people 
+in the same room yelling at eachother. Everyone can hear you, but you don't 
+know if anyone heard what you said. This has both advantages and disadvantages. 
+One advantage is that your program is not stuck waiting for a reply or timeout, 
+locking up your user interface. The disadvantage is you have no idea if anyone 
+took note of what you had said.
+
+This works fine in a local network since the traffic doesn't have to survive
+the trip through the big bad tubes of the internet. That being said, someone
+may trip on a cord, unplugging the router/switch/wireless gateway. Or someone
+may be trying to use WIFI and they are Soooooo far away you can barely see
+their tent. Or worse you have EVERYONE on WIFI, and there are packet collisions
+galore degrading your network.
+
+To account for this, the client logging program keeps track of recent packets
+sent, noting the time they were sent at. The server after getting a packet, 
+generates a response to the sender with it's unique identifyer. Once the client
+gets the response from the server, it will remove the request on the local side
+and print a little message giving you a visual confirmation that the command was
+acted upon by the server. If the server does not respond either because the 
+response was lost or the request never made it to reply too. The client will 
+resend the packet every 30 seconds until it gets a reply.
+
+But all this may still result in the server not having a copy of your contact.
+To account for this, when the "Generate Logs" button is pressed on the client,
+the client will resend all the logged contacts that have not gotten responses
+from the server. You can keep doing this, if need be,  until it gets them all.
+
+There is a visual indicator giving you an idea of how many if any contacts have
+not been verified. The `Generate Logs` button will change serving this purpose. 
+
+![picture of generate log button showing count of unverified contacts](pics/unverified_indicator.png) 
+
+The client will resend all the unverified contacts to the server as part of
+the log generation process.
+
+Chat traffic is best effort. Either everyone sees your plea for more beer or
+they don't. No retry is made for chat traffic. Just get your butt up and make 
+the trip to the cooler.
+
+### Generating the cabrillo file
+
+If any of the networked clients presses the 'Generate Logs' button on their
+screen, the server will be told to generate it's cabrillo file, it will be
+named 'WhatEverYourClubCallIs.log'
+
+### I'm sure there are short cummings
+
+It's early days, and I've mainly tested the operations with the client logging
+program and several simulated operators, see file in `testing/simulant.py`
+Real world use for Winter Field Day in January is hard to come by. So I'm sure 
+there are a couple of things I forgot, or didn't account for.
+
+If you are part of a group of linux using Hams, please take this for a spin and
+tell me what I missed or could do better.
+
+
 
 ## The Bandmap program
 See [here](./bandmap.md "Band Map Docs")

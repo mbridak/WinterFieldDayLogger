@@ -17,14 +17,17 @@ GPL V3
 
 from math import radians, sin, cos, atan2, sqrt, asin, pi
 import sys
-import sqlite3
 import socket
 import os
 import logging
 import threading
+import uuid
+import queue
+import time
+from itertools import chain
 
-from json import dumps, loads
-from datetime import datetime
+from json import dumps, loads, JSONDecodeError
+from datetime import datetime, timedelta
 from pathlib import Path
 from shutil import copyfile
 
@@ -38,6 +41,7 @@ from lib.database import DataBase
 from lib.lookup import HamDBlookup, HamQTH, QRZlookup
 from lib.cat_interface import CAT
 from lib.cwinterface import CW
+from lib.n1mm import N1MM
 from lib.version import __version__
 
 
@@ -106,10 +110,13 @@ class MainWindow(QtWidgets.QMainWindow):
     dfreq = {
         "160": "1.830",
         "80": "3.530",
-        "60": "5.340",
+        "60": "5.357",
         "40": "7.030",
+        "30": "10.130",
         "20": "14.030",
+        "17": "18.100",
         "15": "21.030",
+        "12": "24.920",
         "10": "28.030",
         "6": "50.030",
         "2": "144.030",
@@ -142,11 +149,16 @@ class MainWindow(QtWidgets.QMainWindow):
     powermult = 0
     fkeys = {}
     run_state = False
+    people = {}
+    groupcall = None
+    server_commands = []
+    server_seen = None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         uic.loadUi(self.relpath("data/main.ui"), self)
         self.db = DataBase(self.database)
+        self.udp_fifo = queue.Queue()
         self.listWidget.itemDoubleClicked.connect(self.qsoclicked)
         self.run_button.clicked.connect(self.run_button_pressed)
         self.altpowerButton.clicked.connect(self.claim_alt_power)
@@ -168,6 +180,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.callsign_entry.editingFinished.connect(self.dup_check)
         self.section_entry.textEdited.connect(self.section_check)
         self.genLogButton.clicked.connect(self.generate_logs)
+        self.chat_entry.returnPressed.connect(self.send_chat)
         self.radio_grey = QtGui.QPixmap(self.relpath("icon/radio_grey.png"))
         self.radio_red = QtGui.QPixmap(self.relpath("icon/radio_red.png"))
         self.radio_green = QtGui.QPixmap(self.relpath("icon/radio_green.png"))
@@ -177,6 +190,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.radio_icon.setPixmap(self.radio_grey)
         self.cloudlog_icon.setPixmap(self.cloud_grey)
         self.QRZ_icon.setStyleSheet("color: rgb(136, 138, 133);")
+        self.chat_window.hide()
+        self.group_call_indicator.hide()
         self.settingsbutton.clicked.connect(self.settingspressed)
         self.F1.clicked.connect(self.sendf1)
         self.F2.clicked.connect(self.sendf2)
@@ -190,6 +205,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.F10.clicked.connect(self.sendf10)
         self.F11.clicked.connect(self.sendf11)
         self.F12.clicked.connect(self.sendf12)
+
         self.contactlookup = {
             "call": "",
             "grid": "",
@@ -226,15 +242,279 @@ class MainWindow(QtWidgets.QMainWindow):
             "outdoors": False,
             "notathome": False,
             "satellite": False,
+            "useserver": 0,
+            "multicast_group": "224.1.1.1",
+            "multicast_port": 2239,
+            "interface_ip": "0.0.0.0",
+            "send_n1mm_packets": False,
+            "n1mm_station_name": "20M CW Tent",
+            "n1mm_operator": "Bernie",
+            "n1mm_ip": "127.0.0.1",
+            "n1mm_radioport": 12060,
+            "n1mm_contactport": 12061,
+            "n1mm_lookupport": 12060,
+            "n1mm_scoreport": 12062,
         }
         self.reference_preference = self.preference.copy()
         self.look_up = None
         self.cat_control = None
         self.cw = None
+        self.connect_to_server = False
+        self.multicast_group = None
+        self.multicast_port = None
+        self.interface_ip = None
+        self._udpwatch = None
         self.readpreferences()
+
         self.radiochecktimer = QtCore.QTimer()
         self.radiochecktimer.timeout.connect(self.poll_radio)
         self.radiochecktimer.start(1000)
+
+    def show_people(self):
+        """Display operators"""
+        rev_dict = {}
+        for key, value in self.people.items():
+            rev_dict.setdefault(value, set()).add(key)
+        result = set(
+            chain.from_iterable(
+                values for key, values in rev_dict.items() if len(values) > 1
+            )
+        )
+        self.users_list.clear()
+        self.users_list.insertPlainText("    Operators\n")
+        for op_callsign in self.people:
+            if op_callsign in result:
+                self.users_list.setTextColor(QtGui.QColor(245, 121, 0))
+                self.users_list.insertPlainText(
+                    f"{op_callsign.rjust(6,' ')} {self.people.get(op_callsign).rjust(6, ' ')}\n"
+                )
+                self.users_list.setTextColor(QtGui.QColor(211, 215, 207))
+            else:
+                self.users_list.insertPlainText(
+                    f"{op_callsign.rjust(6,' ')} {self.people.get(op_callsign).rjust(6, ' ')}\n"
+                )
+
+    def show_dirty_records(self):
+        """Checks for dirty records, Changes Generate Log button to give visual indication."""
+        if self.connect_to_server:
+            result = self.db.count_all_dirty_contacts()
+            all_dirty_count = result.get("alldirty")
+            if all_dirty_count:
+                self.genLogButton.setStyleSheet("background-color: red;")
+                self.genLogButton.setText(f"UnVfyd: {all_dirty_count}")
+            else:
+                self.genLogButton.setStyleSheet("background-color: rgb(92, 53, 102);")
+                self.genLogButton.setText("Generate Logs")
+
+    def resolve_dirty_records(self):
+        """Go through dirty records and submit them to the server."""
+        if self.connect_to_server:
+            records = self.db.fetch_all_dirty_contacts()
+            self.infobox.setTextColor(QtGui.QColor(211, 215, 207))
+            self.infobox.insertPlainText(f"Resolving {len(records)} unsent contacts.\n")
+            app.processEvents()
+            if records:
+                for count, dirty_contact in enumerate(records):
+                    contact = {}
+                    contact["cmd"] = "POST"
+                    contact["station"] = self.preference.get("mycallsign")
+                    stale = datetime.now() + timedelta(seconds=30)
+                    contact["expire"] = stale.isoformat()
+                    contact["unique_id"] = dirty_contact.get("unique_id")
+                    contact["hiscall"] = dirty_contact.get("callsign")
+                    contact["class"] = dirty_contact.get("class")
+                    contact["section"] = dirty_contact.get("section")
+                    contact["date_and_time"] = dirty_contact.get("date_time")
+                    contact["frequency"] = dirty_contact.get("frequency")
+                    contact["band"] = dirty_contact.get("band")
+                    contact["mode"] = dirty_contact.get("mode")
+                    contact["power"] = dirty_contact.get("power")
+                    contact["grid"] = dirty_contact.get("grid")
+                    contact["opname"] = dirty_contact.get("opname")
+                    self.server_commands.append(contact)
+                    bytesToSend = bytes(dumps(contact), encoding="ascii")
+                    try:
+                        self.server_udp.sendto(
+                            bytesToSend,
+                            (self.multicast_group, int(self.multicast_port)),
+                        )
+                    except OSError as err:
+                        logging.warning("%s", err)
+                    time.sleep(0.1)  # Do I need this?
+                    self.infobox.insertPlainText(f"Sending {count}\n")
+                    app.processEvents()
+
+    def clear_dirty_flag(self, unique_id):
+        """clear the dirty flag on record once response is returned from server."""
+        self.db.clear_dirty_flag(unique_id)
+        self.show_dirty_records()
+
+    def remove_confirmed_commands(self, data):
+        """Removed confirmed commands from the sent commands list."""
+        for index, item in enumerate(self.server_commands):
+            if item.get("unique_id") == data.get("unique_id") and item.get(
+                "cmd"
+            ) == data.get("subject"):
+                self.server_commands.pop(index)
+                self.clear_dirty_flag(data.get("unique_id"))
+                self.infobox.insertPlainText(
+                    f"Server Confirmed {data.get('subject')}\n"
+                )
+
+    def check_for_stale_commands(self):
+        """
+        Check through server commands to see if there has not been a reply in 30 seconds.
+        Resubmits those that are stale.
+        """
+        if self.connect_to_server:
+            for index, item in enumerate(self.server_commands):
+                expired = datetime.strptime(item.get("expire"), "%Y-%m-%dT%H:%M:%S.%f")
+                if datetime.now() > expired:
+                    newexpire = datetime.now() + timedelta(seconds=30)
+                    self.server_commands[index]["expire"] = newexpire.isoformat()
+                    bytesToSend = bytes(dumps(item), encoding="ascii")
+                    try:
+                        self.server_udp.sendto(
+                            bytesToSend,
+                            (self.multicast_group, int(self.multicast_port)),
+                        )
+                    except OSError as err:
+                        logging.warning("%s", err)
+
+    def send_chat(self):
+        """Sends UDP chat packet with text entered in chat_entry field."""
+        message = self.chat_entry.text()
+        packet = {"cmd": "CHAT"}
+        packet["sender"] = self.preference.get("mycallsign")
+        packet["message"] = message
+        bytesToSend = bytes(dumps(packet), encoding="ascii")
+        try:
+            self.server_udp.sendto(
+                bytesToSend, (self.multicast_group, int(self.multicast_port))
+            )
+        except OSError as err:
+            logging.warning("%s", err)
+        self.chat_entry.setText("")
+
+    def display_chat(self, sender, body):
+        """Displays the chat history."""
+        if self.preference.get("mycallsign") in body.upper():
+            self.chatlog.setTextColor(QtGui.QColor(245, 121, 0))
+        self.chatlog.insertPlainText(f"\n{sender}: {body}")
+        self.chatlog.setTextColor(QtGui.QColor(211, 215, 207))
+        self.chatlog.ensureCursorVisible()
+
+    def watch_udp(self):
+        """Puts UDP datagrams in a FIFO queue"""
+        while True:
+            if self.connect_to_server:
+                try:
+                    datagram = self.server_udp.recv(1500)
+                except socket.timeout:
+                    time.sleep(1)
+                    continue
+                if datagram:
+                    self.udp_fifo.put(datagram)
+            else:
+                time.sleep(1)
+
+    def check_udp_queue(self):
+        """checks the UDP datagram queue."""
+        if self.server_seen:
+            if datetime.now() > self.server_seen:
+                self.group_call_indicator.setStyleSheet(
+                    "border: 1px solid green;\nbackground-color: red;\ncolor: yellow;"
+                )
+        while not self.udp_fifo.empty():
+            datagram = self.udp_fifo.get()
+            try:
+                json_data = loads(datagram.decode())
+            except UnicodeDecodeError as err:
+                the_error = f"Not Unicode: {err}\n{datagram}"
+                logging.info(the_error)
+                continue
+            except JSONDecodeError as err:
+                the_error = f"Not JSON: {err}\n{datagram}"
+                logging.info(the_error)
+                continue
+            logging.info("%s", json_data)
+
+            if json_data.get("cmd") == "PING":
+                if json_data.get("station"):
+                    band_mode = f"{json_data.get('band')} {json_data.get('mode')}"
+                    if self.people.get(json_data.get("station")) != band_mode:
+                        self.people[json_data.get("station")] = band_mode
+                    self.show_people()
+                if json_data.get("host"):
+                    self.server_seen = datetime.now() + timedelta(seconds=30)
+                    self.group_call_indicator.setStyleSheet("border: 1px solid green;")
+                continue
+
+            if json_data.get("cmd") == "RESPONSE":
+                if json_data.get("recipient") == self.preference.get("mycallsign"):
+                    if json_data.get("subject") == "HOSTINFO":
+                        self.groupcall = str(json_data.get("groupcall"))
+                        self.myclassEntry.setText(str(json_data.get("groupclass")))
+                        self.mysectionEntry.setText(str(json_data.get("groupsection")))
+                        self.group_call_indicator.setText(self.groupcall)
+                        self.changemyclass()
+                        self.changemysection()
+                        self.mycallEntry.hide()
+                        self.server_seen = datetime.now() + timedelta(seconds=30)
+                        self.group_call_indicator.show()
+                        self.group_call_indicator.setStyleSheet(
+                            "border: 1px solid green;"
+                        )
+                        return
+                    if json_data.get("subject") == "LOG":
+                        self.infobox.insertPlainText("Server Generated Log.\n")
+                    self.remove_confirmed_commands(json_data)
+                    continue
+
+            if json_data.get("cmd") == "CHAT":
+                self.display_chat(json_data.get("sender"), json_data.get("message"))
+                continue
+
+            if json_data.get("cmd") == "GROUPQUERY":
+                if self.groupcall:
+                    self.send_status_udp()
+
+    def query_group(self):
+        """Sends request to server asking for group call/class/section."""
+        update = {
+            "cmd": "GROUPQUERY",
+            "station": self.preference["mycallsign"],
+        }
+        bytesToSend = bytes(dumps(update), encoding="ascii")
+        try:
+            self.server_udp.sendto(
+                bytesToSend, (self.multicast_group, int(self.multicast_port))
+            )
+        except OSError as err:
+            logging.warning("%s", err)
+
+    def send_status_udp(self):
+        """Send status update to server informing of our band and mode"""
+        if self.connect_to_server:
+            if self.groupcall is None and self.preference["mycallsign"] != "":
+                self.query_group()
+                return
+
+            update = {
+                "cmd": "PING",
+                "mode": self.mode,
+                "band": self.band,
+                "station": self.preference["mycallsign"],
+            }
+            bytesToSend = bytes(dumps(update), encoding="ascii")
+            try:
+                self.server_udp.sendto(
+                    bytesToSend, (self.multicast_group, int(self.multicast_port))
+                )
+            except OSError as err:
+                logging.warning("%s", err)
+
+            self.check_for_stale_commands()
 
     @staticmethod
     def relpath(filename: str) -> str:
@@ -542,6 +822,54 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.highlighted(self.preference.get("satellite"))
             )
 
+            self.connect_to_server = self.preference.get("useserver")
+            self.multicast_group = self.preference.get("multicast_group")
+            self.multicast_port = self.preference.get("multicast_port")
+            self.interface_ip = self.preference.get("interface_ip")
+
+            # group upd server
+            logging.info("Use group server: %s", self.connect_to_server)
+            if self.connect_to_server:
+                logging.info(
+                    "Connecting: %s:%s %s",
+                    self.multicast_group,
+                    self.multicast_port,
+                    self.interface_ip,
+                )
+                self.mycallEntry.hide()
+                self.group_call_indicator.show()
+                self.chat_window.show()
+                self.server_udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                self.server_udp.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                self.server_udp.bind(("", int(self.multicast_port)))
+                mreq = socket.inet_aton(self.multicast_group) + socket.inet_aton(
+                    self.interface_ip
+                )
+                self.server_udp.setsockopt(
+                    socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, bytes(mreq)
+                )
+                self.server_udp.settimeout(0.01)
+
+                if self._udpwatch is None:
+                    self._udpwatch = threading.Thread(
+                        target=self.watch_udp,
+                        daemon=True,
+                    )
+                    self._udpwatch.start()
+            else:
+                self.groupcall = None
+                self.mycallEntry.show()
+                self.group_call_indicator.hide()
+                self.chat_window.hide()
+
+            self.n1mm = N1MM(
+                ip_address=self.preference.get("n1mm_ip"),
+                radioport=self.preference.get("n1mm_radioport"),
+                contactport=self.preference.get("n1mm_contactport"),
+            )
+            self.n1mm.set_station_name(self.preference.get("n1mm_station_name"))
+            self.n1mm.set_operator(self.preference.get("n1mm_operator"))
+
         except KeyError as err:
             logging.warning("Corrupt preference, %s, loading clean version.", err)
             self.preference = self.reference_preference.copy()
@@ -612,6 +940,36 @@ class MainWindow(QtWidgets.QMainWindow):
                 )
                 logging.warning("Cloudlog: %s", exception)
 
+    @staticmethod
+    def fakefreq(band, mode):
+        """
+        If unable to obtain a frequency from the rig,
+        This will return a sane value for a frequency mainly for the cabrillo and adif log.
+        Takes a band and mode as input and returns freq in khz.
+        """
+        logging.info("fakefreq: band:%s mode:%s", band, mode)
+        modes = {"CW": 0, "DI": 1, "PH": 2, "FT8": 1, "SSB": 2}
+        fakefreqs = {
+            "160": ["1830", "1805", "1840"],
+            "80": ["3530", "3559", "3970"],
+            "60": ["5332", "5373", "5405"],
+            "40": ["7030", "7040", "7250"],
+            "30": ["10130", "10130", "0000"],
+            "20": ["14030", "14070", "14250"],
+            "17": ["18080", "18100", "18150"],
+            "15": ["21065", "21070", "21200"],
+            "12": ["24911", "24920", "24970"],
+            "10": ["28065", "28070", "28400"],
+            "6": ["50.030", "50300", "50125"],
+            "2": ["144030", "144144", "144250"],
+            "222": ["222100", "222070", "222100"],
+            "432": ["432070", "432200", "432100"],
+            "SAT": ["144144", "144144", "144144"],
+        }
+        freqtoreturn = fakefreqs[band][modes[mode]]
+        logging.info("fakefreq: returning:%s", freqtoreturn)
+        return freqtoreturn
+
     def getband(self, freq: str) -> str:
         """
         Convert a (string) frequency into a (string) band.
@@ -669,6 +1027,7 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         self.band_selector.setCurrentIndex(self.band_selector.findText(theband))
         self.changeband()
+        self.send_status_udp()
 
     def setmode(self, themode: str) -> None:
         """
@@ -676,6 +1035,7 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         self.mode_selector.setCurrentIndex(self.mode_selector.findText(themode))
         self.changemode()
+        self.send_status_udp()
 
     def poll_radio(self) -> None:
         """
@@ -716,6 +1076,20 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.setmode(str(self.getmode(newmode)))
                 # setpower(str(newpwr))
                 # self.setfreq(str(newfreq))
+            if self.preference.get("send_n1mm_packets"):
+                self.n1mm.radio_info["StationName"] = self.preference.get(
+                    "n1mm_station_name"
+                )
+                self.n1mm.radio_info["Freq"] = newfreq[:-1]
+                self.n1mm.radio_info["TXFreq"] = newfreq[:-1]
+                self.n1mm.radio_info["Mode"] = newmode
+                self.n1mm.radio_info["OpCall"] = self.preference["mycallsign"]
+                self.n1mm.radio_info["IsRunning"] = str(self.run_state)
+                if self.cat_control.get_ptt() == "0":
+                    self.n1mm.radio_info["IsTransmitting"] = "False"
+                else:
+                    self.n1mm.radio_info["IsTransmitting"] = "True"
+                self.n1mm.send_radio()
 
     def flash(self):
         """
@@ -733,7 +1107,10 @@ class MainWindow(QtWidgets.QMainWindow):
     def process_macro(self, macro):
         """Process CW macro substitutions"""
         macro = macro.upper()
-        macro = macro.replace("{MYCALL}", self.preference["mycallsign"])
+        if self.groupcall and self.connect_to_server:
+            macro = macro.replace("{MYCALL}", self.groupcall)
+        else:
+            macro = macro.replace("{MYCALL}", self.preference["mycallsign"])
         macro = macro.replace("{MYCLASS}", self.preference["myclass"])
         macro = macro.replace("{MYSECT}", self.preference["mysection"])
         macro = macro.replace("{HISCALL}", self.callsign_entry.text())
@@ -969,38 +1346,18 @@ class MainWindow(QtWidgets.QMainWindow):
             if text[1] == "P":
                 self.power_selector.setValue(int(text[2:]))
                 return
-            if text[1] == "E":  # FIXME not using the database class
-                qtoedit = int(text[2:])
+            if text[1] == "E":
                 try:
-                    with sqlite3.connect(self.database) as conn:
-                        cursor = conn.cursor()
-                        cursor.execute(f"select * from contacts where id={qtoedit}")
-                        log = cursor.fetchone()
-                        (
-                            logid,
-                            hiscall,
-                            hisclass,
-                            hissection,
-                            the_datetime,
-                            band,
-                            mode,
-                            power,
-                            _,
-                            _,
-                        ) = log
-                        self.linetopass = (
-                            f"{str(logid).rjust(3,'0')} {hiscall.ljust(10)} {hisclass.rjust(3)} "
-                            f"{hissection.rjust(3)} {the_datetime} {str(band).rjust(3)} "
-                            f"{mode} {str(power).rjust(3)}"
-                        )
-                        dialog = EditQsoDialog(self)
-                        dialog.setup(self.linetopass, self.database)
-                        dialog.change.lineChanged.connect(self.qsoedited)
-                        dialog.open()
-                except sqlite3.Error:
-                    pass
+                    qtoedit = int(text[2:])
+                except ValueError:
+                    return
+                log = self.db.contact_by_id(qtoedit)
+                if log:
+                    dialog = EditQsoDialog(self)
+                    dialog.setup(log, self.db)
+                    dialog.change.lineChanged.connect(self.qsoedited)
+                    dialog.open()
                 return
-                # attention
             if text[1] == "M":
                 self.setmode(text[2:])
                 return
@@ -1116,7 +1473,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def log_contact(self):
         """Log a contact to the db."""
-
+        self.show_dirty_records()
         if (
             len(self.callsign_entry.text()) == 0
             or len(self.class_entry.text()) == 0
@@ -1124,18 +1481,72 @@ class MainWindow(QtWidgets.QMainWindow):
         ):
             logging.info("Incomplete fields")
             return
-
+        if not self.cat_control:
+            self.oldfreq = int(float(self.fakefreq(self.band, self.mode)) * 1000)
+        unique_id = uuid.uuid4().hex
         contact = (
             self.callsign_entry.text(),
             self.class_entry.text(),
             self.section_entry.text(),
+            self.oldfreq,
             self.band,
             self.mode,
             int(self.power_selector.value()),
             self.contactlookup.get("grid"),
             self.contactlookup.get("name"),
+            self.run_state,
+            unique_id,
         )
         self.db.log_contact(contact)
+        stale = datetime.now() + timedelta(seconds=30)
+        if self.connect_to_server:
+            contact = {
+                "cmd": "POST",
+                "hiscall": self.callsign_entry.text(),
+                "class": self.class_entry.text(),
+                "section": self.section_entry.text(),
+                "mode": self.mode,
+                "band": self.band,
+                "frequency": self.oldfreq,
+                "date_and_time": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+                "power": int(self.power_selector.value()),
+                "grid": self.contactlookup["grid"],
+                "opname": self.contactlookup["name"],
+                "station": self.preference["mycallsign"],
+                "unique_id": unique_id,
+                "expire": stale.isoformat(),
+            }
+            self.server_commands.append(contact)
+            bytesToSend = bytes(dumps(contact), encoding="ascii")
+            try:
+                self.server_udp.sendto(
+                    bytesToSend, (self.multicast_group, int(self.multicast_port))
+                )
+            except OSError as err:
+                logging.warning("%s", err)
+        if self.preference.get("send_n1mm_packets"):
+            self.n1mm.contact_info["rxfreq"] = self.oldfreq[:-1]
+            self.n1mm.contact_info["txfreq"] = self.oldfreq[:-1]
+            self.n1mm.contact_info["mode"] = self.oldmode
+            if self.oldmode in ("CW", "DI"):
+                self.n1mm.contact_info["points"] = "2"
+            else:
+                self.n1mm.contact_info["points"] = "1"
+            self.n1mm.contact_info["band"] = self.band
+            self.n1mm.contact_info["mycall"] = self.preference["mycallsign"]
+            self.n1mm.contact_info["IsRunQSO"] = str(self.run_state)
+            self.n1mm.contact_info["timestamp"] = datetime.utcnow().strftime(
+                "%Y-%m-%d %H:%M:%S"
+            )
+            self.n1mm.contact_info["call"] = self.callsign_entry.text()
+            self.n1mm.contact_info["gridsquare"] = self.contactlookup["grid"]
+            self.n1mm.contact_info["exchange1"] = self.class_entry.text()
+            self.n1mm.contact_info["section"] = self.section_entry.text()
+            self.n1mm.contact_info["name"] = self.contactlookup["name"]
+            self.n1mm.contact_info["power"] = self.power_selector.value()
+            self.n1mm.contact_info["ID"] = unique_id
+            self.n1mm.send_contact_info()
+
         self.sections()
         self.stats()
         self.updatemarker()
@@ -1147,16 +1558,13 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         Get an idea of how you're doing points wise.
         """
-        (
-            cwcontacts,
-            phonecontacts,
-            digitalcontacts,
-            bandmodemult,
-            last15,
-            lasthour,
-            _,
-            _,
-        ) = self.db.stats()
+        results = self.db.stats()
+        cwcontacts = results.get("cwcontacts")
+        phonecontacts = results.get("phonecontacts")
+        digitalcontacts = results.get("digitalcontacts")
+        bandmodemult = results.get("bandmodemult")
+        last15 = results.get("last15")
+        lasthour = results.get("lasthour")
         self.Total_CW.setText(str(cwcontacts))
         self.Total_Phone.setText(str(phonecontacts))
         self.Total_Digital.setText(str(digitalcontacts))
@@ -1170,7 +1578,13 @@ class MainWindow(QtWidgets.QMainWindow):
         Return our current score based on operating power,
         band / mode multipliers and types of contacts.
         """
-        cw, ph, di, bandmodemult, _, _, highpower, qrp = self.db.stats()
+        results = self.db.stats()
+        cw = results.get("cwcontacts")
+        ph = results.get("phonecontacts")
+        di = results.get("digitalcontacts")
+        bandmodemult = results.get("bandmodemult")
+        highpower = results.get("highpower")
+        qrp = results.get("qrp")
         self.score = (int(cw) * 2) + int(ph) + (int(di) * 2)
         self.basescore = self.score
         if qrp:
@@ -1192,18 +1606,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self.listWidget.clear()
         log = self.db.fetch_all_contacts_desc()
         for x in log:
-            (
-                logid,
-                hiscall,
-                hisclass,
-                hissection,
-                the_date_and_time,
-                band,
-                mode,
-                power,
-                _,
-                _,
-            ) = x
+            logid = x.get("id")
+            hiscall = x.get("callsign")
+            hisclass = x.get("class")
+            hissection = x.get("section")
+            the_date_and_time = x.get("date_time")
+            band = x.get("band")
+            mode = x.get("mode")
+            power = x.get("power")
+
             logline = (
                 f"{str(logid).rjust(3,'0')} {hiscall.ljust(10)} {hisclass.rjust(3)} "
                 f"{hissection.rjust(3)} {the_date_and_time} {str(band).rjust(3)} {mode} "
@@ -1224,9 +1635,10 @@ class MainWindow(QtWidgets.QMainWindow):
         Gets the line of the log clicked on, and passes that line to the edit dialog.
         """
         item = self.listWidget.currentItem()
-        self.linetopass = item.text()
+        contactnumber = item.text().split()[0]
+        result = self.db.contact_by_id(contactnumber)
         dialog = EditQsoDialog(self)
-        dialog.setup(self.linetopass, self.db)
+        dialog.setup(result, self.db)
         dialog.change.lineChanged.connect(self.qsoedited)
         dialog.open()
 
@@ -1234,29 +1646,22 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         Reads in the ARRL sections into some internal dictionaries.
         """
+
         try:
             with open(
-                self.relpath("data/arrl_sect.dat"), "r", encoding="utf-8"
-            ) as file_descriptor:  # read section data
-                while 1:
-                    line = (
-                        file_descriptor.readline().strip()
-                    )  # read a line and put in db
-                    if not line:
-                        break
-                    if line[0] == "#":
-                        continue
-                    try:
-                        _, state, canum, abbrev, name = str.split(line, None, 4)
-                        self.secName[abbrev] = abbrev + " " + name + " " + canum
-                        self.secState[abbrev] = state
-                        for i in range(len(abbrev) - 1):
-                            partial = abbrev[: -i - 1]
-                            self.secPartial[partial] = 1
-                    except ValueError as exception:
-                        logging.warning("read_sections: %s", exception)
+                relpath("./data/secname.json"), "rt", encoding="utf-8"
+            ) as file_descriptor:
+                self.secName = loads(file_descriptor.read())
+            with open(
+                relpath("./data/secstate.json"), "rt", encoding="utf-8"
+            ) as file_descriptor:
+                self.secState = loads(file_descriptor.read())
+            with open(
+                relpath("./data/secpartial.json"), "rt", encoding="utf-8"
+            ) as file_descriptor:
+                self.secPartial = loads(file_descriptor.read())
         except IOError as exception:
-            logging.critical("read_sections: read error: %s", exception)
+            logging.critical("read error: %s", exception)
 
     def section_check(self):
         """
@@ -1298,23 +1703,17 @@ class MainWindow(QtWidgets.QMainWindow):
             for match in matches:
                 self.infobox.insertPlainText(match + " ")
 
-    def dup_check(self) -> None:  # FIXME not using the database class
+    def dup_check(self) -> None:
         """checks to see if a contact you're entering will be a dup."""
         acall = self.callsign_entry.text()
         self.infobox.clear()
-        try:
-            with sqlite3.connect(self.database) as conn:
-                cursor = conn.cursor()
-                cursor.execute(
-                    f"select callsign, class, section, band, mode "
-                    f"from contacts where callsign like '{acall}' order by band"
-                )
-                log = cursor.fetchall()
-        except sqlite3.Error as exception:
-            logging.critical("dup_check: %s", exception)
-            return
+        log = self.db.dup_check(acall)
         for contact in log:
-            hiscall, hisclass, hissection, hisband, hismode = contact
+            hiscall = contact.get("callsign")
+            hisclass = contact.get("class")
+            hissection = contact.get("section")
+            hisband = contact.get("band")
+            hismode = contact.get("mode")
             if len(self.class_entry.text()) == 0:
                 self.class_entry.setText(hisclass)
             if len(self.section_entry.text()) == 0:
@@ -1328,24 +1727,12 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.infobox.setTextColor(QtGui.QColor(211, 215, 207))
             self.infobox.insertPlainText(f"{hiscall}: {hisband} {hismode}{dupetext}\n")
 
-    def sections_worked(self) -> None:  # FIXME not using the database class
+    def sections_worked(self) -> None:
         """Generates a list of sections worked."""
-        try:
-            with sqlite3.connect(self.database) as conn:
-                cursor = conn.cursor()
-                cursor.execute("select distinct section from contacts")
-                all_rows = cursor.fetchall()
-        except sqlite3.Error as exception:
-            logging.critical("sections_worked: %s", exception)
-            return
-        self.wrkdsections = str(all_rows)
-        self.wrkdsections = (
-            self.wrkdsections.replace("('", "")
-            .replace("',), ", ",")
-            .replace("',)]", "")
-            .replace("[", "")
-            .split(",")
-        )
+        result = self.db.sections()
+        self.wrkdsections = []
+        for section in result:
+            self.wrkdsections.append(section.get("section"))
 
     def worked_section(self, section: str) -> str:
         """
@@ -1518,7 +1905,7 @@ class MainWindow(QtWidgets.QMainWindow):
         result = self.db.get_bands()
         if result:
             for returned_band in result:
-                bandlist.append(returned_band[0])
+                bandlist.append(returned_band.get("band"))
             return bandlist
         return []
 
@@ -1539,8 +1926,9 @@ class MainWindow(QtWidgets.QMainWindow):
                         dit = self.get_band_mode_tally(band, "DI")
                         pht = self.get_band_mode_tally(band, "PH")
                         print(
-                            f"Band:\t{band}\t{cwt[0]}\t{cwt[1]}\t"
-                            f"{dit[0]}\t{dit[1]}\t{pht[0]}\t{pht[1]}",
+                            f"Band:\t{band}\t{cwt.get('tally')}\t{cwt.get('mpow')}\t"
+                            f"{dit.get('tally')}\t{dit.get('mpow')}\t"
+                            f"{pht.get('tally')}\t{pht.get('mpow')}",
                             end="\r\n",
                             file=file_descriptor,
                         )
@@ -1600,8 +1988,8 @@ class MainWindow(QtWidgets.QMainWindow):
                         for count, grid in enumerate(grids):
                             if count == islast:
                                 lastcolor = "color=Orange"
-                            if len(grid[0]) > 1:
-                                lat, lon = self.gridtolatlon(grid[0])
+                            if len(grid.get("grid")) > 1:
+                                lat, lon = self.gridtolatlon(grid.get("grid"))
                                 print(
                                     f'{lat} {lon} "" {lastcolor}',
                                     end="\r\n",
@@ -1630,18 +2018,16 @@ class MainWindow(QtWidgets.QMainWindow):
                 print("<ADIF_VER:5>2.2.0", end="\r\n", file=file_descriptor)
                 print("<EOH>", end="\r\n", file=file_descriptor)
                 for contact in log:
-                    (
-                        _,
-                        hiscall,
-                        hisclass,
-                        hissection,
-                        the_date_and_time,
-                        band,
-                        mode,
-                        _,
-                        grid,
-                        opname,
-                    ) = contact
+
+                    hiscall = contact.get("callsign")
+                    hisclass = contact.get("class")
+                    hissection = contact.get("section")
+                    the_date_and_time = contact.get("date_time")
+                    band = contact.get("band")
+                    mode = contact.get("mode")
+                    grid = contact.get("grid")
+                    opname = contact.get("opname")
+
                     if mode == "DI":
                         mode = "RTTY"
                     if mode == "PH":
@@ -1749,18 +2135,16 @@ class MainWindow(QtWidgets.QMainWindow):
         if (not self.preference.get("cloudlog")) or (not self.cloudlogauthenticated):
             return
         contact = self.db.fetch_last_contact()
-        (
-            _,
-            hiscall,
-            hisclass,
-            hissection,
-            the_date_and_time,
-            band,
-            mode,
-            _,
-            grid,
-            opname,
-        ) = contact
+
+        hiscall = contact.get("callsign")
+        hisclass = contact.get("class")
+        hissection = contact.get("section")
+        the_date_and_time = contact.get("date_time")
+        band = contact.get("band")
+        mode = contact.get("mode")
+        grid = contact.get("grid")
+        opname = contact.get("opname")
+
         logging.info("%s", contact)
         if mode == "DI":
             mode = "RTTY"
@@ -1824,7 +2208,9 @@ class MainWindow(QtWidgets.QMainWindow):
         bonuses = 0
         log = self.db.fetch_all_contacts_asc()
         catpower = ""
-        _, _, _, _, _, _, highpower, qrp = self.db.stats()
+        result = self.db.stats()
+        highpower = result.get("highpower")
+        qrp = result.get("qrp")
         self.powermult = 0
         if qrp:
             catpower = "QRP"
@@ -1842,7 +2228,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     end="\r\n",
                     file=file_descriptor,
                 )
-                print("CONTEST: WFD", end="\r\n", file=file_descriptor)
+                print("CONTEST: WINTER-FIELD-DAY", end="\r\n", file=file_descriptor)
                 print(
                     f"CALLSIGN: {self.preference.get('mycallsign')}",
                     end="\r\n",
@@ -1924,18 +2310,14 @@ class MainWindow(QtWidgets.QMainWindow):
                 print("ADDRESS-COUNTRY: ", end="\r\n", file=file_descriptor)
                 print("EMAIL: ", end="\r\n", file=file_descriptor)
                 for contact in log:
-                    (
-                        _,
-                        hiscall,
-                        hisclass,
-                        hissection,
-                        the_date_and_time,
-                        band,
-                        mode,
-                        _,
-                        _,
-                        _,
-                    ) = contact
+
+                    hiscall = contact.get("callsign")
+                    hisclass = contact.get("class")
+                    hissection = contact.get("section")
+                    the_date_and_time = contact.get("date_time")
+                    band = contact.get("band")
+                    mode = contact.get("mode")
+
                     loggeddate = the_date_and_time[:10]
                     loggedtime = the_date_and_time[11:13] + the_date_and_time[14:16]
                     print(
@@ -1959,16 +2341,31 @@ class MainWindow(QtWidgets.QMainWindow):
     def generate_logs(self):
         """Called when the user presses the Generate Logs button."""
         self.infobox.clear()
+        self.show_dirty_records()
+        self.resolve_dirty_records()
         self.cabrillo()
         self.generate_band_mode_tally()
         self.adif()
+        if self.connect_to_server:
+            update = {
+                "cmd": "LOG",
+                "station": self.preference["mycallsign"],
+            }
+            bytesToSend = bytes(dumps(update), encoding="ascii")
+            try:
+                self.server_udp.sendto(
+                    bytesToSend, (self.multicast_group, int(self.multicast_port))
+                )
+            except OSError as err:
+                logging.warning("%s", err)
 
 
 class EditQsoDialog(QtWidgets.QDialog):
     """Edits/deletes a contacts in the database"""
 
     theitem = ""
-    database = ""
+    database = None
+    contact = None
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -1977,30 +2374,21 @@ class EditQsoDialog(QtWidgets.QDialog):
         self.buttonBox.accepted.connect(self.save_changes)
         self.change = QSOEdit()
 
-    def setup(self, linetopass, thedatabase):
+    def setup(self, contact, thedatabase):
         """Loads in the contact information and db to access."""
         self.database = thedatabase
-        (
-            self.theitem,
-            thecall,
-            theclass,
-            thesection,
-            thedate,
-            thetime,
-            theband,
-            themode,
-            thepower,
-        ) = linetopass.split()
-        self.editCallsign.setText(thecall)
-        self.editClass.setText(theclass)
-        self.editSection.setText(thesection)
-        self.editBand.setCurrentIndex(self.editBand.findText(theband))
-        self.editMode.setCurrentIndex(self.editMode.findText(themode))
-        self.editPower.setValue(int(thepower))
-        date_time = thedate + " " + thetime
+        self.contact = contact
+        self.theitem = contact.get("id")
+        self.editCallsign.setText(contact.get("callsign"))
+        self.editClass.setText(contact.get("class"))
+        self.editSection.setText(contact.get("section"))
+        self.editFreq.setText(str(contact.get("frequency")))
+        self.editBand.setCurrentIndex(self.editBand.findText(contact.get("band")))
+        self.editMode.setCurrentIndex(self.editMode.findText(contact.get("mode")))
+        self.editPower.setValue(int(contact.get("power")))
+        date_time = contact.get("date_time")
         now = QtCore.QDateTime.fromString(date_time, "yyyy-MM-dd hh:mm:ss")
         self.editDateTime.setDateTime(now)
-        self.database = thedatabase
 
     @staticmethod
     def relpath(filename: str) -> str:
@@ -2024,14 +2412,81 @@ class EditQsoDialog(QtWidgets.QDialog):
             self.editBand.currentText(),
             self.editMode.currentText(),
             self.editPower.value(),
+            self.editFreq.text(),
             self.theitem,
         )
         self.database.change_contact(qso)
+        if window.connect_to_server:
+            stale = datetime.now() + timedelta(seconds=30)
+            command = {"cmd": "UPDATE"}
+            command["hiscall"] = self.editCallsign.text().upper()
+            command["class"] = self.editClass.text().upper()
+            command["section"] = self.editSection.text().upper()
+            command["date_time"] = self.editDateTime.text()
+            command["frequency"] = self.editFreq.text()
+            command["band"] = self.editBand.currentText()
+            command["mode"] = self.editMode.currentText().upper()
+            command["power"] = self.editPower.value()
+            command["station"] = window.preference["mycallsign"].upper()
+            command["unique_id"] = self.contact.get("unique_id")
+            command["expire"] = stale.isoformat()
+            window.server_commands.append(command)
+            bytesToSend = bytes(dumps(command), encoding="ascii")
+            try:
+                window.server_udp.sendto(
+                    bytesToSend, (window.multicast_group, int(window.multicast_port))
+                )
+            except OSError as err:
+                logging.warning("%s", err)
+        if window.preference.get("send_n1mm_packets"):
+
+            window.n1mm.contact_info["rxfreq"] = self.editFreq.text()[:-1]
+            window.n1mm.contact_info["txfreq"] = self.editFreq.text()[:-1]
+            window.n1mm.contact_info["mode"] = self.editMode.currentText().upper()
+            window.n1mm.contact_info["band"] = self.editBand.currentText()
+            window.n1mm.contact_info["mycall"] = window.preference["mycallsign"]
+            window.n1mm.contact_info["IsRunQSO"] = self.contact.get("IsRunQSO")
+            window.n1mm.contact_info["timestamp"] = self.contact.get("date_time")
+            window.n1mm.contact_info["call"] = self.editCallsign.text().upper()
+            window.n1mm.contact_info["gridsquare"] = self.contact.get("grid")
+            window.n1mm.contact_info["exchange1"] = self.editClass.text().upper()
+            window.n1mm.contact_info["section"] = self.editSection.text().upper()
+            window.n1mm.contact_info["name"] = self.contact.get("opname")
+            window.n1mm.contact_info["power"] = self.editPower.value()
+            window.n1mm.contact_info["ID"] = self.contact.get("unique_id")
+            if window.n1mm.contact_info["mode"] in ("CW", "DI"):
+                window.n1mm.contact_info["points"] = "2"
+            else:
+                window.n1mm.contact_info["points"] = "1"
+            window.n1mm.send_contactreplace()
+
         self.change.lineChanged.emit()
 
     def delete_contact(self):
         """Delete a contact from the db."""
         self.database.delete_contact(self.theitem)
+        if window.connect_to_server:
+            stale = datetime.now() + timedelta(seconds=30)
+            command = {}
+            command["cmd"] = "DELETE"
+            command["unique_id"] = self.contact.get("unique_id")
+            command["station"] = window.preference["mycallsign"].upper()
+            command["expire"] = stale.isoformat()
+            window.server_commands.append(command)
+            bytesToSend = bytes(dumps(command), encoding="ascii")
+            try:
+                window.server_udp.sendto(
+                    bytesToSend, (window.multicast_group, int(window.multicast_port))
+                )
+            except OSError as err:
+                logging.warning("%s", err)
+        if window.preference.get("send_n1mm_packets"):
+            window.n1mm.contactdelete["timestamp"] = datetime.utcnow().strftime(
+                "%Y-%m-%d %H:%M:%S"
+            )
+            window.n1mm.contactdelete["call"] = self.contact.get("callsign")
+            window.n1mm.contactdelete["ID"] = self.contact.get("unique_id")
+            window.n1mm.send_contact_delete()
         self.change.lineChanged.emit()
         self.close()
 
@@ -2153,5 +2608,13 @@ if __name__ == "__main__":
     timer = QtCore.QTimer()
     timer.timeout.connect(window.update_time)
     timer.start(1000)
+
+    timer2 = QtCore.QTimer()
+    timer2.timeout.connect(window.check_udp_queue)
+    timer2.start(1000)
+
+    timer3 = QtCore.QTimer()
+    timer3.timeout.connect(window.send_status_udp)
+    timer3.start(15000)
 
     sys.exit(app.exec())
