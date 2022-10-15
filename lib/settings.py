@@ -1,10 +1,18 @@
-"""Settings Dialog Class"""
+"""
+K6GTE, Settings Dialog Class
+Email: michael.bridak@gmail.com
+GPL V3
+"""
+# pylint: disable=c-extension-no-member
 
 import logging
 import sys
 import os
 from json import dumps, loads
 from PyQt5 import QtWidgets, uic
+
+if __name__ == "__main__":
+    print("I'm not the program you are looking for.")
 
 
 class Settings(QtWidgets.QDialog):

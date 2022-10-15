@@ -1,20 +1,23 @@
-#!/usr/bin/env python3
-"""Testing n1mm stuff"""
+"""
+K6GTE, N1MM sending interface
+Email: michael.bridak@gmail.com
+GPL V3
+"""
 
 import socket
 
-# import uuid
-# from datetime import datetime
-
 # pip3 install -U dicttoxml
 from dicttoxml import dicttoxml
+
+if __name__ == "__main__":
+    print("I'm not the program you are looking for.")
 
 
 class N1MM:
     """ "Send N1MM style packets"""
 
     radio_info = {
-        "app": "Not1MM",
+        "app": "K6GTE-WFD",
         "StationName": "",
         "uNICORNbLOOD": "1",
         "RadioNr": "1",
@@ -39,7 +42,7 @@ class N1MM:
     }
 
     contact_info = {
-        "app": "Not1MM",
+        "app": "K6GTE-WFD",
         "contestname": "Winter Field Day",
         "contestnr": "1",
         "timestamp": "",
@@ -88,7 +91,7 @@ class N1MM:
     }
 
     contactdelete = {
-        "app": "Not1MM",
+        "app": "K6GTE-WFD",
         "timestamp": "",
         "call": "",
         "contestnr": "1",
@@ -161,38 +164,3 @@ class N1MM:
             bytes_to_send,
             (self.ip_address, int(port)),
         )
-
-
-# n1mm = N1MM(contactport=12061, lookupport=12061, scoreport=12062)
-
-# n1mm.radio_info["StationName"] = "stanley"
-# n1mm.radio_info["Freq"] = "1425700"
-# n1mm.radio_info["TXFreq"] = "1425700"
-# n1mm.radio_info["Mode"] = "USB"
-# n1mm.radio_info["OpCall"] = "K6GTE"
-# n1mm.radio_info["IsRunning"] = "True"
-# n1mm.radio_info["IsTransmitting"] = "True"
-# n1mm.radio_info["FunctionKeyCaption"] = "CQ FD"
-
-# n1mm.send_radio()
-
-# n1mm.contact_info["contestname"] = "ARRL-FIELD-DAY"
-# n1mm.contact_info["NetBiosName"] = socket.gethostname()
-# n1mm.contact_info["StationName"] = "stanley"
-# n1mm.contact_info["mycall"] = "K6GTE"
-# n1mm.contact_info["operator"] = "Mike"
-# n1mm.contact_info["call"] = "w5aw"
-# n1mm.contact_info["ID"] = uuid.uuid4().hex
-# n1mm.contact_info["band"] = "14"
-# n1mm.contact_info["mode"] = "USB"
-# n1mm.contact_info["rxfreq"] = "1425700"
-# n1mm.contact_info["txfreq"] = "1425700"
-# n1mm.contact_info["exchange1"] = "1D"
-# n1mm.contact_info["section"] = "VA"
-# n1mm.contact_info["points"] = "1"
-# n1mm.contact_info["timestamp"] = str(datetime.now()).split(".")[0]
-# n1mm.contact_info["IsRunQSO"] = "True"
-
-# n1mm.send_lookup()
-
-# n1mm.send_contact_info()

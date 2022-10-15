@@ -1,7 +1,15 @@
-"""CAT interface abstraction"""
+"""
+K6GTE, CAT interface abstraction
+Email: michael.bridak@gmail.com
+GPL V3
+"""
+
 import logging
 import socket
 import xmlrpc.client
+
+if __name__ == "__main__":
+    print("I'm not the program you are looking for.")
 
 
 class CAT:

@@ -1,7 +1,15 @@
-"""Impliments CW abstraction layer"""
+"""
+K6GTE, CW interface abstraction
+Email: michael.bridak@gmail.com
+GPL V3
+"""
+
 from xmlrpc.client import ServerProxy, Error
 import socket
 import logging
+
+if __name__ == "__main__":
+    print("I'm not the program you are looking for.")
 
 
 class CW:

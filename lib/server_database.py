@@ -1,6 +1,14 @@
-"""Database class to store contacts"""
+"""
+K6GTE, Database class to store contacts
+Email: michael.bridak@gmail.com
+GPL V3
+"""
+
 import logging
 import sqlite3
+
+if __name__ == "__main__":
+    print("I'm not the program you are looking for.")
 
 
 class DataBase:
