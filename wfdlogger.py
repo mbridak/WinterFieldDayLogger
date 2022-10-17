@@ -1193,61 +1193,85 @@ class MainWindow(QtWidgets.QMainWindow):
     def sendf1(self):
         """Sends CW macro"""
         if self.cw:
+            if self.preference.get("send_n1mm_packets"):
+                self.n1mm.radio_info["FunctionKeyCaption"] = self.F1.text()
             self.cw.sendcw(self.process_macro(self.F1.toolTip()))
 
     def sendf2(self):
         """Sends CW macro"""
         if self.cw:
+            if self.preference.get("send_n1mm_packets"):
+                self.n1mm.radio_info["FunctionKeyCaption"] = self.F2.text()
             self.cw.sendcw(self.process_macro(self.F2.toolTip()))
 
     def sendf3(self):
         """Sends CW macro"""
         if self.cw:
+            if self.preference.get("send_n1mm_packets"):
+                self.n1mm.radio_info["FunctionKeyCaption"] = self.F3.text()
             self.cw.sendcw(self.process_macro(self.F3.toolTip()))
 
     def sendf4(self):
         """Sends CW macro"""
         if self.cw:
+            if self.preference.get("send_n1mm_packets"):
+                self.n1mm.radio_info["FunctionKeyCaption"] = self.F4.text()
             self.cw.sendcw(self.process_macro(self.F4.toolTip()))
 
     def sendf5(self):
         """Sends CW macro"""
         if self.cw:
+            if self.preference.get("send_n1mm_packets"):
+                self.n1mm.radio_info["FunctionKeyCaption"] = self.F5.text()
             self.cw.sendcw(self.process_macro(self.F5.toolTip()))
 
     def sendf6(self):
         """Sends CW macro"""
         if self.cw:
+            if self.preference.get("send_n1mm_packets"):
+                self.n1mm.radio_info["FunctionKeyCaption"] = self.F6.text()
             self.cw.sendcw(self.process_macro(self.F6.toolTip()))
 
     def sendf7(self):
         """Sends CW macro"""
         if self.cw:
+            if self.preference.get("send_n1mm_packets"):
+                self.n1mm.radio_info["FunctionKeyCaption"] = self.F7.text()
             self.cw.sendcw(self.process_macro(self.F7.toolTip()))
 
     def sendf8(self):
         """Sends CW macro"""
         if self.cw:
+            if self.preference.get("send_n1mm_packets"):
+                self.n1mm.radio_info["FunctionKeyCaption"] = self.F8.text()
             self.cw.sendcw(self.process_macro(self.F8.toolTip()))
 
     def sendf9(self):
         """Sends CW macro"""
         if self.cw:
+            if self.preference.get("send_n1mm_packets"):
+                self.n1mm.radio_info["FunctionKeyCaption"] = self.F9.text()
             self.cw.sendcw(self.process_macro(self.F9.toolTip()))
 
     def sendf10(self):
         """Sends CW macro"""
         if self.cw:
+            if self.preference.get("send_n1mm_packets"):
+                self.n1mm.radio_info["FunctionKeyCaption"] = self.F10.text()
             self.cw.sendcw(self.process_macro(self.F10.toolTip()))
 
     def sendf11(self):
         """Sends CW macro"""
         if self.cw:
+            if self.preference.get("send_n1mm_packets"):
+                self.n1mm.radio_info["FunctionKeyCaption"] = self.F11.text()
             self.cw.sendcw(self.process_macro(self.F11.toolTip()))
 
     def sendf12(self):
         """Sends CW macro"""
         if self.cw:
+            if self.preference.get("send_n1mm_packets"):
+                self.n1mm.radio_info["FunctionKeyCaption"] = self.F12.text()
             self.cw.sendcw(self.process_macro(self.F12.toolTip()))
 
     def clearinputs(self):
