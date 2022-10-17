@@ -67,8 +67,29 @@ color: rgb(211, 215, 207);</string>
      <pointsize>12</pointsize>
     </font>
    </property>
+   <property name="tabPosition">
+    <enum>QTabWidget::North</enum>
+   </property>
+   <property name="tabShape">
+    <enum>QTabWidget::Rounded</enum>
+   </property>
    <property name="currentIndex">
     <number>0</number>
+   </property>
+   <property name="elideMode">
+    <enum>Qt::ElideNone</enum>
+   </property>
+   <property name="documentMode">
+    <bool>true</bool>
+   </property>
+   <property name="tabsClosable">
+    <bool>false</bool>
+   </property>
+   <property name="movable">
+    <bool>false</bool>
+   </property>
+   <property name="tabBarAutoHide">
+    <bool>false</bool>
    </property>
    <widget class="QWidget" name="tab_1">
     <attribute name="title">
@@ -357,6 +378,9 @@ color: rgb(211, 215, 207);</string>
        <bold>false</bold>
       </font>
      </property>
+     <property name="inputMethodHints">
+      <set>Qt::ImhUrlCharactersOnly</set>
+     </property>
      <property name="text">
       <string>http://Cloudlog.com/Cloudlog/index.php/api/qso</string>
      </property>
@@ -475,6 +499,9 @@ color: rgb(211, 215, 207);</string>
        <weight>50</weight>
        <bold>false</bold>
       </font>
+     </property>
+     <property name="inputMethodHints">
+      <set>Qt::ImhDigitsOnly</set>
      </property>
      <property name="text">
       <string>4532</string>
@@ -705,6 +732,9 @@ color: rgb(211, 215, 207);</string>
        <pointsize>12</pointsize>
       </font>
      </property>
+     <property name="inputMethodHints">
+      <set>Qt::ImhDigitsOnly</set>
+     </property>
      <property name="text">
       <string>6789</string>
      </property>
@@ -848,6 +878,9 @@ color: rgb(211, 215, 207);</string>
        <family>JetBrains Mono</family>
        <pointsize>12</pointsize>
       </font>
+     </property>
+     <property name="inputMethodHints">
+      <set>Qt::ImhDigitsOnly</set>
      </property>
      <property name="text">
       <string>2239</string>
@@ -1076,6 +1109,9 @@ color: rgb(211, 215, 207);</string>
        <height>29</height>
       </rect>
      </property>
+     <property name="inputMethodHints">
+      <set>Qt::ImhDigitsOnly</set>
+     </property>
      <property name="text">
       <string/>
      </property>
@@ -1091,6 +1127,9 @@ color: rgb(211, 215, 207);</string>
        <width>141</width>
        <height>29</height>
       </rect>
+     </property>
+     <property name="inputMethodHints">
+      <set>Qt::ImhDigitsOnly</set>
      </property>
      <property name="text">
       <string/>
@@ -1108,6 +1147,9 @@ color: rgb(211, 215, 207);</string>
        <height>29</height>
       </rect>
      </property>
+     <property name="inputMethodHints">
+      <set>Qt::ImhDigitsOnly</set>
+     </property>
      <property name="text">
       <string/>
      </property>
@@ -1123,6 +1165,9 @@ color: rgb(211, 215, 207);</string>
        <width>141</width>
        <height>29</height>
       </rect>
+     </property>
+     <property name="inputMethodHints">
+      <set>Qt::ImhDigitsOnly</set>
      </property>
      <property name="text">
       <string/>
@@ -1170,7 +1215,7 @@ color: rgb(211, 215, 207);</string>
   </connection>
  </connections>
  <buttongroups>
-  <buttongroup name="buttonGroup_2"/>
   <buttongroup name="buttonGroup"/>
+  <buttongroup name="buttonGroup_2"/>
  </buttongroups>
 </ui>
