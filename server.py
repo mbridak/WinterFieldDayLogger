@@ -21,6 +21,7 @@ import os
 import sys
 import threading
 import argparse
+from datetime import datetime
 
 from itertools import chain
 from json import JSONDecodeError, loads, dumps
@@ -76,6 +77,7 @@ MULTICAST_PORT = 2239
 MULTICAST_GROUP = "224.1.1.1"
 INTERFACE_IP = "0.0.0.0"
 
+NAMEOFCLUB = "The Best Club"
 OURCALL = "XXXX"
 OURCLASS = "XX"
 OURSECTION = "XXX"
@@ -102,6 +104,7 @@ PEOPLEWINDOW = curses.newwin(6, 28, 17, 51)
 
 people = {}
 
+n1mm_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
 
 height, width = THE_SCREEN.getmaxyx()
 if height < 24 or width < 80:
@@ -172,11 +175,87 @@ def ptitle(win, y, x1, x2, title):
     win.addch(y, x + title_length, curses.ACS_LTEE)
 
 
+def points():
+    """return points as xml tags"""
+    bands = ["160", "80", "40", "20", "15", "10", "6", "2"]
+    blist = []
+    list_o_bands = DB.get_bands()
+    if list_o_bands:
+        for count in list_o_bands:
+            blist.append(count[0])
+
+    message = ""
+    totalcw = 0
+    totalph = 0
+    totaldi = 0
+    for band in bands:
+        cwt = DB.get_band_mode_tally(band, "CW")
+        dit = DB.get_band_mode_tally(band, "DI")
+        pht = DB.get_band_mode_tally(band, "PH")
+
+        totalcw += cwt[0]
+        totalph += pht[0]
+        totaldi += dit[0]
+
+        line = ""
+        if cwt[0]:
+            line += f'<qso band="{band}" mode="CW">{cwt[0]}</qso>\n'
+            line += f'<point band="{band}" mode="CW">{cwt[0]*2}</point>\n'
+        if pht[0]:
+            line += f'<qso band="{band}" mode="PH">{pht[0]}</qso>\n'
+            line += f'<point band="{band}" mode="PH">{pht[0]}</point>\n'
+        if dit[0]:
+            line += f'<qso band="{band}" mode="DIGI">{dit[0]}</qso>\n'
+            line += f'<point band="{band}" mode="DIGI">{dit[0]*2}</point>\n'
+        if cwt[0] + pht[0] + dit[0]:
+            line += (
+                f'<qso band="{band}" mode="total">{cwt[0] + pht[0] + dit[0]}</qso>\n'
+            )
+            line += f'<point band="{band}" mode="ALL">{(cwt[0]*2) + pht[0] + (dit[0]*2)}</point>\n'
+        message += line
+
+    message += f'<qso band="total" mode="ALL">{totalcw + totalph + totaldi}</qso>\n'
+    message += f'<point band="total" mode="ALL">{(totalcw * 2) + totalph + (totaldi * 2)}</point>\n'
+    return message
+
+
+def send_xml_score():
+    """send xml score"""
+    ops = DB.get_operators()
+    operator_list = []
+    lop = points()
+    for operators in ops:
+        operator_list.append(operators[0])
+    xemel = (
+        '<?xml version="1.0" encoding="UTF-8" ?>\n'
+        "<dynamicresults>\n"
+        "<contest>ARRL-FIELD-DAY</contest>\n"
+        f"<call>{OURCALL}</call>\n"
+        f'<ops>{",".join(operator_list)}</ops>\n'
+        '<class power="HIGH" assisted = "ASSISTED" transmitter="UNLIMITED" '
+        'ops="MULTI-OP" bands="ALL" mode="MIXED" overlay="N/A"></class>\n'
+        f"<club>{NAMEOFCLUB}</club>\n"
+        "<qth>\n<dxcccountry>K</dxcccountry>\n<cqzone>4</cqzone>\n<iaruzone>8</iaruzone>\n"
+        "<arrlsection>MI</arrlsection>\n<stprvoth>MI</stprvoth>\n<grid6>EN82BK</grid6>\n</qth>\n"
+        f"<breakdown>\n{lop}</breakdown>\n"
+        f"<score>{calcscore()}</score>\n"
+        f'<timestamp>{datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")}</timestamp>\n'
+        "</dynamicresults>\n"
+    )
+
+    bytes_to_send = str(xemel).encode("ascii")
+    n1mm_socket.sendto(
+        bytes_to_send,
+        ("192.168.1.141", 12062),
+    )
+
+
 def send_pulse():
     """send heartbeat"""
     while True:
         pulse = b'{"cmd": "PING", "host": "server"}'
         s.sendto(pulse, (MULTICAST_GROUP, MULTICAST_PORT))
+        # send_xml_score()
         time.sleep(10)
 
 
