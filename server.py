@@ -757,18 +757,24 @@ def main(_):
                     f"{json_data.get('band')} "
                     f"{json_data.get('mode')}"
                 )
-                DB.change_contact(
+                # We're sending this as a log_contact, since the db logic
+                # first checks to see if the record exists before writing
+                # it. if the unique id exists, it will update. otherwise
+                # it will save as new.
+                DB.log_contact(
                     (
+                        json_data.get("unique_id"),
                         json_data.get("hiscall"),
                         json_data.get("class"),
                         json_data.get("section"),
-                        json_data.get("date_time"),
+                        json_data.get("date_and_time"),
+                        json_data.get("frequency"),
                         json_data.get("band"),
                         json_data.get("mode"),
                         json_data.get("power"),
+                        json_data.get("grid"),
+                        json_data.get("opname"),
                         json_data.get("station"),
-                        json_data.get("frequency"),
-                        json_data.get("unique_id"),
                     )
                 )
                 comm_log()

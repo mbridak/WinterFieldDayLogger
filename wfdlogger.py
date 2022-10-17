@@ -2422,7 +2422,7 @@ class EditQsoDialog(QtWidgets.QDialog):
             command["hiscall"] = self.editCallsign.text().upper()
             command["class"] = self.editClass.text().upper()
             command["section"] = self.editSection.text().upper()
-            command["date_time"] = self.editDateTime.text()
+            command["date_and_time"] = self.editDateTime.text()
             command["frequency"] = self.editFreq.text()
             command["band"] = self.editBand.currentText()
             command["mode"] = self.editMode.currentText().upper()
@@ -2430,6 +2430,8 @@ class EditQsoDialog(QtWidgets.QDialog):
             command["station"] = window.preference["mycallsign"].upper()
             command["unique_id"] = self.contact.get("unique_id")
             command["expire"] = stale.isoformat()
+            command["opname"] = self.contact.get("opname")
+            command["grid"] = self.contact.get("grid")
             window.server_commands.append(command)
             bytesToSend = bytes(dumps(command), encoding="ascii")
             try:
