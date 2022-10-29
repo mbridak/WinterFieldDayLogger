@@ -35,9 +35,9 @@ The server if used, will generate a group cabrillo file to submit.
   - [Caveats](#caveats)
   - [Changes since last release.](#changes-since-last-release)
   - [Running from source](#running-from-source)
-  - [The Client](#the-client)
-  - [The Server](#the-server)
-  - [Requirements for bandmap](#requirements-for-bandmap)
+    - [The Client](#the-client)
+    - [The Server](#the-server)
+    - [Requirements for bandmap](#requirements-for-bandmap)
   - [Building your own binary.](#building-your-own-binary)
   - [What to do first](#what-to-do-first)
   - [Logging](#logging)
@@ -51,28 +51,30 @@ The server if used, will generate a group cabrillo file to submit.
   - [Section partial check](#section-partial-check)
   - [DUP checking](#dup-checking)
   - [Autofill](#autofill)
-  - [CW Macros](#cw-macros)
-  - [CW Macros (Run vs S&P)](#cw-macros-run-vs-sp)
-  - [cwdaemon speed changes and stop sending.](#cwdaemon-speed-changes-and-stop-sending)
+  - [CW](#cw)
+    - [CW Settings](#cw-settings)
+    - [CW Macros](#cw-macros)
+    - [CW Macros (Run vs S&P)](#cw-macros-run-vs-sp)
+    - [cwdaemon speed changes and stop sending.](#cwdaemon-speed-changes-and-stop-sending)
   - [When the event is over](#when-the-event-is-over)
-  - [Group / Club logging](#group--club-logging)
+- [Group / Club logging](#group--club-logging)
   - [Server configuration](#server-configuration)
   - [Client configuration for groups](#client-configuration-for-groups)
   - [Chat Window](#chat-window)
   - [How to know the server is there.](#how-to-know-the-server-is-there)
   - [Logging reliability](#logging-reliability)
   - [Generating the cabrillo file](#generating-the-cabrillo-file)
-  - [I'm sure there are short cummings](#im-sure-there-are-short-cummings)
+- [I'm sure there are short cummings](#im-sure-there-are-short-cummings)
 
 ## Caveats
----
+
 WFD only has a generic digital mode designator 'DI', which gets exported to the
 cabrillo file. But ADIF and CloudLog needed something else, So I Chose RTTY. 
 Feel free to change it to what ever you will use. Just search for the two 
 places in the code 'RTTY' is used and Bob's your dads brother.
 
 ## Changes since last release.
----
+
 Added a group contact aggregation server. So multiple clients can participate in
 WFD together.
 
@@ -80,9 +82,9 @@ Added N1MM XML status packets. So you can use
 [Kyle AA0Z's Node-Red dashboard](https://github.com/kylekrieg/Node-Red-Contesting-Dashboard).
  
 ## Running from source
----
+
 ### The Client
----
+
 Install Python 3, then two required libs via pip.
 
 `pip install -r requirements.txt`
@@ -96,7 +98,7 @@ Just make wfdlogger.py executable and run it within the same folder, or type:
 `python3 wfdlogger.py`
 
 ### The Server
----
+
 The server is a terminal / curses program and uses standard libraries that
 should already be installed.
 
@@ -106,13 +108,13 @@ The server can be run on a stand alone device like a Raspberry Pi, Or on the
 same computer as one of the clients.
 
 ### Requirements for bandmap
----
+
 The [bandmap](./bandmap.md "Band Map Docs") needs a few more python libraries.
 
 pip or pip3 install rich bs4 lxml 
 
 ## Building your own binary.
----
+
 Install pyinstaller.
 
 `python3 -m pip3 install pyinstaller`
@@ -130,15 +132,19 @@ For Windows:
 You will find the binary in the newly created dist directory.
 
 ## What to do first
----
+
 On first run, there will be a dialog box asking you for your call class and 
 section. if you need to change this later, the entry fields can be found at 
 the bottom of the screen.
 
+If you're participating as a member of a group, do not put your groups/club
+call as your call. Enter your own call. The group call will be polled from
+the server. 
+
 ![Snapshot focused on bottom of window](pics/yourstuff.png)
 
 ## Logging
----
+
 Okay you've made a contact. Enter the call in the call field. As you type it 
 in, it will do a super check partial (see below). Press TAB or SPACE to advance 
 to the next field. Once the call is complete it will do a DUP check (see below).
@@ -150,7 +156,7 @@ to clear all inputs and start again.
 # Features
 
 ## Radio Polling via flrig or rigctld
----
+
 If you run flrig or rigctld on a computer connected to the radio, it can be 
 polled for band/mode updates automatically. Click the gear icon at the bottom 
 of the screen to set the IP and port. There is a radio icon at the bottom of 
@@ -159,7 +165,7 @@ the logging window to indicate polling status.
 ![Snapshot of settings dialog](pics/catSettings.png)
 
 ## Cloudlog, QRZ, HamDB, HamQTH useage
----
+
 If you use either Cloudlog logging or QRZ/HamDB/HamQTH lookup you can click 
 the gear icon to enter your credentials. 
 
@@ -172,14 +178,14 @@ feature. HAMDB.org is used by default since it's free. If both are checked it
 will it will use QRZ then fallback to HAMDB.
 
 ## N1MM packets for Node-Red Dashboard
----
+
 If you wish to use Kyle AA0Z's Node-Red contest dashboard, edit these settings.
 
 ![N1MM settings](pics/n1mm_settings.png)
 
 
 ## XPlanet marker file
----
+
 If you use QRZ/HamdDB/HamQTH lookups you can also generate an 
 [XPlanet](http://xplanet.sourceforge.net/) markerfile which will show little 
 pips on the map as contacts are logged.
@@ -193,13 +199,13 @@ xplanet -body earth -window -longitude -117 -latitude 38 -config Default -projec
 ```
 
 ## Editing an existing contact
----
+
 Double click a contact in the upper left of the screen to edit or delete it.
 
 ![Snapshot of edit qso dialog](pics/editqso.png)
 
 ## Super Check Partial
----
+
 If you type more than two characters in the callsign field the program will 
 filter the input through a "Super Check Partial" routine and show you possible 
 matches to known contesting call signs. Is this useful? Doubt it.
@@ -207,14 +213,14 @@ matches to known contesting call signs. Is this useful? Doubt it.
 ![Snapshot of main screen focused on super check partial output](pics/scp.png)
 
 ## Section partial check
----
+
 As you type the section abbreviation you are presented with a list of all 
 possible sections that start with what you have typed.
 
 ![Snapshot of main screen focused on section check partial output](pics/sectioncheck.png)
 
 ## DUP checking
----
+
 Once you type a complete callsign and press TAB or SPACE to advance to the 
 next field. The callsign is checked against previous callsigns in your log. 
 It will list any prior contact made showing the band and mode of the contact. 
@@ -227,13 +233,23 @@ a decision if you'll enter the call or not.
 ![Snapshot of main screen focused on dup checking output](pics/dupe.png)
 
 ## Autofill
----
+
 If you have worked this person before on another band/mode the program will 
 load the class and section used previously for this call so you will not have 
 to enter this info again.
 
-## CW Macros
----
+## CW
+
+### CW Settings
+
+Support is provided for both cwdaemon and PyWinkeyer.
+
+![Settings dialog tab for CW](pics/cw_settings.png)
+
+Defalt port for cwdaemon is 6789 and for PyWinkeyer is 8000. 
+
+### CW Macros
+
 The program will check in the current working directory for a file called 
 `cwmacros.txt` It will parse the file
 and configure the row of 12 buttons along the bottom half of the window.
@@ -260,8 +276,8 @@ A limited set of substitution macros are offered.
 These are pulled straight from the onscreen input fields. Combined with normal
 text this should have you covered for most of your exchange needs.
 
-## CW Macros (Run vs S&P)
----
+### CW Macros (Run vs S&P)
+
 You can toggle the macros in use between Run and Search and Pounce by clicking
 the button to the left of the Generate Logs button at the botton right portion
 of the screen.
@@ -271,8 +287,8 @@ of the screen.
 This can also be used to reload the macros if you edit them while the program
 is running.
 
-## cwdaemon speed changes and stop sending.
----
+### cwdaemon speed changes and stop sending.
+
 If you are using cwedaemon for sending, you can use:
 
 `CTRL+Esc` to abort sending.
@@ -282,7 +298,7 @@ If you are using cwedaemon for sending, you can use:
 `PgDown` Decrease sending speed.
 
 ## When the event is over
----
+
 After the big weekend, once you've swept up all the broken beer bottles and 
 wiped the BBQ sauce off your chin, go ahead and click the Generate Logs button.
 
@@ -302,7 +318,7 @@ A 'Statistics.txt' file which breaks down your band mode usage. Each unique
 band/mode combo is a multiplier.
 
 # Group / Club logging
----
+
 I have added a group contact aggrigating server. This can be run on the same
 computer as the client program, or on a separate dedicated PC or Raspberry Pi
 on the same network.
@@ -310,10 +326,10 @@ on the same network.
 ![Picture showing main server screen](pics/server_pic.png)
 
 ## Server configuration
----
+
 The configuration file for the server is a JSON file 'server_preferences.json'.
 
-```
+```json
 {
     "ourcall": "W1AW",
     "ourclass": "3O",
@@ -345,7 +361,7 @@ Under the bonuses section, if your group qualifies for a bonus, put true next
 to the type of bonus.
 
 ## Client configuration for groups
----
+
 In the settings dialog there is now a tab labeled 'Group Operation'.
 
 ![Picture showing settings dialog tab](pics/group_server_settings.png)
@@ -368,7 +384,7 @@ highlighted in the operators list. Feel free to yell at eachother in the chat.
 ![Picture showing band and mode conflict](pics/band_conflict_client.png)
 
 ## Chat Window
----
+
 The chat window is pretty straight forward. If someone mentions you in the chat
 that line will be highlighted with an accent color. If you find the font size
 does not work for you, can adjust the size by: Placing your mouse cursor in the
@@ -378,7 +394,7 @@ There is one command you can type into the chat window that may be of use.
 if you type @stats into the window the server will dump out the groups stats 
 into the chat.
 
-```
+```text
 Server: 
 Band   CW    PH    DI
  160     0     0     0
@@ -399,7 +415,7 @@ Since most people will not be able to see the screen of the server, if it has
 one at all. You may find this useful.
 
 ## How to know the server is there.
----
+
 Most likely, the server will be in some other tent/building/area of the room.
 Every 10 seconds or so the server will send out a UDP network packet saying
 it's there. As long as your client keeps seeing these packets the group call
@@ -415,7 +431,7 @@ will change to:
 Go check on it.
 
 ## Logging reliability
----
+
 As mentioned before, We're using UDP traffic to pass data back and forth to the
 server. UDP traffic is a 'Fire and forget' method. Akin to a bunch of people 
 in the same room yelling at eachother. Everyone can hear you, but you don't 
@@ -458,13 +474,13 @@ they don't. No retry is made for chat traffic. Just get your butt up and make
 the trip to the cooler.
 
 ## Generating the cabrillo file
----
+
 If any of the networked clients presses the 'Generate Logs' button on their
 screen, the server will be told to generate it's cabrillo file, it will be
 named 'WhatEverYourClubCallIs.log'
 
-## I'm sure there are short cummings
----
+# I'm sure there are short cummings
+
 It's early days, and I've mainly tested the operations with the client logging
 program and several simulated operators, see file in `testing/simulant.py`
 Real world use for Winter Field Day in January is hard to come by. So I'm sure 
