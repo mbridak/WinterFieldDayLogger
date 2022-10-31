@@ -635,8 +635,8 @@ def main(_):
     THE_SCREEN.addstr(f" {OURCLASS}", curses.color_pair(7))
     THE_SCREEN.addstr(4, 2, "Section_:")
     THE_SCREEN.addstr(f" {OURSECTION}", curses.color_pair(7))
-    THE_SCREEN.addstr(5, 2, "Battery_:")
-    THE_SCREEN.addstr(f" {bool(BATTERYPOWER)}", curses.color_pair(7))
+    # THE_SCREEN.addstr(5, 2, "Battery_:")
+    # THE_SCREEN.addstr(f" {bool(BATTERYPOWER)}", curses.color_pair(7))
 
     THE_SCREEN.addstr(2, 25, "Multicast Group: ")
     THE_SCREEN.addstr(f"{MULTICAST_GROUP}", curses.color_pair(7))
