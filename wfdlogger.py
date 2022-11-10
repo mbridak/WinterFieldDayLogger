@@ -1549,8 +1549,8 @@ class MainWindow(QtWidgets.QMainWindow):
             except OSError as err:
                 logging.warning("%s", err)
         if self.preference.get("send_n1mm_packets"):
-            self.n1mm.contact_info["rxfreq"] = self.oldfreq[:-1]
-            self.n1mm.contact_info["txfreq"] = self.oldfreq[:-1]
+            self.n1mm.contact_info["rxfreq"] = str(self.oldfreq)[:-1]
+            self.n1mm.contact_info["txfreq"] = str(self.oldfreq)[:-1]
             self.n1mm.contact_info["mode"] = self.oldmode
             if self.oldmode in ("CW", "DI"):
                 self.n1mm.contact_info["points"] = "2"
@@ -1770,6 +1770,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def sections_column_1(self) -> None:
         """Highlights the sections worked in column 1"""
         self.Section_DX.setStyleSheet(self.worked_section("DX"))
+        self.Section_MX.setStyleSheet(self.worked_section("MX"))
         self.Section_CT.setStyleSheet(self.worked_section("CT"))
         self.Section_RI.setStyleSheet(self.worked_section("RI"))
         self.Section_EMA.setStyleSheet(self.worked_section("EMA"))
@@ -2345,8 +2346,10 @@ class MainWindow(QtWidgets.QMainWindow):
                     loggeddate = the_date_and_time[:10]
                     loggedtime = the_date_and_time[11:13] + the_date_and_time[14:16]
                     print(
-                        f"QSO: {self.dfreq[band].replace('.','')} {mode} {loggeddate} "
-                        f"{loggedtime} {self.mycall} {self.myclass} {self.mysection} "
+                        f"QSO: {self.dfreq[band].replace('.','')} {mode} {loggeddate} {loggedtime}"
+                        f" {self.preference.get('mycallsign')}"
+                        f" {self.preference.get('myclass')}"
+                        f" {self.preference.get('mysection')} "
                         f"{hiscall} {hisclass} {hissection}",
                         end="\r\n",
                         file=file_descriptor,
