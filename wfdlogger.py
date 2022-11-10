@@ -1505,8 +1505,8 @@ class MainWindow(QtWidgets.QMainWindow):
         ):
             logging.info("Incomplete fields")
             return
-        if not self.cat_control:
-            self.oldfreq = int(float(self.fakefreq(self.band, self.mode)) * 1000)
+        if not self.cat_control or self.oldfreq == 0:
+            self.oldfreq = int(self.fakefreq(self.band, self.mode) + "000")
         unique_id = uuid.uuid4().hex
         contact = (
             self.callsign_entry.text(),
@@ -2052,7 +2052,11 @@ class MainWindow(QtWidgets.QMainWindow):
                     mode = contact.get("mode")
                     grid = contact.get("grid")
                     opname = contact.get("opname")
-
+                    frequency = contact.get("frequency")
+                    if frequency == 0:
+                        frequency = f"{int(self.fakefreq(band, mode)) / 1000:.3f}"
+                    else:
+                        frequency = f"{int(frequency) / 1000000:.3f}"
                     if mode == "DI":
                         mode = "RTTY"
                     if mode == "PH":
@@ -2087,7 +2091,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     )
                     try:
                         print(
-                            f"<FREQ:{len(self.dfreq.get(band))}>{self.dfreq.get(band)}",
+                            f"<FREQ:{len(frequency)}>{frequency}",
                             end="\r\n",
                             file=file_descriptor,
                         )
@@ -2169,6 +2173,11 @@ class MainWindow(QtWidgets.QMainWindow):
         mode = contact.get("mode")
         grid = contact.get("grid")
         opname = contact.get("opname")
+        frequency = contact.get("frequency")
+        if frequency == 0:
+            frequency = f"{int(self.fakefreq(band, mode)) / 1000:.3f}"
+        else:
+            frequency = f"{int(frequency) / 1000000:.3f}"
 
         logging.info("%s", contact)
         if mode == "DI":
@@ -2191,7 +2200,7 @@ class MainWindow(QtWidgets.QMainWindow):
             f"<CALL:{len(hiscall)}>{hiscall}"
             f"<MODE:{len(mode)}>{mode}"
             f"<BAND:{len(band + 'M')}>{band + 'M'}"
-            f"<FREQ:{len(self.dfreq.get(band))}>{self.dfreq.get(band)}"
+            f"<FREQ:{len(frequency)}>{frequency}"
             f"<RST_SENT:{len(rst)}>{rst}"
             f"<RST_RCVD:{len(rst)}>{rst}"
             f"<STX_STRING:{len(stx)}>"
@@ -2342,11 +2351,16 @@ class MainWindow(QtWidgets.QMainWindow):
                     the_date_and_time = contact.get("date_time")
                     band = contact.get("band")
                     mode = contact.get("mode")
+                    frequency = contact.get("frequency")
+                    if frequency == 0:
+                        frequency = self.fakefreq(band, mode)
+                    else:
+                        frequency = f"{int(frequency / 1000)}"
 
                     loggeddate = the_date_and_time[:10]
                     loggedtime = the_date_and_time[11:13] + the_date_and_time[14:16]
                     print(
-                        f"QSO: {self.dfreq[band].replace('.','')} {mode} {loggeddate} {loggedtime}"
+                        f"QSO: {frequency} {mode} {loggeddate} {loggedtime}"
                         f" {self.preference.get('mycallsign')}"
                         f" {self.preference.get('myclass')}"
                         f" {self.preference.get('mysection')} "
