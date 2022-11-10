@@ -4067,7 +4067,6 @@ color: rgb(0, 0, 0);</string>
      <set>Qt::AlignCenter</set>
     </property>
    </widget>
-   <zorder>chat_window</zorder>
    <zorder>frame</zorder>
    <zorder>frame_2</zorder>
    <zorder>frame_3</zorder>
@@ -4114,6 +4113,7 @@ color: rgb(0, 0, 0);</string>
    <zorder>F10</zorder>
    <zorder>run_button</zorder>
    <zorder>group_call_indicator</zorder>
+   <zorder>chat_window</zorder>
   </widget>
  </widget>
  <tabstops>
