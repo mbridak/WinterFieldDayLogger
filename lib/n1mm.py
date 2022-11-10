@@ -4,6 +4,7 @@ Email: michael.bridak@gmail.com
 GPL V3
 """
 
+import logging
 import socket
 
 # pip3 install -U dicttoxml
@@ -159,6 +160,8 @@ class N1MM:
 
     def _send(self, port, payload, package_name):
         """Send XML data"""
+        logging_info = f"{package_name} - {payload}"
+        logging.info("%s", logging_info)
         bytes_to_send = dicttoxml(payload, custom_root=package_name, attr_type=False)
         self.radio_socket.sendto(
             bytes_to_send,
