@@ -2628,7 +2628,7 @@ color: rgb(0, 0, 0);</string>
 color: rgb(0, 0, 0);</string>
      </property>
      <property name="text">
-      <string>DX</string>
+      <string>DX / MX</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
@@ -2691,7 +2691,7 @@ color: rgb(0, 0, 0);</string>
     <widget class="QLabel" name="Section_DX">
      <property name="geometry">
       <rect>
-       <x>30</x>
+       <x>5</x>
        <y>23</y>
        <width>21</width>
        <height>17</height>
@@ -3022,6 +3022,22 @@ color: rgb(0, 0, 0);</string>
      </property>
      <property name="text">
       <string>WNY</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="Section_MX">
+     <property name="geometry">
+      <rect>
+       <x>46</x>
+       <y>23</y>
+       <width>18</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">color: rgb(136, 138, 133);</string>
+     </property>
+     <property name="text">
+      <string>MX</string>
      </property>
     </widget>
    </widget>
@@ -3942,6 +3958,9 @@ color: rgb(0, 0, 0);</string>
     </property>
    </widget>
    <widget class="QFrame" name="chat_window">
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
     <property name="geometry">
      <rect>
       <x>350</x>
@@ -3957,6 +3976,9 @@ color: rgb(0, 0, 0);</string>
      <enum>QFrame::Plain</enum>
     </property>
     <widget class="QTextEdit" name="chatlog">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
      <property name="geometry">
       <rect>
        <x>4</x>
@@ -4045,6 +4067,53 @@ color: rgb(0, 0, 0);</string>
      <set>Qt::AlignCenter</set>
     </property>
    </widget>
+   <zorder>chat_window</zorder>
+   <zorder>frame</zorder>
+   <zorder>frame_2</zorder>
+   <zorder>frame_3</zorder>
+   <zorder>frame_4</zorder>
+   <zorder>frame_5</zorder>
+   <zorder>frame_6</zorder>
+   <zorder>frame_7</zorder>
+   <zorder>frame_8</zorder>
+   <zorder>frame_9</zorder>
+   <zorder>label_13</zorder>
+   <zorder>label_14</zorder>
+   <zorder>band_selector</zorder>
+   <zorder>label_57</zorder>
+   <zorder>mode_selector</zorder>
+   <zorder>label_7</zorder>
+   <zorder>label_8</zorder>
+   <zorder>localtime</zorder>
+   <zorder>utctime</zorder>
+   <zorder>altpowerButton</zorder>
+   <zorder>outdoorsButton</zorder>
+   <zorder>notathomeButton</zorder>
+   <zorder>satelliteButton</zorder>
+   <zorder>mycallEntry</zorder>
+   <zorder>myclassEntry</zorder>
+   <zorder>mysectionEntry</zorder>
+   <zorder>label_58</zorder>
+   <zorder>power_selector</zorder>
+   <zorder>genLogButton</zorder>
+   <zorder>radio_icon</zorder>
+   <zorder>QRZ_icon</zorder>
+   <zorder>cloudlog_icon</zorder>
+   <zorder>settingsbutton</zorder>
+   <zorder>F1</zorder>
+   <zorder>F2</zorder>
+   <zorder>F3</zorder>
+   <zorder>F4</zorder>
+   <zorder>F5</zorder>
+   <zorder>F6</zorder>
+   <zorder>F8</zorder>
+   <zorder>F11</zorder>
+   <zorder>F9</zorder>
+   <zorder>F7</zorder>
+   <zorder>F12</zorder>
+   <zorder>F10</zorder>
+   <zorder>run_button</zorder>
+   <zorder>group_call_indicator</zorder>
   </widget>
  </widget>
  <tabstops>
