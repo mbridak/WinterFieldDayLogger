@@ -26,6 +26,9 @@ breakdown.
 
 The server if used, will generate a group cabrillo file to submit.
 
+# The 2023 rules posted todate, Nov 10 2022 are not clear. So I am unable to
+complete the update until they are changed.
+
 ![Snapshot of main screen](pics/loggerscreenshot.png)
 
 # Table Of Contents
