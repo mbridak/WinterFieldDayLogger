@@ -198,13 +198,14 @@ class DataBase:
         """
         returns list of dicts with amount of contacts and the maximum power used
         for a given band using a particular mode.
+        Only showing contacts below 101 watts.
         """
         with sqlite3.connect(self.database) as conn:
             conn.row_factory = self.row_factory
             cursor = conn.cursor()
             cursor.execute(
                 "select count(*) as tally, MAX(power) as mpow from contacts "
-                f"where band = '{band}' AND mode ='{mode}';"
+                f"where band = '{band}' AND mode ='{mode}' AND power < 101;"
             )
             return cursor.fetchone()
 
