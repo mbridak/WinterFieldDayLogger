@@ -1612,9 +1612,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.score = (int(cw) * 2) + int(ph) + (int(di) * 2)
         self.basescore = self.score
         if qrp:
-            self.score = self.score * 4
-        elif not highpower:
             self.score = self.score * 2
+        elif not highpower:
+            self.score = self.score * 1
         self.score = self.score * bandmodemult
         self.score = (
             self.score
@@ -2245,13 +2245,13 @@ class MainWindow(QtWidgets.QMainWindow):
         result = self.db.stats()
         highpower = result.get("highpower")
         qrp = result.get("qrp")
-        self.powermult = 0
+        self.powermult = 1
         if qrp:
             catpower = "QRP"
-            self.powermult = 4
+            self.powermult = 2
         elif highpower:
             catpower = "HIGH"
-            self.powermult = 2
+            self.powermult = 0
         else:
             catpower = "LOW"
         try:
