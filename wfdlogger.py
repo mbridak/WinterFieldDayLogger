@@ -1607,14 +1607,14 @@ class MainWindow(QtWidgets.QMainWindow):
         ph = results.get("phonecontacts")
         di = results.get("digitalcontacts")
         bandmodemult = results.get("bandmodemult")
-        highpower = results.get("highpower")
+        # highpower = results.get("highpower")
         qrp = results.get("qrp")
         self.score = (int(cw) * 2) + int(ph) + (int(di) * 2)
         self.basescore = self.score
         if qrp:
             self.score = self.score * 2
-        elif not highpower:
-            self.score = self.score * 1
+        # elif not highpower:
+        #     self.score = self.score * 1
         self.score = self.score * bandmodemult
         self.score = (
             self.score

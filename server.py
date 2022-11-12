@@ -405,22 +405,23 @@ def calcscore():
     Return our current score based on operating power,
     battery power and types of contacts.
 
-    2022 scoring: contacts over 100w are disallowed.
-    QRP and Low Power (<100W) have base multiplier of 2.
-    QRP with Battery Power has base multiplier of 5
+    2023 scoring: contacts over 100w are disallowed.
+    QRP x2
+    CW and DI 2pts
+    PH 1pt
     """
     results = DB.stats()
     cw = results.get("cwcontacts")
     ph = results.get("phonecontacts")
     di = results.get("digitalcontacts")
     bandmodemult = results.get("bandmodemult")
-    highpower = results.get("highpower")
+    # highpower = results.get("highpower")
     qrp = results.get("qrp")
     score = (int(cw) * 2) + int(ph) + (int(di) * 2)
     if qrp:
-        score = score * 4
-    elif not highpower:
         score = score * 2
+    # elif not highpower:
+    #     score = score * 1
     score = score * bandmodemult
     if preference.get("altpower"):
         score += 500
