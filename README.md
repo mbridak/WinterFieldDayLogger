@@ -80,6 +80,8 @@ WFD together.
 
 Added N1MM XML status packets. So you can use 
 [Kyle AA0Z's Node-Red dashboard](https://github.com/kylekrieg/Node-Red-Contesting-Dashboard).
+
+Added power, scoring and bonus changes for 2023.
  
 ## Running from source
 
@@ -345,7 +347,8 @@ The configuration file for the server is a JSON file 'server_preferences.json'.
         "altpower": true,
         "outdoors": true,
         "notathome": true,
-        "satellite": true
+        "satellite": true,
+        "antenna": true
     },
     "mullticast_group": "224.1.1.1",
     "multicast_port": 2239,
@@ -477,7 +480,9 @@ the trip to the cooler.
 
 If any of the networked clients presses the 'Generate Logs' button on their
 screen, the server will be told to generate it's cabrillo file, it will be
-named 'WhatEverYourClubCallIs.log'
+named 'WhatEverYourClubCallIs.log'.
+Later you can also launche the server with '-l' flag on the commadn line
+and the server will generate the log and then exit.
 
 # I'm sure there are short cummings
 
