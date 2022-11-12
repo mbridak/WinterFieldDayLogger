@@ -10,10 +10,11 @@
     "country": "USA",
     "email": "Hiram.Maxim@arrl.net",
     "bonus": {
-        "altpower": true,
-        "outdoors": true,
-        "notathome": true,
-        "satellite": true
+        "altpower": false,
+        "outdoors": false,
+        "notathome": false,
+        "antenna": false,
+        "satellite": false
     },
     "mullticast_group": "224.1.1.1",
     "multicast_port": 2239,

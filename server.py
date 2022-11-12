@@ -431,7 +431,8 @@ def calcscore():
         score += 500
     if preference.get("satellite"):
         score += 500
-
+    if preference.get("antenna"):
+        score += 500
     return score
 
 
@@ -443,6 +444,8 @@ def cabrillo():
     log = DB.fetch_all_contacts_asc()
     if not log:
         return
+    stats = DB.stats()
+    QRP = stats.get("qrp")
     catpower = ""
     if QRP:
         catpower = "QRP"
@@ -503,8 +506,9 @@ def cabrillo():
             bonus_title = {
                 "altpower": "Alternate Power",
                 "outdoors": "Setup Outdoors",
-                "notathome": "Not At Home",
+                "notathome": "Away From Home",
                 "satellite": "Satellite Contact",
+                "antenna": "Antenna",
             }
 
             bonuses = preference.get("bonus")
@@ -529,6 +533,15 @@ def cabrillo():
                     continue
 
                 if bonus == "notathome":
+                    print(
+                        f"SOAPBOX: {bonus_title.get(bonus)} Bonus 500 Points",
+                        end="\r\n",
+                        file=file_descriptor,
+                    )
+                    bonus_points += 500
+                    continue
+
+                if bonus == "antenna":
                     print(
                         f"SOAPBOX: {bonus_title.get(bonus)} Bonus 500 Points",
                         end="\r\n",
@@ -574,8 +587,6 @@ def cabrillo():
                     _,
                     _,
                 ) = contact
-                if mode == "DI":
-                    mode = "DG"
                 loggeddate = the_datetime[:10]
                 loggedtime = the_datetime[11:13] + the_datetime[14:16]
                 try:
