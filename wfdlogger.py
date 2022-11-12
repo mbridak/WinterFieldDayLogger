@@ -165,6 +165,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.outdoorsButton.clicked.connect(self.claim_outdoors)
         self.notathomeButton.clicked.connect(self.claim_not_at_home)
         self.satelliteButton.clicked.connect(self.claim_satellite)
+        self.antButton.clicked.connect(self.claim_ant)
         self.callsign_entry.textEdited.connect(self.calltest)
         self.class_entry.textEdited.connect(self.classtest)
         self.section_entry.textEdited.connect(self.sectiontest)
@@ -242,6 +243,7 @@ class MainWindow(QtWidgets.QMainWindow):
             "outdoors": False,
             "notathome": False,
             "satellite": False,
+            "antenna": False,
             "useserver": 0,
             "multicast_group": "224.1.1.1",
             "multicast_port": 2239,
@@ -820,6 +822,9 @@ class MainWindow(QtWidgets.QMainWindow):
             )
             self.satelliteButton.setStyleSheet(
                 self.highlighted(self.preference.get("satellite"))
+            )
+            self.antButton.setStyleSheet(
+                self.highlighted(self.preference.get("antenna"))
             )
 
             self.connect_to_server = self.preference.get("useserver")
@@ -1622,6 +1627,7 @@ class MainWindow(QtWidgets.QMainWindow):
             + (500 * self.preference.get("outdoors"))
             + (500 * self.preference.get("notathome"))
             + (500 * self.preference.get("satellite"))
+            + (500 * self.preference.get("antenna"))
         )
         return self.score
 
@@ -1912,6 +1918,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.satelliteButton.setStyleSheet(
             self.highlighted(self.preference.get("satellite"))
         )
+        self.writepreferences()
+        self.stats()
+
+    def claim_ant(self, _) -> None:
+        """Is called when the ant button is pressed."""
+        self.preference["antenna"] = not self.preference.get("antenna")
+        self.antButton.setStyleSheet(self.highlighted(self.preference.get("antenna")))
         self.writepreferences()
         self.stats()
 
@@ -2301,28 +2314,36 @@ class MainWindow(QtWidgets.QMainWindow):
                         end="\r\n",
                         file=file_descriptor,
                     )
-                    bonuses = bonuses + 500
+                    bonuses += 500
                 if self.preference.get("outdoors"):
                     print(
                         "SOAPBOX: 500 points for setting up outdoors",
                         end="\r\n",
                         file=file_descriptor,
                     )
-                    bonuses = bonuses + 500
+                    bonuses += 500
                 if self.preference.get("notathome"):
                     print(
                         "SOAPBOX: 500 points for setting up away from home",
                         end="\r\n",
                         file=file_descriptor,
                     )
-                    bonuses = bonuses + 500
+                    bonuses += 500
                 if self.preference.get("satellite"):
                     print(
                         "SOAPBOX: 500 points for working satellite",
                         end="\r\n",
                         file=file_descriptor,
                     )
-                    bonuses = bonuses + 500
+                    bonuses += 500
+                if self.preference.get("antenna"):
+                    print(
+                        "SOAPBOX: 500 points for setting up WFD antenna",
+                        end="\r\n",
+                        file=file_descriptor,
+                    )
+                    bonuses += 500
+
                 print(
                     f"SOAPBOX: BONUS Total {bonuses}", end="\r\n", file=file_descriptor
                 )
