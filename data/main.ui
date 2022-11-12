@@ -3316,7 +3316,7 @@ color: rgb(0, 0, 0);</string>
      <rect>
       <x>71</x>
       <y>533</y>
-      <width>80</width>
+      <width>51</width>
       <height>25</height>
      </rect>
     </property>
@@ -3332,13 +3332,13 @@ color: rgb(0, 0, 0);</string>
      <enum>Qt::NoFocus</enum>
     </property>
     <property name="text">
-     <string>Alt Power</string>
+     <string>Power</string>
     </property>
    </widget>
    <widget class="QPushButton" name="outdoorsButton">
     <property name="geometry">
      <rect>
-      <x>151</x>
+      <x>123</x>
       <y>533</y>
       <width>80</width>
       <height>25</height>
@@ -3362,9 +3362,9 @@ color: rgb(0, 0, 0);</string>
    <widget class="QPushButton" name="notathomeButton">
     <property name="geometry">
      <rect>
-      <x>231</x>
+      <x>204</x>
       <y>533</y>
-      <width>98</width>
+      <width>97</width>
       <height>25</height>
      </rect>
     </property>
@@ -3386,9 +3386,9 @@ color: rgb(0, 0, 0);</string>
    <widget class="QPushButton" name="satelliteButton">
     <property name="geometry">
      <rect>
-      <x>329</x>
+      <x>302</x>
       <y>533</y>
-      <width>80</width>
+      <width>41</width>
       <height>25</height>
      </rect>
     </property>
@@ -3404,7 +3404,7 @@ color: rgb(0, 0, 0);</string>
      <enum>Qt::NoFocus</enum>
     </property>
     <property name="text">
-     <string>Satellite</string>
+     <string>SAT</string>
     </property>
    </widget>
    <widget class="QLineEdit" name="mycallEntry">
@@ -4067,6 +4067,25 @@ color: rgb(0, 0, 0);</string>
      <set>Qt::AlignCenter</set>
     </property>
    </widget>
+   <widget class="QPushButton" name="antButton">
+    <property name="geometry">
+     <rect>
+      <x>345</x>
+      <y>533</y>
+      <width>52</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>JetBrains Mono</family>
+      <pointsize>10</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>ANT</string>
+    </property>
+   </widget>
    <zorder>frame</zorder>
    <zorder>frame_2</zorder>
    <zorder>frame_3</zorder>
@@ -4114,6 +4133,7 @@ color: rgb(0, 0, 0);</string>
    <zorder>run_button</zorder>
    <zorder>group_call_indicator</zorder>
    <zorder>chat_window</zorder>
+   <zorder>antButton</zorder>
   </widget>
  </widget>
  <tabstops>
