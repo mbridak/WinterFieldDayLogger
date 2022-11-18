@@ -475,15 +475,16 @@ the trip to the cooler.
 If any of the networked clients presses the 'Generate Logs' button on their
 screen, the server will be told to generate it's cabrillo file, it will be
 named 'WhatEverYourClubCallIs.log'.
-Later you can also launche the server with '-l' flag on the commadn line
+
+Later you can also launch the server with '-l' flag on the command line
 and the server will generate the log and then exit.
 
 # I'm sure there are short cummings
 
 It's early days, and I've mainly tested the operations with the client logging
-program and several simulated operators, see file in `testing/simulant.py`
-Real world use for Winter Field Day in January is hard to come by. So I'm sure 
+program and several simulated operators, see file in `testing/simulant.py`.
+Real world use for Winter Field Day outside of January is hard to come by. So I'm sure 
 there are a couple of things I forgot, or didn't account for.
 
 If you are part of a group of linux using Hams, please take this for a spin and
-tell me what I missed or could do better.
+tell me what I missed or could do better. Like a dry run, to make sure I'm not an idiot.
