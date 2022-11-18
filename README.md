@@ -38,7 +38,6 @@ The server if used, will generate a group cabrillo file to submit.
   - [Running from source](#running-from-source)
     - [The Client](#the-client)
     - [The Server](#the-server)
-    - [Requirements for bandmap](#requirements-for-bandmap)
   - [Building your own binary.](#building-your-own-binary)
   - [What to do first](#what-to-do-first)
   - [Logging](#logging)
@@ -88,13 +87,13 @@ Added power, scoring and bonus changes for 2023.
 
 ### The Client
 
-Install Python 3, then two required libs via pip.
+Install Python 3, then required libs via pip.
 
 `pip install -r requirements.txt`
 
 Or if you're the Ubuntu/Debian type you can:
 
-`sudo apt install python3-pyqt5 python3-requests`
+`sudo apt install python3-pyqt5 python3-requests python3-bs4 python3-lxml`
 
 Just make wfdlogger.py executable and run it within the same folder, or type:
 
@@ -109,12 +108,6 @@ Just make server.py executable and run it the same way as the client.
 
 The server can be run on a stand alone device like a Raspberry Pi, Or on the 
 same computer as one of the clients.
-
-### Requirements for bandmap
-
-The [bandmap](./bandmap.md "Band Map Docs") needs a few more python libraries.
-
-pip or pip3 install rich bs4 lxml 
 
 ## Building your own binary.
 
