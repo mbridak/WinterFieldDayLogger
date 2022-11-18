@@ -7,8 +7,9 @@
 emergency preparidness event for radio amateurs (Hams). During the event, we try
 and make as many radio contacts with other Hams in a 24 hour period. Bonus 
 points are awarded for operating outside or using alternate power sources, such
-as battery/solar/wind. You can find out more about amateur radio by visiting
-the [WFDA](https://winterfieldday.com/).
+as battery/solar/wind. You can find out more about Winter Field Day by visiting
+the [WFDA](https://winterfieldday.com/). You can find out more about amateur radio
+by visiting the [ARRL](https://winterfieldday.com/).
 
 The logger is written in Python 3, and uses the PyQT5 lib. Qt5 is cross 
 platform so it might work on everything. I have tested it on Linux, Rasperry 
