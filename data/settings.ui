@@ -954,11 +954,16 @@ color: rgb(211, 215, 207);</string>
     <widget class="QCheckBox" name="send_n1mm_packets">
      <property name="geometry">
       <rect>
-       <x>240</x>
+       <x>224</x>
        <y>20</y>
-       <width>178</width>
-       <height>27</height>
+       <width>189</width>
+       <height>28</height>
       </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>JetBrains Mono</family>
+      </font>
      </property>
      <property name="styleSheet">
       <string notr="true"/>
@@ -970,11 +975,16 @@ color: rgb(211, 215, 207);</string>
     <widget class="QLabel" name="label_13">
      <property name="geometry">
       <rect>
-       <x>40</x>
+       <x>32</x>
        <y>60</y>
-       <width>117</width>
-       <height>21</height>
+       <width>125</width>
+       <height>22</height>
       </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>JetBrains Mono</family>
+      </font>
      </property>
      <property name="text">
       <string>Station Name:</string>
@@ -983,11 +993,16 @@ color: rgb(211, 215, 207);</string>
     <widget class="QLabel" name="label_14">
      <property name="geometry">
       <rect>
-       <x>340</x>
+       <x>332</x>
        <y>60</y>
-       <width>126</width>
-       <height>21</height>
+       <width>135</width>
+       <height>22</height>
       </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>JetBrains Mono</family>
+      </font>
      </property>
      <property name="text">
       <string>Operator Name:</string>
@@ -996,11 +1011,16 @@ color: rgb(211, 215, 207);</string>
     <widget class="QLabel" name="label_15">
      <property name="geometry">
       <rect>
-       <x>90</x>
+       <x>73</x>
        <y>100</y>
-       <width>189</width>
-       <height>21</height>
+       <width>202</width>
+       <height>22</height>
       </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>JetBrains Mono</family>
+      </font>
      </property>
      <property name="text">
       <string>Destination Adderess:</string>
@@ -1009,11 +1029,16 @@ color: rgb(211, 215, 207);</string>
     <widget class="QLabel" name="label_16">
      <property name="geometry">
       <rect>
-       <x>180</x>
+       <x>170</x>
        <y>140</y>
-       <width>99</width>
-       <height>21</height>
+       <width>106</width>
+       <height>22</height>
       </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>JetBrains Mono</family>
+      </font>
      </property>
      <property name="text">
       <string>Radio Port:</string>
@@ -1022,11 +1047,16 @@ color: rgb(211, 215, 207);</string>
     <widget class="QLabel" name="label_17">
      <property name="geometry">
       <rect>
-       <x>160</x>
+       <x>150</x>
        <y>180</y>
-       <width>117</width>
-       <height>21</height>
+       <width>125</width>
+       <height>22</height>
       </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>JetBrains Mono</family>
+      </font>
      </property>
      <property name="text">
       <string>Contact Port:</string>
@@ -1035,11 +1065,16 @@ color: rgb(211, 215, 207);</string>
     <widget class="QLabel" name="label_18">
      <property name="geometry">
       <rect>
-       <x>170</x>
+       <x>160</x>
        <y>220</y>
-       <width>108</width>
-       <height>21</height>
+       <width>116</width>
+       <height>22</height>
       </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>JetBrains Mono</family>
+      </font>
      </property>
      <property name="text">
       <string>Lookup Port:</string>
@@ -1048,11 +1083,16 @@ color: rgb(211, 215, 207);</string>
     <widget class="QLabel" name="label_19">
      <property name="geometry">
       <rect>
-       <x>180</x>
+       <x>170</x>
        <y>260</y>
-       <width>99</width>
-       <height>21</height>
+       <width>106</width>
+       <height>22</height>
       </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>JetBrains Mono</family>
+      </font>
      </property>
      <property name="text">
       <string>Score Port:</string>
@@ -1067,6 +1107,11 @@ color: rgb(211, 215, 207);</string>
        <height>29</height>
       </rect>
      </property>
+     <property name="font">
+      <font>
+       <family>JetBrains Mono</family>
+      </font>
+     </property>
      <property name="placeholderText">
       <string>20M-CW Tent</string>
      </property>
@@ -1080,6 +1125,11 @@ color: rgb(211, 215, 207);</string>
        <height>29</height>
       </rect>
      </property>
+     <property name="font">
+      <font>
+       <family>JetBrains Mono</family>
+      </font>
+     </property>
      <property name="placeholderText">
       <string>Bernie</string>
      </property>
@@ -1092,6 +1142,11 @@ color: rgb(211, 215, 207);</string>
        <width>141</width>
        <height>29</height>
       </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>JetBrains Mono</family>
+      </font>
      </property>
      <property name="text">
       <string/>
@@ -1108,6 +1163,11 @@ color: rgb(211, 215, 207);</string>
        <width>141</width>
        <height>29</height>
       </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>JetBrains Mono</family>
+      </font>
      </property>
      <property name="inputMethodHints">
       <set>Qt::ImhDigitsOnly</set>
@@ -1128,6 +1188,11 @@ color: rgb(211, 215, 207);</string>
        <height>29</height>
       </rect>
      </property>
+     <property name="font">
+      <font>
+       <family>JetBrains Mono</family>
+      </font>
+     </property>
      <property name="inputMethodHints">
       <set>Qt::ImhDigitsOnly</set>
      </property>
@@ -1147,6 +1212,11 @@ color: rgb(211, 215, 207);</string>
        <height>29</height>
       </rect>
      </property>
+     <property name="font">
+      <font>
+       <family>JetBrains Mono</family>
+      </font>
+     </property>
      <property name="inputMethodHints">
       <set>Qt::ImhDigitsOnly</set>
      </property>
@@ -1165,6 +1235,11 @@ color: rgb(211, 215, 207);</string>
        <width>141</width>
        <height>29</height>
       </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>JetBrains Mono</family>
+      </font>
      </property>
      <property name="inputMethodHints">
       <set>Qt::ImhDigitsOnly</set>
