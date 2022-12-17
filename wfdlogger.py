@@ -1861,18 +1861,19 @@ class MainWindow(QtWidgets.QMainWindow):
         self.Section_MN.setStyleSheet(self.worked_section("MN"))
         self.Section_SD.setStyleSheet(self.worked_section("SD"))
         self.Section_AB.setStyleSheet(self.worked_section("AB"))
-        self.Section_NT.setStyleSheet(self.worked_section("NT"))
+        self.Section_NB.setStyleSheet(self.worked_section("NB"))
         self.Section_BC.setStyleSheet(self.worked_section("BC"))
         self.Section_ONE.setStyleSheet(self.worked_section("ONE"))
-        self.Section_GTA.setStyleSheet(self.worked_section("GTA"))
+        self.Section_GH.setStyleSheet(self.worked_section("GH"))
         self.Section_ONN.setStyleSheet(self.worked_section("ONN"))
-        self.Section_MAR.setStyleSheet(self.worked_section("MAR"))
+        self.Section_NS.setStyleSheet(self.worked_section("NS"))
         self.Section_ONS.setStyleSheet(self.worked_section("ONS"))
         self.Section_MB.setStyleSheet(self.worked_section("MB"))
         self.Section_QC.setStyleSheet(self.worked_section("QC"))
         self.Section_NL.setStyleSheet(self.worked_section("NL"))
         self.Section_SK.setStyleSheet(self.worked_section("SK"))
         self.Section_PE.setStyleSheet(self.worked_section("PE"))
+        self.Section_TER.setStyleSheet(self.worked_section("TER"))
 
     def sections(self) -> None:
         """
