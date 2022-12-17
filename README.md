@@ -54,7 +54,7 @@ The server if used, will generate a group cabrillo file to submit.
   - [CW](#cw)
     - [CW Settings](#cw-settings)
     - [CW Macros](#cw-macros)
-    - [CW Macros (Run vs S&P)](#cw-macros-run-vs-sp)
+    - [CW Macros (Run vs S\&P)](#cw-macros-run-vs-sp)
     - [cwdaemon speed changes and stop sending.](#cwdaemon-speed-changes-and-stop-sending)
   - [When the event is over](#when-the-event-is-over)
 - [Group / Club logging](#group--club-logging)
@@ -74,6 +74,8 @@ Feel free to change it to what ever you will use. Just search for the two
 places in the code 'RTTY' is used and Bob's your dads brother.
 
 ## Changes since last release.
+
+Changed the RAC sections for 2023. Thanks for the heads up WB8ERJ!
 
 Added a group contact aggregation server. So multiple clients can participate in
 WFD together.
