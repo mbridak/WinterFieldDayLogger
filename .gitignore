@@ -1,9 +1,9 @@
 *.pyc
-
-wfdlogger/lib/__pycache__/*.pyc
-wfdlogger.egg-info/*
+*.db
 wfdlogger/lib/__pycache__
-dist/*
-
-wfdlogger/lib/__pycache__/database.cpython-311.pyc
-wfdlogger/lib/__pycache__/version.cpython-311.pyc
+wfdlogger.egg-info
+wfdlogger/__pycache__
+dist
+cwmacros.txt
+rebuild.sh
+wfd_preferences.json
