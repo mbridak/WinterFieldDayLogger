@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wfdlogger" 
+version = "22.12.24"
+description = "Winter Field Day logger GUI"
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [
+  { name="Michael Bridak", email="michael.bridak@gmail.com" },
+]
+dependencies = [
+    "PyQt5",
+    "requests",
+    "bs4",
+    "lxml",
+    "dicttoxml",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Development Status :: 5 - Production/Stable",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Environment :: X11 Applications :: Qt",
+    "Operating System :: POSIX :: Linux",
+    "Intended Audience :: End Users/Desktop",
+    "Natural Language :: English",
+    "Topic :: Communications :: Ham Radio",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/mbridak/WinterFieldDayLogger"
+"Bug Tracker" = "https://github.com/mbridak/WinterFieldDayLogger/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[tool.setuptools.package-data]
+"wfdlogger.data" = ["*.json", "*.txt", "*.SCP", "*.ui",]
+"wfdlogger.icon" = ["*.png",]
+
+[project.scripts]
+wfdlogger = "wfdlogger.__main__:run"
