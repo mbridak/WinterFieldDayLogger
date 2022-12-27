@@ -1673,7 +1673,7 @@ class MainWindow(QtWidgets.QMainWindow):
             data_path = self.working_path + "/data/secname.json"
             with open(data_path, "rt", encoding="utf-8") as file_descriptor:
                 self.secName = loads(file_descriptor.read())
-            data_path = self.working_ptah + "/data/secstate.json"
+            data_path = self.working_path + "/data/secstate.json"
             with open(data_path, "rt", encoding="utf-8") as file_descriptor:
                 self.secState = loads(file_descriptor.read())
             data_path = self.working_path + "/data/secpartial.json"
