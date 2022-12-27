@@ -1,0 +1,6 @@
+*.pyc
+
+wfdlogger/lib/__pycache__/*
+wfdlogger.egg-info/*
+wfdlogger/lib/__pycache__
+dist/*
