@@ -1,6 +1,9 @@
 *.pyc
 
-wfdlogger/lib/__pycache__/*
+wfdlogger/lib/__pycache__/*.pyc
 wfdlogger.egg-info/*
 wfdlogger/lib/__pycache__
 dist/*
+
+wfdlogger/lib/__pycache__/database.cpython-311.pyc
+wfdlogger/lib/__pycache__/version.cpython-311.pyc

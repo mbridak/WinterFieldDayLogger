@@ -40,37 +40,19 @@ import requests
 
 try:
     from wfdlogger.lib.settings import Settings
-except ModuleNotFoundError:
-    from lib.settings import Settings
-
-try:
     from wfdlogger.lib.database import DataBase
-except ModuleNotFoundError:
-    from lib.database import DataBase
-
-try:
     from wfdlogger.lib.lookup import HamDBlookup, HamQTH, QRZlookup
-except ModuleNotFoundError:
-    from lib.lookup import HamDBlookup, HamQTH, QRZlookup
-
-try:
     from wfdlogger.lib.cat_interface import CAT
-except ModuleNotFoundError:
-    from lib.cat_interface import CAT
-
-try:
     from wfdlogger.lib.cwinterface import CW
-except ModuleNotFoundError:
-    from lib.cwinterface import CW
-
-try:
     from wfdlogger.lib.n1mm import N1MM
-except ModuleNotFoundError:
-    from lib.n1mm import N1MM
-
-try:
     from wfdlogger.lib.version import __version__
 except ModuleNotFoundError:
+    from lib.settings import Settings
+    from lib.database import DataBase
+    from lib.lookup import HamDBlookup, HamQTH, QRZlookup
+    from lib.cat_interface import CAT
+    from lib.cwinterface import CW
+    from lib.n1mm import N1MM
     from lib.version import __version__
 
 
@@ -173,9 +155,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        ui_path = os.path.dirname(pkgutil.get_loader("wfdlogger").get_filename())
-        ui_path += "/data/main.ui"
-        uic.loadUi(ui_path, self)
+        self.working_path = os.path.dirname(
+            pkgutil.get_loader("wfdlogger").get_filename()
+        )
+        data_path = self.working_path + "/data/main.ui"
+        uic.loadUi(data_path, self)
         self.db = DataBase(self.database)
         self.udp_fifo = queue.Queue()
         self.listWidget.itemDoubleClicked.connect(self.qsoclicked)
@@ -201,14 +185,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.section_entry.textEdited.connect(self.section_check)
         self.genLogButton.clicked.connect(self.generate_logs)
         self.chat_entry.returnPressed.connect(self.send_chat)
-        ui_path = os.path.dirname(pkgutil.get_loader("wfdlogger").get_filename())
-        ui_path += "/icon/"
-        self.radio_grey = QtGui.QPixmap(ui_path + "radio_grey.png")
-        self.radio_red = QtGui.QPixmap(ui_path + "radio_red.png")
-        self.radio_green = QtGui.QPixmap(ui_path + "radio_green.png")
-        self.cloud_grey = QtGui.QPixmap(ui_path + "cloud_grey.png")
-        self.cloud_red = QtGui.QPixmap(ui_path + "cloud_red.png")
-        self.cloud_green = QtGui.QPixmap(ui_path + "cloud_green.png")
+        icon_path = self.working_path + "/icon/"
+        self.radio_grey = QtGui.QPixmap(icon_path + "radio_grey.png")
+        self.radio_red = QtGui.QPixmap(icon_path + "radio_red.png")
+        self.radio_green = QtGui.QPixmap(icon_path + "radio_green.png")
+        self.cloud_grey = QtGui.QPixmap(icon_path + "cloud_grey.png")
+        self.cloud_red = QtGui.QPixmap(icon_path + "cloud_red.png")
+        self.cloud_green = QtGui.QPixmap(icon_path + "cloud_green.png")
         self.radio_icon.setPixmap(self.radio_grey)
         self.cloudlog_icon.setPixmap(self.cloud_grey)
         self.QRZ_icon.setStyleSheet("color: rgb(136, 138, 133);")
@@ -640,9 +623,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if not Path("./cwmacros.txt").exists():
             logging.debug("read_cw_macros: copying default macro file.")
-            ui_path = os.path.dirname(pkgutil.get_loader("wfdlogger").get_filename())
-            ui_path += "/data/cwmacros.txt"
-            copyfile(ui_path, "./cwmacros.txt")
+            data_path = self.working_path + "/data/cwmacros.txt"
+            copyfile(data_path, "./cwmacros.txt")
         with open("./cwmacros.txt", "r", encoding="utf-8") as file_descriptor:
             for line in file_descriptor:
                 try:
@@ -1688,17 +1670,14 @@ class MainWindow(QtWidgets.QMainWindow):
         """
 
         try:
-            ui_path = os.path.dirname(pkgutil.get_loader("wfdlogger").get_filename())
-            ui_path += "/data/secname.json"
-            with open(ui_path, "rt", encoding="utf-8") as file_descriptor:
+            data_path = self.working_path + "/data/secname.json"
+            with open(data_path, "rt", encoding="utf-8") as file_descriptor:
                 self.secName = loads(file_descriptor.read())
-            ui_path = os.path.dirname(pkgutil.get_loader("wfdlogger").get_filename())
-            ui_path += "/data/secstate.json"
-            with open(ui_path, "rt", encoding="utf-8") as file_descriptor:
+            data_path = self.working_ptah + "/data/secstate.json"
+            with open(data_path, "rt", encoding="utf-8") as file_descriptor:
                 self.secState = loads(file_descriptor.read())
-            ui_path = os.path.dirname(pkgutil.get_loader("wfdlogger").get_filename())
-            ui_path += "/data/secpartial.json"
-            with open(ui_path, "rt", encoding="utf-8") as file_descriptor:
+            data_path = self.working_path + "/data/secpartial.json"
+            with open(data_path, "rt", encoding="utf-8") as file_descriptor:
                 self.secPartial = loads(file_descriptor.read())
         except IOError as exception:
             logging.critical("read error: %s", exception)
@@ -1723,9 +1702,8 @@ class MainWindow(QtWidgets.QMainWindow):
         Reads in a list of known contesters into an internal dictionary
         """
         try:
-            ui_path = os.path.dirname(pkgutil.get_loader("wfdlogger").get_filename())
-            ui_path += "/data/MASTER.SCP"
-            with open(ui_path, "r", encoding="utf-8") as file_descriptor:
+            data_path = self.working_path + "/data/MASTER.SCP"
+            with open(data_path, "r", encoding="utf-8") as file_descriptor:
                 self.scp = file_descriptor.readlines()
                 self.scp = list(map(lambda x: x.strip(), self.scp))
         except IOError as exception:
@@ -2442,9 +2420,11 @@ class EditQsoDialog(QtWidgets.QDialog):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        ui_path = os.path.dirname(pkgutil.get_loader("wfdlogger").get_filename())
-        ui_path += "/data/dialog.ui"
-        uic.loadUi(ui_path, self)
+        self.working_path = os.path.dirname(
+            pkgutil.get_loader("wfdlogger").get_filename()
+        )
+        data_path = self.working_path + "/data/dialog.ui"
+        uic.loadUi(data_path, self)
         self.deleteButton.clicked.connect(self.delete_contact)
         self.buttonBox.accepted.connect(self.save_changes)
         self.change = QSOEdit()
@@ -2563,9 +2543,11 @@ class Startup(QtWidgets.QDialog):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        ui_path = os.path.dirname(pkgutil.get_loader("wfdlogger").get_filename())
-        ui_path += "/data/startup.ui"
-        uic.loadUi(ui_path, self)
+        self.working_path = os.path.dirname(
+            pkgutil.get_loader("wfdlogger").get_filename()
+        )
+        data_path = self.working_path + "/data/startup.ui"
+        uic.loadUi(data_path, self)
         self.continue_pushButton.clicked.connect(self.store)
 
     def set_callsign(self, callsign):
@@ -2610,8 +2592,8 @@ def startup_dialog_finished():
     startupdialog.close()
 
 
-# if Path("./debug").exists():
-if True:
+if Path("./debug").exists():
+    # if True:
     logging.basicConfig(
         format=(
             "[%(asctime)s] %(levelname)s %(module)s - "
@@ -2631,9 +2613,9 @@ else:
     )
 app = QtWidgets.QApplication(sys.argv)
 app.setStyle("Fusion")
-ui_path = os.path.dirname(pkgutil.get_loader("wfdlogger").get_filename())
-ui_path += "/data"
-families = load_fonts_from_dir(os.fspath(ui_path))
+working_path = os.path.dirname(pkgutil.get_loader("wfdlogger").get_filename())
+font_path = working_path + "/data"
+families = load_fonts_from_dir(os.fspath(font_path))
 logging.info(families)
 window = MainWindow()
 window.setWindowTitle(f"K6GTE Winter Field Day Logger v{__version__}")
@@ -2677,6 +2659,7 @@ timer3.timeout.connect(window.send_status_udp)
 
 
 def run():
+    """main entry point"""
     timer.start(1000)
     timer2.start(1000)
     timer3.start(15000)
