@@ -124,7 +124,7 @@ class DataBase:
             cwcontacts = str(cursor.fetchone()[0])
             cursor.execute("select count(*) from contacts where mode = 'PH'")
             phonecontacts = str(cursor.fetchone()[0])
-            cursor.execute("select count(*) from contacts where mode = 'DI'")
+            cursor.execute("select count(*) from contacts where mode = 'DG'")
             digitalcontacts = str(cursor.fetchone()[0])
             cursor.execute("select distinct band, mode from contacts")
             bandmodemult = len(cursor.fetchall())
@@ -139,17 +139,17 @@ class DataBase:
             )
             lasthour = str(cursor.fetchone()[0])
             cursor.execute(
-                "select count(*) as qrpc from contacts where mode = 'CW' and power > 10"
+                "select count(*) as qrpc from contacts where mode = 'CW' and power > 5"
             )
             log = cursor.fetchall()
             qrpc = list(log[0])[0]
             cursor.execute(
-                "select count(*) as qrpp from contacts where mode = 'PH' and power > 20"
+                "select count(*) as qrpp from contacts where mode = 'PH' and power > 10"
             )
             log = cursor.fetchall()
             qrpp = list(log[0])[0]
             cursor.execute(
-                "select count(*) as qrpd from contacts where mode = 'DI' and power > 20"
+                "select count(*) as qrpd from contacts where mode = 'DG' and power > 10"
             )
             log = cursor.fetchall()
             qrpd = list(log[0])[0]
@@ -187,7 +187,7 @@ class DataBase:
                 )
                 phone = str(cursor.fetchone()[0])
                 cursor.execute(
-                    "select count(*) as di from contacts where mode = 'DI' and power < 101"
+                    "select count(*) as di from contacts where mode = 'DG' and power < 101"
                 )
                 digital = str(cursor.fetchone()[0])
         except sqlite3.Error as exception:
@@ -201,17 +201,17 @@ class DataBase:
             with sqlite3.connect(self.database) as conn:
                 cursor = conn.cursor()
                 cursor.execute(
-                    "select count(*) as qrpc from contacts where mode = 'CW' and power > 10"
+                    "select count(*) as qrpc from contacts where mode = 'CW' and power > 5"
                 )
                 log = cursor.fetchall()
                 qrpc = list(log[0])[0]
                 cursor.execute(
-                    "select count(*) as qrpp from contacts where mode = 'PH' and power > 20"
+                    "select count(*) as qrpp from contacts where mode = 'PH' and power > 10"
                 )
                 log = cursor.fetchall()
                 qrpp = list(log[0])[0]
                 cursor.execute(
-                    "select count(*) as qrpd from contacts where mode = 'DI' and power > 20"
+                    "select count(*) as qrpd from contacts where mode = 'DG' and power > 10"
                 )
                 log = cursor.fetchall()
                 qrpd = list(log[0])[0]

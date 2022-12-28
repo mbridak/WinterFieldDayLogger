@@ -190,7 +190,7 @@ def points():
     totaldi = 0
     for band in bands:
         cwt = DB.get_band_mode_tally(band, "CW")
-        dit = DB.get_band_mode_tally(band, "DI")
+        dit = DB.get_band_mode_tally(band, "DG")
         pht = DB.get_band_mode_tally(band, "PH")
 
         totalcw += cwt[0]
@@ -291,10 +291,10 @@ def comm_log():
             blist.append(count[0])
     QUEWINDOW.clear()
     # QUEWINDOW.box()
-    QUEWINDOW.addstr(0, 0, "Band   CW    PH    DI", curses.color_pair(1))
+    QUEWINDOW.addstr(0, 0, "Band   CW    PH    DG", curses.color_pair(1))
     for yline, band in enumerate(bands):
         cwt = DB.get_band_mode_tally(band, "CW")
-        dit = DB.get_band_mode_tally(band, "DI")
+        dit = DB.get_band_mode_tally(band, "DG")
         pht = DB.get_band_mode_tally(band, "PH")
         line = (
             f"{str(band).rjust(4, ' ')} "
@@ -377,7 +377,7 @@ def fakefreq(band, mode):
     Takes a band and mode as input and returns freq in khz.
     """
     logging.info("fakefreq: band:%s mode:%s", band, mode)
-    modes = {"CW": 0, "DI": 1, "PH": 2, "FT8": 1, "SSB": 2}
+    modes = {"CW": 0, "DG": 1, "PH": 2, "FT8": 1, "SSB": 2}
     fakefreqs = {
         "160": ["1830", "1805", "1840"],
         "80": ["3530", "3559", "3970"],
@@ -407,7 +407,7 @@ def calcscore():
 
     2023 scoring: contacts over 100w are disallowed.
     QRP x2
-    CW and DI 2pts
+    CW and DG 2pts
     PH 1pt
     """
     results = DB.stats()
@@ -839,10 +839,10 @@ def main(_):
                         for count in list_o_bands:
                             blist.append(count[0])
 
-                    message = "\nBand   CW    PH    DI\n"
+                    message = "\nBand   CW    PH    DG\n"
                     for band in bands:
                         cwt = DB.get_band_mode_tally(band, "CW")
-                        dit = DB.get_band_mode_tally(band, "DI")
+                        dit = DB.get_band_mode_tally(band, "DG")
                         pht = DB.get_band_mode_tally(band, "PH")
                         line = (
                             f"{str(band).rjust(4, ' ')} "

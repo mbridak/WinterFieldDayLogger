@@ -953,7 +953,7 @@ class MainWindow(QtWidgets.QMainWindow):
         Takes a band and mode as input and returns freq in khz.
         """
         logging.info("fakefreq: band:%s mode:%s", band, mode)
-        modes = {"CW": 0, "DI": 1, "PH": 2, "FT8": 1, "SSB": 2}
+        modes = {"CW": 0, "DG": 1, "PH": 2, "FT8": 1, "SSB": 2}
         fakefreqs = {
             "160": ["1830", "1805", "1840"],
             "80": ["3530", "3559", "3970"],
@@ -1024,7 +1024,7 @@ class MainWindow(QtWidgets.QMainWindow):
             return "CW"
         if rigmode in ("USB", "LSB", "FM", "AM"):
             return "PH"
-        return "DI"  # All else digital
+        return "DG"  # All else digital
 
     def setband(self, theband: str) -> None:
         """
@@ -1036,7 +1036,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def setmode(self, themode: str) -> None:
         """
-        Takes a string for the mode (CW, PH, DI) and programatically changes the onscreen dropdown.
+        Takes a string for the mode (CW, PH, DG) and programatically changes the onscreen dropdown.
         """
         self.mode_selector.setCurrentIndex(self.mode_selector.findText(themode))
         self.changemode()
@@ -1557,7 +1557,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.n1mm.contact_info["rxfreq"] = str(self.oldfreq)[:-1]
             self.n1mm.contact_info["txfreq"] = str(self.oldfreq)[:-1]
             self.n1mm.contact_info["mode"] = self.oldmode
-            if self.oldmode in ("CW", "DI"):
+            if self.oldmode in ("CW", "DG"):
                 self.n1mm.contact_info["points"] = "2"
             else:
                 self.n1mm.contact_info["points"] = "1"
@@ -1957,12 +1957,12 @@ class MainWindow(QtWidgets.QMainWindow):
         bandlist = self.getbands()
         try:
             with open("Statistics.txt", "w", encoding="utf-8") as file_descriptor:
-                print("\t\tCW\tPWR\tDI\tPWR\tPH\tPWR", end="\r\n", file=file_descriptor)
+                print("\t\tCW\tPWR\tDG\tPWR\tPH\tPWR", end="\r\n", file=file_descriptor)
                 print("-" * 60, end="\r\n", file=file_descriptor)
                 for band in self.bands:
                     if band in bandlist:
                         cwt = self.get_band_mode_tally(band, "CW")
-                        dit = self.get_band_mode_tally(band, "DI")
+                        dit = self.get_band_mode_tally(band, "DG")
                         pht = self.get_band_mode_tally(band, "PH")
                         print(
                             f"Band:\t{band}\t{cwt.get('tally')}\t{cwt.get('mpow')}\t"
@@ -2071,7 +2071,7 @@ class MainWindow(QtWidgets.QMainWindow):
                         frequency = f"{int(self.fakefreq(band, mode)) / 1000:.3f}"
                     else:
                         frequency = f"{int(frequency) / 1000000:.3f}"
-                    if mode == "DI":
+                    if mode == "DG":
                         mode = "RTTY"
                     if mode == "PH":
                         mode = "SSB"
@@ -2194,7 +2194,7 @@ class MainWindow(QtWidgets.QMainWindow):
             frequency = f"{int(frequency) / 1000000:.3f}"
 
         logging.info("%s", contact)
-        if mode == "DI":
+        if mode == "DG":
             mode = "RTTY"
         if mode == "PH":
             mode = "SSB"
@@ -2519,7 +2519,7 @@ class EditQsoDialog(QtWidgets.QDialog):
             window.n1mm.contact_info["name"] = self.contact.get("opname")
             window.n1mm.contact_info["power"] = self.editPower.value()
             window.n1mm.contact_info["ID"] = self.contact.get("unique_id")
-            if window.n1mm.contact_info["mode"] in ("CW", "DI"):
+            if window.n1mm.contact_info["mode"] in ("CW", "DG"):
                 window.n1mm.contact_info["points"] = "2"
             else:
                 window.n1mm.contact_info["points"] = "1"
