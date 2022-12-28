@@ -35,9 +35,10 @@ The server if used, will generate a group cabrillo file to submit.
   - [Caveats](#caveats)
   - [Changes since last release](#changes-since-last-release)
   - [Installing Client](#installing-client)
-  - [Running from source](#running-from-source)
-    - [The Client](#the-client)
-    - [The Server](#the-server)
+  - [Running Client from source](#running-client-from-source)
+  - [The Server](#the-server)
+    - [Server install](#server-install)
+    - [Server source](#server-source)
   - [What to do first](#what-to-do-first)
   - [Logging](#logging)
   - [Features](#features)
@@ -74,6 +75,8 @@ places in the code 'RTTY' is used and Bob's your dads brother.
 
 ## Changes since last release
 
+WFDA preferres `DG` as the mode indicator for digital.
+
 Changed the RAC sections for 2023. Thanks for the heads up WB8ERJ!
 
 Added a group contact aggregation server. So multiple clients can participate in
@@ -90,9 +93,7 @@ Added power, scoring and bonus changes for 2023.
 pip install wfdlogger
 ```
 
-## Running from source
-
-### The Client
+## Running Client from source
 
 The client source package is available [here](https://github.com/mbridak/WinterFieldDayLogger)
 
@@ -108,15 +109,16 @@ Just make wfdlogger.py executable and run it within the same folder, or type:
 
 `python3 wfdlogger.py`
 
-### The Server
+## The Server
 
-The server is a terminal / curses program and uses standard libraries that
-should already be installed.
+### Server install
 
-Just make server.py executable and run it the same way as the client.
+```bash
+pip install wfdserver
+```
+### Server source
 
-The server can be run on a stand alone device like a Raspberry Pi, Or on the
-same computer as one of the clients.
+[wfdserver](https://github.com/mbridak/wfdserver)
 
 ## What to do first
 
@@ -314,6 +316,8 @@ on the same network.
 ## Server configuration
 
 The configuration file for the server is a JSON file 'server_preferences.json'.
+It's generated automatically on the first run of the server `wfdserver`.
+So start the server then press CTRL-C to quit it, then edit the josn file. 
 
 ```json
 {
@@ -328,23 +332,24 @@ The configuration file for the server is a JSON file 'server_preferences.json'.
     "country": "USA",
     "email": "Hiram.Maxim@arrl.net",
     "bonus": {
-        "altpower": true,
-        "outdoors": true,
-        "notathome": true,
-        "satellite": true,
-        "antenna": true
+        "altpower": false,
+        "outdoors": false,
+        "notathome": false,
+        "antenna": false,
+        "satellite": false
     },
     "mullticast_group": "224.1.1.1",
     "multicast_port": 2239,
-    "interface_ip": "0.0.0.0"
+    "interface_ip": "0.0.0.0",
+    "node_red_server_ip": "127.0.0.1",
+    "node_red_server_port": 12062
 }
 ```
 
-Go ahead and edit this file before running the server. Feel free to leave the
-last 3 items as they are unless you have good reason not too. The rest should
-be straight forward.
+Feel free to leave the last 3 items as they are unless you have good 
+reason not too. The rest should be straight forward.
 
-Under the bonuses section, if your group qualifies for a bonus, put true next
+Under the bonuses section, if your group qualifies for a bonus, put `true` next
 to the type of bonus.
 
 ## Client configuration for groups
@@ -383,7 +388,7 @@ into the chat.
 
 ```text
 Server: 
-Band   CW    PH    DI
+Band   CW    PH    DG
  160     0     0     0
   80     0     0    25
   40     0   159     0
