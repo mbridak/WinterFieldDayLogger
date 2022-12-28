@@ -7,3 +7,6 @@ dist
 cwmacros.txt
 rebuild.sh
 wfd_preferences.json
+*.log
+*.adi
+*.txt
