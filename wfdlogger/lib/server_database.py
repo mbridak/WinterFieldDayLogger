@@ -124,7 +124,7 @@ class DataBase:
             cwcontacts = str(cursor.fetchone()[0])
             cursor.execute("select count(*) from contacts where mode = 'PH'")
             phonecontacts = str(cursor.fetchone()[0])
-            cursor.execute("select count(*) from contacts where mode = 'DI'")
+            cursor.execute("select count(*) from contacts where mode = 'DG'")
             digitalcontacts = str(cursor.fetchone()[0])
             cursor.execute("select distinct band, mode from contacts")
             bandmodemult = len(cursor.fetchall())
@@ -149,7 +149,7 @@ class DataBase:
             log = cursor.fetchall()
             qrpp = list(log[0])[0]
             cursor.execute(
-                "select count(*) as qrpd from contacts where mode = 'DI' and power > 20"
+                "select count(*) as qrpd from contacts where mode = 'DG' and power > 20"
             )
             log = cursor.fetchall()
             qrpd = list(log[0])[0]
@@ -187,7 +187,7 @@ class DataBase:
                 )
                 phone = str(cursor.fetchone()[0])
                 cursor.execute(
-                    "select count(*) as di from contacts where mode = 'DI' and power < 101"
+                    "select count(*) as di from contacts where mode = 'DG' and power < 101"
                 )
                 digital = str(cursor.fetchone()[0])
         except sqlite3.Error as exception:
@@ -211,7 +211,7 @@ class DataBase:
                 log = cursor.fetchall()
                 qrpp = list(log[0])[0]
                 cursor.execute(
-                    "select count(*) as qrpd from contacts where mode = 'DI' and power > 20"
+                    "select count(*) as qrpd from contacts where mode = 'DG' and power > 20"
                 )
                 log = cursor.fetchall()
                 qrpd = list(log[0])[0]
