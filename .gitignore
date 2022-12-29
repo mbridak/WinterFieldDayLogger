@@ -138,3 +138,5 @@ bandmap.md.backup
 debug
 wfd_preferences.json
 cwmacros.txt
+rebuild.sh
+publish.sh
