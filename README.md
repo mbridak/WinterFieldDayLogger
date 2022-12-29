@@ -75,6 +75,8 @@ places in the code 'RTTY' is used and Bob's your dads brother.
 
 ## Changes since last release
 
+Removed use of BeautifulSoup and lxml. Migrated to xmltodict.
+
 WFDA preferres `DG` as the mode indicator for digital.
 
 Changed the RAC sections for 2023. Thanks for the heads up WB8ERJ!
@@ -116,6 +118,7 @@ Just make wfdlogger.py executable and run it within the same folder, or type:
 ```bash
 pip install wfdserver
 ```
+
 ### Server source
 
 [wfdserver](https://github.com/mbridak/wfdserver)
@@ -317,7 +320,7 @@ on the same network.
 
 The configuration file for the server is a JSON file 'server_preferences.json'.
 It's generated automatically on the first run of the server `wfdserver`.
-So start the server then press CTRL-C to quit it, then edit the josn file. 
+So start the server then press CTRL-C to quit it, then edit the josn file.
 
 ```json
 {
@@ -346,7 +349,7 @@ So start the server then press CTRL-C to quit it, then edit the josn file.
 }
 ```
 
-Feel free to leave the last 3 items as they are unless you have good 
+Feel free to leave the last 3 items as they are unless you have good
 reason not too. The rest should be straight forward.
 
 Under the bonuses section, if your group qualifies for a bonus, put `true` next
