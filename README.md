@@ -105,7 +105,7 @@ Install Python 3, then required libs via pip.
 
 Or if you're the Ubuntu/Debian type you can:
 
-`sudo apt install python3-pyqt5 python3-requests python3-bs4 python3-lxml python3-dicttoxml`
+`sudo apt install python3-pyqt5 python3-requests python3-xmltodict python3-dicttoxml`
 
 Just make wfdlogger.py executable and run it within the same folder, or type:
 
