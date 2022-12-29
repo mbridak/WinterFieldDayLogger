@@ -8,6 +8,7 @@ GPL V3
 import logging
 import sys
 import os
+import pkgutil
 from json import dumps, loads
 from PyQt5 import QtWidgets, uic
 
@@ -21,7 +22,9 @@ class Settings(QtWidgets.QDialog):
     def __init__(self, parent=None):
         """initialize dialog"""
         super().__init__(parent)
-        uic.loadUi(self.relpath("data/settings.ui"), self)
+        ui_path = os.path.dirname(pkgutil.get_loader("wfdlogger").get_filename())
+        ui_path += "/data/settings.ui"
+        uic.loadUi(ui_path, self)
         self.reference_preference = {
             "mycallsign": "",
             "myclass": "",
