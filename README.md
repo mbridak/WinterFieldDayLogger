@@ -1,6 +1,6 @@
 # K6GTE Winter Field Day logger (PyQt5)
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)  [![Python: 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)  [![Made With:PyQt5](https://img.shields.io/badge/Made%20with-PyQt5-red)](https://pypi.org/project/PyQt5/)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)  [![Python: 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)  [![Made With:PyQt5](https://img.shields.io/badge/Made%20with-PyQt5-red)](https://pypi.org/project/PyQt5/) ![PyPI - Downloads](https://img.shields.io/pypi/dm/wfdlogger?label=PYPI-Downloads&logo=pypi)
 
 [Winter Field Day](https://www.winterfieldday.com/) is a once a year 24hr
 emergency preparidness event for radio amateurs (Hams). During the event, we try
@@ -8,7 +8,7 @@ and make as many radio contacts with other Hams in a 24 hour period. Bonus
 points are awarded for operating outside or using alternate power sources, such
 as battery/solar/wind. You can find out more about Winter Field Day by visiting
 the [WFDA](https://winterfieldday.com/). You can find out more about amateur radio
-by visiting the [ARRL](https://winterfieldday.com/).
+by visiting the [ARRL](https://www.arrl.org/).
 
 The logger is written in Python 3, and uses the PyQT5 lib. Qt5 is cross
 platform so it might work on everything. I have tested it on Linux, Rasperry
@@ -26,7 +26,7 @@ breakdown.
 
 The server if used, will generate a group cabrillo file to submit.
 
-![Snapshot of main screen](pics/loggerscreenshot.png)
+![Snapshot of main screen](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/loggerscreenshot.png)
 
 ## Table Of Contents
 
@@ -34,10 +34,11 @@ The server if used, will generate a group cabrillo file to submit.
   - [Table Of Contents](#table-of-contents)
   - [Caveats](#caveats)
   - [Changes since last release](#changes-since-last-release)
-  - [Running from source](#running-from-source)
-    - [The Client](#the-client)
-    - [The Server](#the-server)
-  - [Building your own binary](#building-your-own-binary)
+  - [Installing Client](#installing-client)
+  - [Running Client from source](#running-client-from-source)
+  - [The Server](#the-server)
+    - [Server install](#server-install)
+    - [Server source](#server-source)
   - [What to do first](#what-to-do-first)
   - [Logging](#logging)
   - [Features](#features)
@@ -74,6 +75,10 @@ places in the code 'RTTY' is used and Bob's your dads brother.
 
 ## Changes since last release
 
+Removed use of BeautifulSoup and lxml. Migrated to xmltodict.
+
+WFDA preferres `DG` as the mode indicator for digital.
+
 Changed the RAC sections for 2023. Thanks for the heads up WB8ERJ!
 
 Added a group contact aggregation server. So multiple clients can participate in
@@ -84,9 +89,15 @@ Added N1MM XML status packets. So you can use
 
 Added power, scoring and bonus changes for 2023.
 
-## Running from source
+## Installing Client
 
-### The Client
+```bash
+pip install wfdlogger
+```
+
+## Running Client from source
+
+The client source package is available [here](https://github.com/mbridak/WinterFieldDayLogger)
 
 Install Python 3, then required libs via pip.
 
@@ -94,39 +105,23 @@ Install Python 3, then required libs via pip.
 
 Or if you're the Ubuntu/Debian type you can:
 
-`sudo apt install python3-pyqt5 python3-requests python3-bs4 python3-lxml`
+`sudo apt install python3-pyqt5 python3-requests python3-bs4 python3-lxml python3-dicttoxml`
 
 Just make wfdlogger.py executable and run it within the same folder, or type:
 
 `python3 wfdlogger.py`
 
-### The Server
+## The Server
 
-The server is a terminal / curses program and uses standard libraries that
-should already be installed.
+### Server install
 
-Just make server.py executable and run it the same way as the client.
+```bash
+pip install wfdserver
+```
 
-The server can be run on a stand alone device like a Raspberry Pi, Or on the
-same computer as one of the clients.
+### Server source
 
-## Building your own binary
-
-Install pyinstaller.
-
-`python3 -m pip3 install pyinstaller`
-
-Build the binary.
-
-For Linux and Raspberry PI:
-
-`pyinstaller linux.spec`
-
-For Windows:
-
-`pyinstaller windows.spec`
-
-You will find the binary in the newly created dist directory.
+[wfdserver](https://github.com/mbridak/wfdserver)
 
 ## What to do first
 
@@ -138,7 +133,7 @@ If you're participating as a member of a group, do not put your groups/club
 call as your call. Enter your own call. The group call will be polled from
 the server.
 
-![Snapshot focused on bottom of window](pics/yourstuff.png)
+![Snapshot focused on bottom of window](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/yourstuff.png)
 
 ## Logging
 
@@ -159,7 +154,7 @@ polled for band/mode updates automatically. Click the gear icon at the bottom
 of the screen to set the IP and port. There is a radio icon at the bottom of
 the logging window to indicate polling status.
 
-![Snapshot of settings dialog](pics/catSettings.png)
+![Snapshot of settings dialog](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/catSettings.png)
 
 ## Cloudlog, QRZ, HamDB, HamQTH useage
 
@@ -178,7 +173,7 @@ will it will use QRZ then fallback to HAMDB.
 
 If you wish to use Kyle AA0Z's Node-Red contest dashboard, edit these settings.
 
-![N1MM settings](pics/n1mm_settings.png)
+![N1MM settings](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/n1mm_settings.png)
 
 ## XPlanet marker file
 
@@ -186,7 +181,7 @@ If you use QRZ/HamdDB/HamQTH lookups you can also generate an
 [XPlanet](http://xplanet.sourceforge.net/) markerfile which will show little
 pips on the map as contacts are logged.
 
-![Snapshot of xplanet window](pics/xplanet.png)
+![Snapshot of xplanet window](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/xplanet.png)
 
 The above launched with an example command:
 
@@ -198,7 +193,7 @@ xplanet -body earth -window -longitude -117 -latitude 38 -config Default -projec
 
 Double click a contact in the upper left of the screen to edit or delete it.
 
-![Snapshot of edit qso dialog](pics/editqso.png)
+![Snapshot of edit qso dialog](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/editqso.png)
 
 ## Super Check Partial
 
@@ -206,14 +201,14 @@ If you type more than two characters in the callsign field the program will
 filter the input through a "Super Check Partial" routine and show you possible
 matches to known contesting call signs. Is this useful? Doubt it.
 
-![Snapshot of main screen focused on super check partial output](pics/scp.png)
+![Snapshot of main screen focused on super check partial output](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/scp.png)
 
 ## Section partial check
 
 As you type the section abbreviation you are presented with a list of all
 possible sections that start with what you have typed.
 
-![Snapshot of main screen focused on section check partial output](pics/sectioncheck.png)
+![Snapshot of main screen focused on section check partial output](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/sectioncheck.png)
 
 ## DUP checking
 
@@ -226,7 +221,7 @@ you that this is a DUP. At this point you and the other OP can argue back and
 forth about who's wrong. In the end you'll put your big boy pants on and make
 a decision if you'll enter the call or not.
 
-![Snapshot of main screen focused on dup checking output](pics/dupe.png)
+![Snapshot of main screen focused on dup checking output](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/dupe.png)
 
 ## Autofill
 
@@ -240,7 +235,7 @@ to enter this info again.
 
 Support is provided for both cwdaemon and PyWinkeyer.
 
-![Settings dialog tab for CW](pics/cw_settings.png)
+![Settings dialog tab for CW](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/cw_settings.png)
 
 Defalt port for cwdaemon is 6789 and for PyWinkeyer is 8000.
 
@@ -278,7 +273,7 @@ You can toggle the macros in use between Run and Search and Pounce by clicking
 the button to the left of the Generate Logs button at the botton right portion
 of the screen.
 
-![Picture showing buttons](pics/run_sp.png)
+![Picture showing buttons](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/run_sp.png)
 
 This can also be used to reload the macros if you edit them while the program
 is running.
@@ -298,7 +293,7 @@ If you are using cwedaemon for sending, you can use:
 After the big weekend, once you've swept up all the broken beer bottles and
 wiped the BBQ sauce off your chin, go ahead and click the Generate Logs button.
 
-![Snapshot of main screen focused on generate logs button](pics/genlog.png)
+![Snapshot of main screen focused on generate logs button](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/genlog.png)
 
 This will generate the following:
 
@@ -319,11 +314,13 @@ I have added a group contact aggrigating server. This can be run on the same
 computer as the client program, or on a separate dedicated PC or Raspberry Pi
 on the same network.
 
-![Picture showing main server screen](pics/server_pic.png)
+![Picture showing main server screen](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/server_pic.png)
 
 ## Server configuration
 
 The configuration file for the server is a JSON file 'server_preferences.json'.
+It's generated automatically on the first run of the server `wfdserver`.
+So start the server then press CTRL-C to quit it, then edit the josn file.
 
 ```json
 {
@@ -338,30 +335,31 @@ The configuration file for the server is a JSON file 'server_preferences.json'.
     "country": "USA",
     "email": "Hiram.Maxim@arrl.net",
     "bonus": {
-        "altpower": true,
-        "outdoors": true,
-        "notathome": true,
-        "satellite": true,
-        "antenna": true
+        "altpower": false,
+        "outdoors": false,
+        "notathome": false,
+        "antenna": false,
+        "satellite": false
     },
     "mullticast_group": "224.1.1.1",
     "multicast_port": 2239,
-    "interface_ip": "0.0.0.0"
+    "interface_ip": "0.0.0.0",
+    "node_red_server_ip": "127.0.0.1",
+    "node_red_server_port": 12062
 }
 ```
 
-Go ahead and edit this file before running the server. Feel free to leave the
-last 3 items as they are unless you have good reason not too. The rest should
-be straight forward.
+Feel free to leave the last 3 items as they are unless you have good
+reason not too. The rest should be straight forward.
 
-Under the bonuses section, if your group qualifies for a bonus, put true next
+Under the bonuses section, if your group qualifies for a bonus, put `true` next
 to the type of bonus.
 
 ## Client configuration for groups
 
 In the settings dialog there is now a tab labeled 'Group Operation'.
 
-![Picture showing settings dialog tab](pics/group_server_settings.png)
+![Picture showing settings dialog tab](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/group_server_settings.png)
 
 Go ahead and place a check next to 'Connect to server'. Rejoyce and let
 merriment be had by all. Be sure and have your callsign already set before
@@ -373,7 +371,7 @@ server reports. The portion of the screen where all the different ARRL sections
 are displayed will be replaced by a group chat window and a column showing the
 station call, band and mode of other participants.
 
-![Picture showing logger screen changes](pics/group_chat.png)
+![Picture showing logger screen changes](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/group_chat.png)
 
 If more than one operator is on the same band/mode, their names will be
 highlighted in the operators list. Feel free to yell at eachother in the chat.
@@ -393,7 +391,7 @@ into the chat.
 
 ```text
 Server: 
-Band   CW    PH    DI
+Band   CW    PH    DG
  160     0     0     0
   80     0     0    25
   40     0   159     0
@@ -418,12 +416,12 @@ Every 10 seconds or so the server will send out a UDP network packet saying
 it's there. As long as your client keeps seeing these packets the group call
 indicator at the bottom of the screen will look like:
 
-![Picture showing server status](pics/server_okay.png)
+![Picture showing server status](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/server_okay.png)
 
 But if about 30 seconds go by with no update from the server, the indicator
 will change to:
 
-![Picture showing server status](pics/server_not_pinging.png)
+![Picture showing server status](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/server_not_pinging.png)
 
 Go check on it.
 
@@ -461,7 +459,7 @@ from the server. You can keep doing this, if need be,  until it gets them all.
 There is a visual indicator giving you an idea of how many if any contacts have
 not been verified. The `Generate Logs` button will change serving this purpose.
 
-![picture of generate log button showing count of unverified contacts](pics/unverified_indicator.png)
+![picture of generate log button showing count of unverified contacts](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/unverified_indicator.png)
 
 The client will resend all the unverified contacts to the server as part of
 the log generation process.

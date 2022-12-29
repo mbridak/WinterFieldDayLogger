@@ -24,6 +24,7 @@ import threading
 import uuid
 import queue
 import time
+import pkgutil
 from itertools import chain
 
 from json import dumps, loads, JSONDecodeError
@@ -36,25 +37,23 @@ from PyQt5.QtCore import QDir, Qt
 from PyQt5.QtGui import QFontDatabase
 
 import requests
-from lib.settings import Settings
-from lib.database import DataBase
-from lib.lookup import HamDBlookup, HamQTH, QRZlookup
-from lib.cat_interface import CAT
-from lib.cwinterface import CW
-from lib.n1mm import N1MM
-from lib.version import __version__
 
-
-def relpath(filename: str) -> str:
-    """
-    Checks to see if program has been packaged with pyinstaller.
-    If so base dir is in a temp folder.
-    """
-    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
-        base_path = getattr(sys, "_MEIPASS")
-    else:
-        base_path = os.path.abspath(".")
-    return os.path.join(base_path, filename)
+try:
+    from wfdlogger.lib.settings import Settings
+    from wfdlogger.lib.database import DataBase
+    from wfdlogger.lib.lookup import HamDBlookup, HamQTH, QRZlookup
+    from wfdlogger.lib.cat_interface import CAT
+    from wfdlogger.lib.cwinterface import CW
+    from wfdlogger.lib.n1mm import N1MM
+    from wfdlogger.lib.version import __version__
+except ModuleNotFoundError:
+    from lib.settings import Settings
+    from lib.database import DataBase
+    from lib.lookup import HamDBlookup, HamQTH, QRZlookup
+    from lib.cat_interface import CAT
+    from lib.cwinterface import CW
+    from lib.n1mm import N1MM
+    from lib.version import __version__
 
 
 def load_fonts_from_dir(directory: str) -> set:
@@ -156,7 +155,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        uic.loadUi(self.relpath("data/main.ui"), self)
+        self.working_path = os.path.dirname(
+            pkgutil.get_loader("wfdlogger").get_filename()
+        )
+        data_path = self.working_path + "/data/main.ui"
+        uic.loadUi(data_path, self)
         self.db = DataBase(self.database)
         self.udp_fifo = queue.Queue()
         self.listWidget.itemDoubleClicked.connect(self.qsoclicked)
@@ -182,12 +185,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.section_entry.textEdited.connect(self.section_check)
         self.genLogButton.clicked.connect(self.generate_logs)
         self.chat_entry.returnPressed.connect(self.send_chat)
-        self.radio_grey = QtGui.QPixmap(self.relpath("icon/radio_grey.png"))
-        self.radio_red = QtGui.QPixmap(self.relpath("icon/radio_red.png"))
-        self.radio_green = QtGui.QPixmap(self.relpath("icon/radio_green.png"))
-        self.cloud_grey = QtGui.QPixmap(self.relpath("icon/cloud_grey.png"))
-        self.cloud_red = QtGui.QPixmap(self.relpath("icon/cloud_red.png"))
-        self.cloud_green = QtGui.QPixmap(self.relpath("icon/cloud_green.png"))
+        icon_path = self.working_path + "/icon/"
+        self.radio_grey = QtGui.QPixmap(icon_path + "radio_grey.png")
+        self.radio_red = QtGui.QPixmap(icon_path + "radio_red.png")
+        self.radio_green = QtGui.QPixmap(icon_path + "radio_green.png")
+        self.cloud_grey = QtGui.QPixmap(icon_path + "cloud_grey.png")
+        self.cloud_red = QtGui.QPixmap(icon_path + "cloud_red.png")
+        self.cloud_green = QtGui.QPixmap(icon_path + "cloud_green.png")
         self.radio_icon.setPixmap(self.radio_grey)
         self.cloudlog_icon.setPixmap(self.cloud_grey)
         self.QRZ_icon.setStyleSheet("color: rgb(136, 138, 133);")
@@ -518,19 +522,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
             self.check_for_stale_commands()
 
-    @staticmethod
-    def relpath(filename: str) -> str:
-        """
-        If the program is packaged with pyinstaller,
-        this is needed since all files will be in a temp
-        folder during execution.
-        """
-        if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
-            base_path = getattr(sys, "_MEIPASS")
-        else:
-            base_path = os.path.abspath(".")
-        return os.path.join(base_path, filename)
-
     def clearcontactlookup(self):
         """clearout the contact lookup"""
         self.contactlookup["call"] = ""
@@ -632,7 +623,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if not Path("./cwmacros.txt").exists():
             logging.debug("read_cw_macros: copying default macro file.")
-            copyfile(relpath("data/cwmacros.txt"), "./cwmacros.txt")
+            data_path = self.working_path + "/data/cwmacros.txt"
+            copyfile(data_path, "./cwmacros.txt")
         with open("./cwmacros.txt", "r", encoding="utf-8") as file_descriptor:
             for line in file_descriptor:
                 try:
@@ -1678,17 +1670,14 @@ class MainWindow(QtWidgets.QMainWindow):
         """
 
         try:
-            with open(
-                relpath("./data/secname.json"), "rt", encoding="utf-8"
-            ) as file_descriptor:
+            data_path = self.working_path + "/data/secname.json"
+            with open(data_path, "rt", encoding="utf-8") as file_descriptor:
                 self.secName = loads(file_descriptor.read())
-            with open(
-                relpath("./data/secstate.json"), "rt", encoding="utf-8"
-            ) as file_descriptor:
+            data_path = self.working_path + "/data/secstate.json"
+            with open(data_path, "rt", encoding="utf-8") as file_descriptor:
                 self.secState = loads(file_descriptor.read())
-            with open(
-                relpath("./data/secpartial.json"), "rt", encoding="utf-8"
-            ) as file_descriptor:
+            data_path = self.working_path + "/data/secpartial.json"
+            with open(data_path, "rt", encoding="utf-8") as file_descriptor:
                 self.secPartial = loads(file_descriptor.read())
         except IOError as exception:
             logging.critical("read error: %s", exception)
@@ -1713,9 +1702,8 @@ class MainWindow(QtWidgets.QMainWindow):
         Reads in a list of known contesters into an internal dictionary
         """
         try:
-            with open(
-                self.relpath("data/MASTER.SCP"), "r", encoding="utf-8"
-            ) as file_descriptor:
+            data_path = self.working_path + "/data/MASTER.SCP"
+            with open(data_path, "r", encoding="utf-8") as file_descriptor:
                 self.scp = file_descriptor.readlines()
                 self.scp = list(map(lambda x: x.strip(), self.scp))
         except IOError as exception:
@@ -2432,7 +2420,11 @@ class EditQsoDialog(QtWidgets.QDialog):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        uic.loadUi(self.relpath("data/dialog.ui"), self)
+        self.working_path = os.path.dirname(
+            pkgutil.get_loader("wfdlogger").get_filename()
+        )
+        data_path = self.working_path + "/data/dialog.ui"
+        uic.loadUi(data_path, self)
         self.deleteButton.clicked.connect(self.delete_contact)
         self.buttonBox.accepted.connect(self.save_changes)
         self.change = QSOEdit()
@@ -2452,18 +2444,6 @@ class EditQsoDialog(QtWidgets.QDialog):
         date_time = contact.get("date_time")
         now = QtCore.QDateTime.fromString(date_time, "yyyy-MM-dd hh:mm:ss")
         self.editDateTime.setDateTime(now)
-
-    @staticmethod
-    def relpath(filename: str) -> str:
-        """
-        If the program is packaged with pyinstaller,
-        this is needed since all files will be in a temp folder during execution.
-        """
-        if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
-            base_path = getattr(sys, "_MEIPASS")
-        else:
-            base_path = os.path.abspath(".")
-        return os.path.join(base_path, filename)
 
     def save_changes(self):
         """Update edited contact in the db."""
@@ -2563,20 +2543,12 @@ class Startup(QtWidgets.QDialog):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        uic.loadUi(self.relpath("data/startup.ui"), self)
+        self.working_path = os.path.dirname(
+            pkgutil.get_loader("wfdlogger").get_filename()
+        )
+        data_path = self.working_path + "/data/startup.ui"
+        uic.loadUi(data_path, self)
         self.continue_pushButton.clicked.connect(self.store)
-
-    @staticmethod
-    def relpath(filename: str) -> str:
-        """
-        Checks to see if program has been packaged with pyinstaller.
-        If so base dir is in a temp folder.
-        """
-        if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
-            base_path = getattr(sys, "_MEIPASS")
-        else:
-            base_path = os.path.abspath(".")
-        return os.path.join(base_path, filename)
 
     def set_callsign(self, callsign):
         """generic getter/setter method"""
@@ -2620,66 +2592,79 @@ def startup_dialog_finished():
     startupdialog.close()
 
 
-if __name__ == "__main__":
-    if Path("./debug").exists():
-        logging.basicConfig(
-            format=(
-                "[%(asctime)s] %(levelname)s %(module)s - "
-                "%(funcName)s Line %(lineno)d:\n%(message)s"
-            ),
-            datefmt="%H:%M:%S",
-            level=logging.INFO,
-        )
-    else:
-        logging.basicConfig(
-            format=(
-                "[%(asctime)s] %(levelname)s %(module)s - "
-                "%(funcName)s Line %(lineno)d:\n%(message)s"
-            ),
-            datefmt="%H:%M:%S",
-            level=logging.WARNING,
-        )
-    app = QtWidgets.QApplication(sys.argv)
-    app.setStyle("Fusion")
-    font_dir = relpath("font")
-    families = load_fonts_from_dir(os.fspath(font_dir))
-    logging.info(families)
-    window = MainWindow()
-    window.setWindowTitle(f"K6GTE Winter Field Day Logger v{__version__}")
-    window.show()
-    window.read_cw_macros()
-    window.changeband()
-    window.changemode()
-    if (
-        window.preference.get("mycallsign") == ""
-        or window.preference.get("myclass") == ""
-        or window.preference.get("mysection") == ""
-    ):
-        startupdialog = Startup()
-        startupdialog.accepted.connect(startup_dialog_finished)
-        startupdialog.open()
-        startupdialog.set_callsign(window.preference.get("mycallsign"))
-        startupdialog.set_class(window.preference.get("myclass"))
-        startupdialog.set_section(window.preference.get("mysection"))
-    window.read_cw_macros()
-    # window.cloudlogauth()
-    window.stats()
-    window.read_sections()
-    window.read_scp()
-    window.logwindow()
-    window.sections()
-    window.callsign_entry.setFocus()
+if Path("./debug").exists():
+    # if True:
+    logging.basicConfig(
+        format=(
+            "[%(asctime)s] %(levelname)s %(module)s - "
+            "%(funcName)s Line %(lineno)d:\n%(message)s"
+        ),
+        datefmt="%H:%M:%S",
+        level=logging.INFO,
+    )
+else:
+    logging.basicConfig(
+        format=(
+            "[%(asctime)s] %(levelname)s %(module)s - "
+            "%(funcName)s Line %(lineno)d:\n%(message)s"
+        ),
+        datefmt="%H:%M:%S",
+        level=logging.WARNING,
+    )
+app = QtWidgets.QApplication(sys.argv)
+app.setStyle("Fusion")
+working_path = os.path.dirname(pkgutil.get_loader("wfdlogger").get_filename())
+font_path = working_path + "/data"
+families = load_fonts_from_dir(os.fspath(font_path))
+logging.info(families)
+window = MainWindow()
+window.setWindowTitle(f"K6GTE Winter Field Day Logger v{__version__}")
+window.show()
+window.read_cw_macros()
+window.changeband()
+window.changemode()
+if (
+    window.preference.get("mycallsign") == ""
+    or window.preference.get("myclass") == ""
+    or window.preference.get("mysection") == ""
+):
+    startupdialog = Startup()
+    startupdialog.accepted.connect(startup_dialog_finished)
+    startupdialog.open()
+    startupdialog.set_callsign(window.preference.get("mycallsign"))
+    startupdialog.set_class(window.preference.get("myclass"))
+    startupdialog.set_section(window.preference.get("mysection"))
+window.read_cw_macros()
+# window.cloudlogauth()
+window.stats()
+window.read_sections()
+window.read_scp()
+window.logwindow()
+window.sections()
+window.callsign_entry.setFocus()
 
-    timer = QtCore.QTimer()
-    timer.timeout.connect(window.update_time)
+timer = QtCore.QTimer()
+timer.timeout.connect(window.update_time)
+# timer.start(1000)
+
+timer2 = QtCore.QTimer()
+timer2.timeout.connect(window.check_udp_queue)
+# timer2.start(1000)
+
+timer3 = QtCore.QTimer()
+timer3.timeout.connect(window.send_status_udp)
+# timer3.start(15000)
+
+# sys.exit(app.exec())
+
+
+def run():
+    """main entry point"""
     timer.start(1000)
-
-    timer2 = QtCore.QTimer()
-    timer2.timeout.connect(window.check_udp_queue)
     timer2.start(1000)
-
-    timer3 = QtCore.QTimer()
-    timer3.timeout.connect(window.send_status_udp)
     timer3.start(15000)
-
     sys.exit(app.exec())
+
+
+if __name__ == "__main__":
+    run()
