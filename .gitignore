@@ -6,6 +6,7 @@ wfdlogger/__pycache__
 dist
 cwmacros.txt
 rebuild.sh
+publish.sh
 wfd_preferences.json
 *.log
 *.adi
