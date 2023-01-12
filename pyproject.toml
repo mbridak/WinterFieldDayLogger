@@ -36,7 +36,7 @@ classifiers = [
 where = ["."]
 
 [tool.setuptools.package-data]
-"wfdlogger.data" = ["*.json", "*.txt", "*.SCP", "*.ui",]
+"wfdlogger.data" = ["*.json", "*.txt", "*.SCP", "*.ui", "*.ttf",]
 "wfdlogger.icon" = ["*.png",]
 
 [project.scripts]
