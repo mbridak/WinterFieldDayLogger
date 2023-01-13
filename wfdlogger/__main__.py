@@ -1057,11 +1057,13 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.preference.get("CAT_port"),
                 )
         if self.cat_control.online:
-            self.radio_icon.setPixmap(self.radio_green)
             newfreq = self.cat_control.get_vfo()
             newmode = self.cat_control.get_mode()
-            # newpwr = self.cat_control.get_power()
             logging.info("F:%s M:%s", newfreq, newmode)
+            if newfreq and newmode:
+                self.radio_icon.setPixmap(self.radio_green)
+            # newpwr = self.cat_control.get_power()
+
             # newpwr = int(float(rigctrlsocket.recv(1024).decode().strip()) * 100)
             if (
                 newfreq != self.oldfreq or newmode != self.oldmode
@@ -2600,7 +2602,7 @@ if Path("./debug").exists():
             "%(funcName)s Line %(lineno)d:\n%(message)s"
         ),
         datefmt="%H:%M:%S",
-        level=logging.INFO,
+        level=logging.DEBUG,
     )
 else:
     logging.basicConfig(

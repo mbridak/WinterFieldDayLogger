@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wfdlogger" 
-version = "23.1.12"
+version = "23.1.13"
 description = "Winter Field Day logger GUI"
 readme = "README.md"
 requires-python = ">=3.9"
