@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=WFDLogger
+StartupWMClass=wfdlogger
+GenericName=K6GTE Winter Field Day Logger
+Comment=Amateur Radio Communications
+Exec=wfdlogger
+Icon=k6gte-wfdlogger
+Terminal=false
+Type=Application
+Categories=HamRadio;

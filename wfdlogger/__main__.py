@@ -2647,21 +2647,22 @@ window.callsign_entry.setFocus()
 
 timer = QtCore.QTimer()
 timer.timeout.connect(window.update_time)
-# timer.start(1000)
 
 timer2 = QtCore.QTimer()
 timer2.timeout.connect(window.check_udp_queue)
-# timer2.start(1000)
 
 timer3 = QtCore.QTimer()
 timer3.timeout.connect(window.send_status_udp)
-# timer3.start(15000)
-
-# sys.exit(app.exec())
 
 
 def run():
     """main entry point"""
+    PATH = os.path.dirname(pkgutil.get_loader("wfdlogger").get_filename())
+    os.system(
+        "xdg-icon-resource install --size 64 --context apps --mode user "
+        f"{PATH}/data/k6gte-wfdlogger.png k6gte-wfdlogger"
+    )
+    os.system(f"xdg-desktop-menu install {PATH}/data/k6gte-wfdlogger.desktop")
     timer.start(1000)
     timer2.start(1000)
     timer3.start(15000)
