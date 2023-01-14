@@ -33,8 +33,8 @@ The server if used, will generate a group cabrillo file to submit.
 - [K6GTE Winter Field Day logger (PyQt5)](#k6gte-winter-field-day-logger-pyqt5)
   - [Table Of Contents](#table-of-contents)
   - [Caveats](#caveats)
-  - [Changes since last release](#changes-since-last-release)
-  - [Installing Client](#installing-client)
+  - [Recent Changes](#recent-changes)
+  - [Installing, Updating, Removing Client](#installing-updating-removing-client)
   - [Running Client from source](#running-client-from-source)
   - [The Server](#the-server)
     - [Server install](#server-install)
@@ -73,26 +73,29 @@ cabrillo file. But ADIF and CloudLog needed something else, So I Chose RTTY.
 Feel free to change it to what ever you will use. Just search for the two
 places in the code 'RTTY' is used and Bob's your dads brother.
 
-## Changes since last release
+## Recent Changes
 
-Removed use of BeautifulSoup and lxml. Migrated to xmltodict.
+- [23.1.14] Safer access to dict keys.
+- [23.1.14] Added app icons.
+- [22.12.28] Repackaged for pypi pip installation.
+- [22.12.28] Removed use of BeautifulSoup and lxml. Migrated to xmltodict.
+- [22.12.27] WFDA preferres `DG` as the mode indicator for digital.
+- [22.12.16] Changed the RAC sections for 2023. Thanks for the heads up WB8ERJ!
+- [22.11.12] 2023 scoring and antenna bonus.
+- [22.10.13] Added N1MM XML status packets. So you can use [Kyle AA0Z's Node-Red dashboard](https://github.com/kylekrieg/Node-Red-Contesting-Dashboard).
+- [22.10.9] Added a group contact aggregation server. So multiple clients can participate in WFD together.
 
-WFDA preferres `DG` as the mode indicator for digital.
-
-Changed the RAC sections for 2023. Thanks for the heads up WB8ERJ!
-
-Added a group contact aggregation server. So multiple clients can participate in
-WFD together.
-
-Added N1MM XML status packets. So you can use
-[Kyle AA0Z's Node-Red dashboard](https://github.com/kylekrieg/Node-Red-Contesting-Dashboard).
-
-Added power, scoring and bonus changes for 2023.
-
-## Installing Client
+## Installing, Updating, Removing Client
 
 ```bash
+#install
 pip install wfdlogger
+
+#update
+pip install -U wfdlogger
+
+#remove
+pip uninstall wfdlogger
 ```
 
 ## Running Client from source
@@ -101,15 +104,21 @@ The client source package is available [here](https://github.com/mbridak/WinterF
 
 Install Python 3, then required libs via pip.
 
-`pip install -r requirements.txt`
+```bash
+pip install -r requirements.txt
+```
 
 Or if you're the Ubuntu/Debian type you can:
 
-`sudo apt install python3-pyqt5 python3-requests python3-xmltodict python3-dicttoxml`
+```bash
+sudo apt install python3-pyqt5 python3-requests python3-xmltodict python3-dicttoxml
+```
 
-Just make wfdlogger.py executable and run it within the same folder, or type:
+Launch Python and point it to the folder containing the logger source:
 
-`python3 wfdlogger.py`
+```bash
+python3 wfdlogger
+```
 
 ## The Server
 
