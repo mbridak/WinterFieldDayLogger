@@ -58,7 +58,11 @@ class CAT:
             target = f"http://{host}:{port}"
             logging.debug("%s", target)
             self.server = xmlrpc.client.ServerProxy(target)
-            self.online = True
+            try:
+                _ = self.server.main.get_version()
+                self.online = True
+            except ConnectionRefusedError:
+                self.online = False
         if self.interface == "rigctld":
             self.__initialize_rigctrld()
 
@@ -90,7 +94,7 @@ class CAT:
     def __getvfo_flrig(self) -> str:
         """Poll the radio using flrig"""
         try:
-            # self.online = True
+            self.online = True
             return self.server.rig.get_vfo()
         except ConnectionRefusedError as exception:
             self.online = False
@@ -126,7 +130,7 @@ class CAT:
     def __getmode_flrig(self) -> str:
         """Returns mode via flrig"""
         try:
-            # self.online = True
+            self.online = True
             return self.server.rig.get_mode()
         except ConnectionRefusedError as exception:
             self.online = False
@@ -163,7 +167,7 @@ class CAT:
 
     def __getpower_flrig(self):
         try:
-            # self.online = True
+            self.online = True
             return self.server.rig.get_power()
         except ConnectionRefusedError as exception:
             self.online = False
@@ -193,7 +197,7 @@ class CAT:
     def __getptt_flrig(self):
         """Returns ptt state via flrig"""
         try:
-            # self.online = True
+            self.online = True
             return self.server.rig.get_ptt()
         except ConnectionRefusedError as exception:
             self.online = False
@@ -227,7 +231,7 @@ class CAT:
     def __setvfo_flrig(self, freq: str) -> bool:
         """Sets the radios vfo"""
         try:
-            # self.online = True
+            self.online = True
             return self.server.rig.set_frequency(float(freq))
         except ConnectionRefusedError as exception:
             self.online = False
@@ -261,7 +265,7 @@ class CAT:
     def __setmode_flrig(self, mode: str) -> bool:
         """Sets the radios mode"""
         try:
-            # self.online = True
+            self.online = True
             return self.server.rig.set_mode(mode)
         except ConnectionRefusedError as exception:
             self.online = False
@@ -294,7 +298,7 @@ class CAT:
 
     def __setpower_flrig(self, power):
         try:
-            # self.online = True
+            self.online = True
             return self.server.rig.set_power(power)
         except ConnectionRefusedError as exception:
             self.online = False
