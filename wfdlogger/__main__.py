@@ -489,7 +489,7 @@ class MainWindow(QtWidgets.QMainWindow):
         """Sends request to server asking for group call/class/section."""
         update = {
             "cmd": "GROUPQUERY",
-            "station": self.preference["mycallsign"],
+            "station": self.preference.get("mycallsign"),
         }
         bytesToSend = bytes(dumps(update), encoding="ascii")
         try:
@@ -502,7 +502,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def send_status_udp(self):
         """Send status update to server informing of our band and mode"""
         if self.connect_to_server:
-            if self.groupcall is None and self.preference["mycallsign"] != "":
+            if self.groupcall is None and self.preference.get("mycallsign") != "":
                 self.query_group()
                 return
 
@@ -510,7 +510,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 "cmd": "PING",
                 "mode": self.mode,
                 "band": self.band,
-                "station": self.preference["mycallsign"],
+                "station": self.preference.get("mycallsign"),
             }
             bytesToSend = bytes(dumps(update), encoding="ascii")
             try:
@@ -535,13 +535,15 @@ class MainWindow(QtWidgets.QMainWindow):
     def lookupmygrid(self):
         """lookup my own gridsquare"""
         if self.look_up:
-            self.mygrid, _, _, _ = self.look_up.lookup(self.preference["mycallsign"])
+            self.mygrid, _, _, _ = self.look_up.lookup(
+                self.preference.get("mycallsign")
+            )
             logging.info("my grid: %s", self.mygrid)
 
     def lazy_lookup(self, acall: str):
         """El Lookup De Lazy"""
         if self.look_up:
-            if acall == self.contactlookup["call"]:
+            if acall == self.contactlookup.get("call"):
                 return
 
             self.contactlookup["call"] = acall
@@ -692,24 +694,27 @@ class MainWindow(QtWidgets.QMainWindow):
         self.look_up = None
         self.cat_control = None
         self.readpreferences()
-        if self.preference["useqrz"]:
+        if self.preference.get("useqrz"):
             self.look_up = QRZlookup(
-                self.preference["lookupusername"], self.preference["lookuppassword"]
+                self.preference.get("lookupusername"),
+                self.preference.get("lookuppassword"),
             )
-        if self.preference["usehamdb"]:
+        if self.preference.get("usehamdb"):
             self.look_up = HamDBlookup()
-        if self.preference["usehamqth"]:
+        if self.preference.get("usehamqth"):
             self.look_up = HamQTH(
-                self.preference["lookupusername"],
-                self.preference["lookuppassword"],
+                self.preference.get("lookupusername"),
+                self.preference.get("lookuppassword"),
             )
-        if self.preference["useflrig"]:
+        if self.preference.get("useflrig"):
             self.cat_control = CAT(
-                "flrig", self.preference["CAT_ip"], self.preference["CAT_port"]
+                "flrig", self.preference.get("CAT_ip"), self.preference.get("CAT_port")
             )
-        if self.preference["userigctld"]:
+        if self.preference.get("userigctld"):
             self.cat_control = CAT(
-                "rigctld", self.preference["CAT_ip"], self.preference["CAT_port"]
+                "rigctld",
+                self.preference.get("CAT_ip"),
+                self.preference.get("CAT_port"),
             )
 
     def readpreferences(self):
@@ -1064,7 +1069,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.radio_icon.setPixmap(self.radio_green)
             # newpwr = self.cat_control.get_power()
 
-            # newpwr = int(float(rigctrlsocket.recv(1024).decode().strip()) * 100)
             if (
                 newfreq != self.oldfreq or newmode != self.oldmode
             ):  # or newpwr != oldpwr
@@ -1075,6 +1079,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.setmode(str(self.getmode(newmode)))
                 # setpower(str(newpwr))
                 # self.setfreq(str(newfreq))
+
             if self.preference.get("send_n1mm_packets"):
                 self.n1mm.radio_info["StationName"] = self.preference.get(
                     "n1mm_station_name"
@@ -1082,7 +1087,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.n1mm.radio_info["Freq"] = newfreq[:-1]
                 self.n1mm.radio_info["TXFreq"] = newfreq[:-1]
                 self.n1mm.radio_info["Mode"] = newmode
-                self.n1mm.radio_info["OpCall"] = self.preference["mycallsign"]
+                self.n1mm.radio_info["OpCall"] = self.preference.get("mycallsign")
                 self.n1mm.radio_info["IsRunning"] = str(self.run_state)
                 if self.cat_control.get_ptt() == "0":
                     self.n1mm.radio_info["IsTransmitting"] = "False"
@@ -1090,7 +1095,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.n1mm.radio_info["IsTransmitting"] = "True"
                 self.n1mm.send_radio()
 
-    def flash(self):
+    def flash(self) -> None:
         """
         Flash the screen to give visual indication of a dupe.
         """
@@ -1103,15 +1108,15 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         app.processEvents()
 
-    def process_macro(self, macro):
+    def process_macro(self, macro: str) -> str:
         """Process CW macro substitutions"""
         macro = macro.upper()
         if self.groupcall and self.connect_to_server:
             macro = macro.replace("{MYCALL}", self.groupcall)
         else:
-            macro = macro.replace("{MYCALL}", self.preference["mycallsign"])
-        macro = macro.replace("{MYCLASS}", self.preference["myclass"])
-        macro = macro.replace("{MYSECT}", self.preference["mysection"])
+            macro = macro.replace("{MYCALL}", self.preference.get("mycallsign"))
+        macro = macro.replace("{MYCLASS}", self.preference.get("myclass"))
+        macro = macro.replace("{MYSECT}", self.preference.get("mysection"))
         macro = macro.replace("{HISCALL}", self.callsign_entry.text())
         return macro
 
@@ -1533,9 +1538,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 "frequency": self.oldfreq,
                 "date_and_time": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
                 "power": int(self.power_selector.value()),
-                "grid": self.contactlookup["grid"],
-                "opname": self.contactlookup["name"],
-                "station": self.preference["mycallsign"],
+                "grid": self.contactlookup.get("grid"),
+                "opname": self.contactlookup.get("name"),
+                "station": self.preference.get("mycallsign"),
                 "unique_id": unique_id,
                 "expire": stale.isoformat(),
             }
@@ -1556,16 +1561,16 @@ class MainWindow(QtWidgets.QMainWindow):
             else:
                 self.n1mm.contact_info["points"] = "1"
             self.n1mm.contact_info["band"] = self.band
-            self.n1mm.contact_info["mycall"] = self.preference["mycallsign"]
+            self.n1mm.contact_info["mycall"] = self.preference.get("mycallsign")
             self.n1mm.contact_info["IsRunQSO"] = str(self.run_state)
             self.n1mm.contact_info["timestamp"] = datetime.utcnow().strftime(
                 "%Y-%m-%d %H:%M:%S"
             )
             self.n1mm.contact_info["call"] = self.callsign_entry.text()
-            self.n1mm.contact_info["gridsquare"] = self.contactlookup["grid"]
+            self.n1mm.contact_info["gridsquare"] = self.contactlookup.get("grid")
             self.n1mm.contact_info["exchange1"] = self.class_entry.text()
             self.n1mm.contact_info["section"] = self.section_entry.text()
-            self.n1mm.contact_info["name"] = self.contactlookup["name"]
+            self.n1mm.contact_info["name"] = self.contactlookup.get("name")
             self.n1mm.contact_info["power"] = self.power_selector.value()
             self.n1mm.contact_info["ID"] = unique_id
             self.n1mm.send_contact_info()
@@ -2402,7 +2407,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.connect_to_server:
             update = {
                 "cmd": "LOG",
-                "station": self.preference["mycallsign"],
+                "station": self.preference.get("mycallsign"),
             }
             bytesToSend = bytes(dumps(update), encoding="ascii")
             try:
@@ -2472,7 +2477,11 @@ class EditQsoDialog(QtWidgets.QDialog):
             command["band"] = self.editBand.currentText()
             command["mode"] = self.editMode.currentText().upper()
             command["power"] = self.editPower.value()
-            command["station"] = window.preference["mycallsign"].upper()
+            command["station"] = (
+                window.preference.get("mycallsign").upper()
+                if window.preference.get("mycallsign")
+                else ""
+            )
             command["unique_id"] = self.contact.get("unique_id")
             command["expire"] = stale.isoformat()
             command["opname"] = self.contact.get("opname")
@@ -2491,7 +2500,7 @@ class EditQsoDialog(QtWidgets.QDialog):
             window.n1mm.contact_info["txfreq"] = self.editFreq.text()[:-1]
             window.n1mm.contact_info["mode"] = self.editMode.currentText().upper()
             window.n1mm.contact_info["band"] = self.editBand.currentText()
-            window.n1mm.contact_info["mycall"] = window.preference["mycallsign"]
+            window.n1mm.contact_info["mycall"] = window.preference.get("mycallsign")
             window.n1mm.contact_info["IsRunQSO"] = self.contact.get("IsRunQSO")
             window.n1mm.contact_info["timestamp"] = self.contact.get("date_time")
             window.n1mm.contact_info["call"] = self.editCallsign.text().upper()
@@ -2517,7 +2526,11 @@ class EditQsoDialog(QtWidgets.QDialog):
             command = {}
             command["cmd"] = "DELETE"
             command["unique_id"] = self.contact.get("unique_id")
-            command["station"] = window.preference["mycallsign"].upper()
+            command["station"] = (
+                window.preference.get("mycallsign").upper()
+                if window.preference.get("mycallsign")
+                else ""
+            )
             command["expire"] = stale.isoformat()
             window.server_commands.append(command)
             bytesToSend = bytes(dumps(command), encoding="ascii")
