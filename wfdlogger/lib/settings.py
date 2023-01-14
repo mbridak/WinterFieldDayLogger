@@ -74,43 +74,119 @@ class Settings(QtWidgets.QDialog):
         with open("./wfd_preferences.json", "rt", encoding="utf-8") as file_descriptor:
             self.preference = loads(file_descriptor.read())
             logging.info("reading: %s", self.preference)
-            self.useqrz_radioButton.setChecked(bool(self.preference["useqrz"]))
-            self.usehamdb_radioButton.setChecked(bool(self.preference["usehamdb"]))
-            self.usehamqth_radioButton.setChecked(bool(self.preference["usehamqth"]))
-            self.lookup_user_name_field.setText(self.preference["lookupusername"])
-            self.lookup_password_field.setText(self.preference["lookuppassword"])
-            self.cloudlogapi_field.setText(self.preference["cloudlogapi"])
-            self.cloudlogurl_field.setText(self.preference["cloudlogurl"])
-            self.rigcontrolip_field.setText(self.preference["CAT_ip"])
-            self.rigcontrolport_field.setText(str(self.preference["CAT_port"]))
-            self.usecloudlog_checkBox.setChecked(bool(self.preference["cloudlog"]))
-            self.userigctld_radioButton.setChecked(bool(self.preference["userigctld"]))
-            self.useflrig_radioButton.setChecked(bool(self.preference["useflrig"]))
-            self.markerfile_field.setText(self.preference["markerfile"])
-            self.generatemarker_checkbox.setChecked(bool(self.preference["usemarker"]))
-            self.cwip_field.setText(self.preference["cwip"])
-            self.cwport_field.setText(str(self.preference["cwport"]))
+            self.useqrz_radioButton.setChecked(bool(self.preference.get("useqrz")))
+            self.usehamdb_radioButton.setChecked(bool(self.preference.get("usehamdb")))
+            self.usehamqth_radioButton.setChecked(
+                bool(self.preference.get("usehamqth"))
+            )
+            self.lookup_user_name_field.setText(
+                self.preference.get("lookupusername")
+                if self.preference.get("lookupusername")
+                else ""
+            )
+            self.lookup_password_field.setText(
+                self.preference.get("lookuppassword")
+                if self.preference.get("lookuppassword")
+                else ""
+            )
+            self.cloudlogapi_field.setText(
+                self.preference.get("cloudlogapi")
+                if self.preference.get("cloudlogapi")
+                else ""
+            )
+            self.cloudlogurl_field.setText(
+                self.preference.get("cloudlogurl")
+                if self.preference.get("cloudlogurl")
+                else ""
+            )
+            self.rigcontrolip_field.setText(
+                self.preference.get("CAT_ip") if self.preference.get("CAT_ip") else ""
+            )
+            self.rigcontrolport_field.setText(
+                str(self.preference.get("CAT_port"))
+                if self.preference.get("CAT_port")
+                else ""
+            )
+            self.usecloudlog_checkBox.setChecked(bool(self.preference.get("cloudlog")))
+            self.userigctld_radioButton.setChecked(
+                bool(self.preference.get("userigctld"))
+            )
+            self.useflrig_radioButton.setChecked(bool(self.preference.get("useflrig")))
+            self.markerfile_field.setText(
+                self.preference.get("markerfile")
+                if self.preference.get("markerfile")
+                else ""
+            )
+            self.generatemarker_checkbox.setChecked(
+                bool(self.preference.get("usemarker"))
+            )
+            self.cwip_field.setText(
+                self.preference.get("cwip") if self.preference.get("cwip") else ""
+            )
+            self.cwport_field.setText(
+                str(self.preference.get("cwport"))
+                if self.preference.get("cwport")
+                else ""
+            )
             self.usecwdaemon_radioButton.setChecked(
-                bool(self.preference["cwtype"] == 1)
+                bool(self.preference.get("cwtype") == 1)
             )
             self.usepywinkeyer_radioButton.setChecked(
-                bool(self.preference["cwtype"] == 2)
+                bool(self.preference.get("cwtype") == 2)
             )
             self.connect_to_server.setChecked(bool(self.preference.get("useserver")))
-            self.multicast_group.setText(self.preference.get("multicast_group"))
-            self.multicast_port.setText(str(self.preference.get("multicast_port")))
-            self.interface_ip.setText(self.preference.get("interface_ip"))
+            self.multicast_group.setText(
+                self.preference.get("multicast_group")
+                if self.preference.get("multicast_group")
+                else ""
+            )
+            self.multicast_port.setText(
+                str(self.preference.get("multicast_port"))
+                if self.preference.get("multicast_port")
+                else ""
+            )
+            self.interface_ip.setText(
+                self.preference.get("interface_ip")
+                if self.preference.get("interface_ip")
+                else ""
+            )
 
             self.send_n1mm_packets.setChecked(
-                bool(self.preference["send_n1mm_packets"])
+                bool(self.preference.get("send_n1mm_packets"))
             )
-            self.n1mm_station_name.setText(self.preference["n1mm_station_name"])
-            self.n1mm_operator.setText(self.preference["n1mm_operator"])
-            self.n1mm_ip.setText(self.preference.get("n1mm_ip"))
-            self.n1mm_radioport.setText(str(self.preference["n1mm_radioport"]))
-            self.n1mm_contactport.setText(str(self.preference["n1mm_contactport"]))
-            self.n1mm_lookupport.setText(str(self.preference["n1mm_lookupport"]))
-            self.n1mm_scoreport.setText(str(self.preference["n1mm_scoreport"]))
+            self.n1mm_station_name.setText(
+                self.preference.get("n1mm_station_name")
+                if self.preference.get("n1mm_station_name")
+                else ""
+            )
+            self.n1mm_operator.setText(
+                self.preference.get("n1mm_operator")
+                if self.preference.get("n1mm_operator")
+                else ""
+            )
+            self.n1mm_ip.setText(
+                self.preference.get("n1mm_ip") if self.preference.get("n1mm_ip") else ""
+            )
+            self.n1mm_radioport.setText(
+                str(self.preference.get("n1mm_radioport"))
+                if self.preference.get("n1mm_radioport")
+                else ""
+            )
+            self.n1mm_contactport.setText(
+                str(self.preference.get("n1mm_contactport"))
+                if self.preference.get("n1mm_contactport")
+                else ""
+            )
+            self.n1mm_lookupport.setText(
+                str(self.preference.get("n1mm_lookupport"))
+                if self.preference.get("n1mm_lookupport")
+                else ""
+            )
+            self.n1mm_scoreport.setText(
+                str(self.preference.get("n1mm_scoreport"))
+                if self.preference.get("n1mm_scoreport")
+                else ""
+            )
 
     @staticmethod
     def relpath(filename: str) -> str:
