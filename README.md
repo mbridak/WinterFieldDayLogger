@@ -34,6 +34,7 @@ The server if used, will generate a group cabrillo file to submit.
   - [Table Of Contents](#table-of-contents)
   - [Caveats](#caveats)
   - [Recent Changes](#recent-changes)
+  - [WB8ERJ's blog writeup](#wb8erjs-blog-writeup)
   - [Installing, Updating, Removing Client](#installing-updating-removing-client)
   - [Running Client from source](#running-client-from-source)
   - [The Server](#the-server)
@@ -84,6 +85,10 @@ places in the code 'RTTY' is used and Bob's your dads brother.
 - [22.11.12] 2023 scoring and antenna bonus.
 - [22.10.13] Added N1MM XML status packets. So you can use [Kyle AA0Z's Node-Red dashboard](https://github.com/kylekrieg/Node-Red-Contesting-Dashboard).
 - [22.10.9] Added a group contact aggregation server. So multiple clients can participate in WFD together.
+
+## WB8ERJ's blog writeup
+
+[Mike's Tech Blog WB8ERJ](https://mikestechblog.com/how-to-install-winter-field-day-logging-software-for-raspberry-pi/)
 
 ## Installing, Updating, Removing Client
 
