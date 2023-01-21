@@ -76,6 +76,7 @@ places in the code 'RTTY' is used and Bob's your dads brother.
 
 ## Recent Changes
 
+- [23.1.20] UI now resizable.
 - [23.1.14] Safer access to dict keys.
 - [23.1.14] Added app icons.
 - [22.12.28] Repackaged for pypi pip installation.
