@@ -392,7 +392,7 @@ station call, band and mode of other participants.
 If more than one operator is on the same band/mode, their names will be
 highlighted in the operators list. Feel free to yell at eachother in the chat.
 
-![Picture showing band and mode conflict](pics/band_conflict_client.png)
+![Picture showing band and mode conflict](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/band_conflict_client.png)
 
 ## Chat Window
 
