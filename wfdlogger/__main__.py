@@ -293,7 +293,7 @@ class MainWindow(QtWidgets.QMainWindow):
             )
         )
         self.users_list.clear()
-        self.users_list.insertPlainText("    Operators\n")
+        self.users_list.insertPlainText("Operators\n")
         for op_callsign in self.people:
             if op_callsign in result:
                 self.users_list.setTextColor(QtGui.QColor(245, 121, 0))
@@ -435,7 +435,8 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.server_seen:
             if datetime.now() > self.server_seen:
                 self.group_call_indicator.setStyleSheet(
-                    "border: 1px solid green;\nbackground-color: red;\ncolor: yellow;"
+                    "border: 1px solid green;\nbackground-color: red;\ncolor: yellow;\n"
+                    "padding-left:5px;\npadding-right: 5px;"
                 )
         while not self.udp_fifo.empty():
             datagram = self.udp_fifo.get()
@@ -459,7 +460,9 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.show_people()
                 if json_data.get("host"):
                     self.server_seen = datetime.now() + timedelta(seconds=30)
-                    self.group_call_indicator.setStyleSheet("border: 1px solid green;")
+                    self.group_call_indicator.setStyleSheet(
+                        "border: 1px solid green;\npadding-left:5px;\npadding-right: 5px;"
+                    )
                 continue
 
             if json_data.get("cmd") == "RESPONSE":
@@ -468,14 +471,14 @@ class MainWindow(QtWidgets.QMainWindow):
                         self.groupcall = str(json_data.get("groupcall"))
                         self.myclassEntry.setText(str(json_data.get("groupclass")))
                         self.mysectionEntry.setText(str(json_data.get("groupsection")))
-                        self.group_call_indicator.setText(self.groupcall)
+                        self.group_call_indicator.setText(self.groupcall.center(14))
                         self.changemyclass()
                         self.changemysection()
                         self.mycallEntry.hide()
                         self.server_seen = datetime.now() + timedelta(seconds=30)
                         self.group_call_indicator.show()
                         self.group_call_indicator.setStyleSheet(
-                            "border: 1px solid green;"
+                            "border: 1px solid green;\npadding-left:5px;\npadding-right: 5px;"
                         )
                         return
                     if json_data.get("subject") == "LOG":
