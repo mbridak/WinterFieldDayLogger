@@ -36,22 +36,22 @@ The server if used, will generate a group cabrillo file to submit.
   - [Recent Changes](#recent-changes)
   - [WB8ERJ's blog writeup](#wb8erjs-blog-writeup)
   - [Installing, Updating, Removing Client](#installing-updating-removing-client)
-  - [Running Client from source](#running-client-from-source)
+  - [Running Client](#running-client)
   - [The Server](#the-server)
     - [Server install](#server-install)
-    - [Server source](#server-source)
+    - [Server Documentation](#server-documentation)
   - [What to do first](#what-to-do-first)
   - [Logging](#logging)
   - [Features](#features)
-  - [Radio Polling via flrig or rigctld](#radio-polling-via-flrig-or-rigctld)
-  - [Cloudlog, QRZ, HamDB, HamQTH useage](#cloudlog-qrz-hamdb-hamqth-useage)
-  - [N1MM packets for Node-Red Dashboard](#n1mm-packets-for-node-red-dashboard)
-  - [XPlanet marker file](#xplanet-marker-file)
-  - [Editing an existing contact](#editing-an-existing-contact)
-  - [Super Check Partial](#super-check-partial)
-  - [Section partial check](#section-partial-check)
-  - [DUP checking](#dup-checking)
-  - [Autofill](#autofill)
+    - [Radio Polling via flrig or rigctld](#radio-polling-via-flrig-or-rigctld)
+    - [Cloudlog, QRZ, HamDB, HamQTH useage](#cloudlog-qrz-hamdb-hamqth-useage)
+    - [N1MM packets for Node-Red Dashboard](#n1mm-packets-for-node-red-dashboard)
+    - [XPlanet marker file](#xplanet-marker-file)
+    - [Editing an existing contact](#editing-an-existing-contact)
+    - [Super Check Partial](#super-check-partial)
+    - [Section partial check](#section-partial-check)
+    - [DUP checking](#dup-checking)
+    - [Autofill](#autofill)
   - [CW](#cw)
     - [CW Settings](#cw-settings)
     - [CW Macros](#cw-macros)
@@ -105,26 +105,12 @@ pip install -U wfdlogger
 pip uninstall wfdlogger
 ```
 
-## Running Client from source
+## Running Client
 
-The client source package is available [here](https://github.com/mbridak/WinterFieldDayLogger)
-
-Install Python 3, then required libs via pip.
+In a terminal type:
 
 ```bash
-pip install -r requirements.txt
-```
-
-Or if you're the Ubuntu/Debian type you can:
-
-```bash
-sudo apt install python3-pyqt5 python3-requests python3-xmltodict python3-dicttoxml
-```
-
-Launch Python and point it to the folder containing the logger source:
-
-```bash
-python3 wfdlogger
+wfdlogger
 ```
 
 ## The Server
@@ -135,7 +121,7 @@ python3 wfdlogger
 pip install wfdserver
 ```
 
-### Server source
+### Server Documentation
 
 [wfdserver](https://github.com/mbridak/wfdserver)
 
@@ -163,7 +149,7 @@ to clear all inputs and start again.
 
 ## Features
 
-## Radio Polling via flrig or rigctld
+### Radio Polling via flrig or rigctld
 
 If you run flrig or rigctld on a computer connected to the radio, it can be
 polled for band/mode updates automatically. Click the gear icon at the bottom
@@ -172,7 +158,7 @@ the logging window to indicate polling status.
 
 ![Snapshot of settings dialog](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/catSettings.png)
 
-## Cloudlog, QRZ, HamDB, HamQTH useage
+### Cloudlog, QRZ, HamDB, HamQTH useage
 
 If you use either Cloudlog logging or QRZ/HamDB/HamQTH lookup you can click
 the gear icon to enter your credentials.
@@ -185,13 +171,13 @@ pin on the map unless it has a gridsquare. So this is a scratch my own itch
 feature. HAMDB.org is used by default since it's free. If both are checked it
 will it will use QRZ then fallback to HAMDB.
 
-## N1MM packets for Node-Red Dashboard
+### N1MM packets for Node-Red Dashboard
 
 If you wish to use Kyle AA0Z's Node-Red contest dashboard, edit these settings.
 
 ![N1MM settings](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/n1mm_settings.png)
 
-## XPlanet marker file
+### XPlanet marker file
 
 If you use QRZ/HamdDB/HamQTH lookups you can also generate an
 [XPlanet](http://xplanet.sourceforge.net/) markerfile which will show little
@@ -205,13 +191,13 @@ The above launched with an example command:
 xplanet -body earth -window -longitude -117 -latitude 38 -config Default -projection azmithal -radius 200 -wait 5
 ```
 
-## Editing an existing contact
+### Editing an existing contact
 
 Double click a contact in the upper left of the screen to edit or delete it.
 
 ![Snapshot of edit qso dialog](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/editqso.png)
 
-## Super Check Partial
+### Super Check Partial
 
 If you type more than two characters in the callsign field the program will
 filter the input through a "Super Check Partial" routine and show you possible
@@ -219,14 +205,14 @@ matches to known contesting call signs. Is this useful? Doubt it.
 
 ![Snapshot of main screen focused on super check partial output](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/scp.png)
 
-## Section partial check
+### Section partial check
 
 As you type the section abbreviation you are presented with a list of all
 possible sections that start with what you have typed.
 
 ![Snapshot of main screen focused on section check partial output](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/sectioncheck.png)
 
-## DUP checking
+### DUP checking
 
 Once you type a complete callsign and press TAB or SPACE to advance to the
 next field. The callsign is checked against previous callsigns in your log.
@@ -239,7 +225,7 @@ a decision if you'll enter the call or not.
 
 ![Snapshot of main screen focused on dup checking output](https://github.com/mbridak/WinterFieldDayLogger/raw/main/pics/dupe.png)
 
-## Autofill
+### Autofill
 
 If you have worked this person before on another band/mode the program will
 load the class and section used previously for this call so you will not have
