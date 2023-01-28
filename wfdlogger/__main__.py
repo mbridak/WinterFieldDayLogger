@@ -2030,8 +2030,9 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         Updates the xplanet marker file with a list of logged contact lat & lon
         """
-        if self.usemarker:
-            filename = str(Path.home()) + "/" + self.markerfile
+        if self.preference.get("usemarker"):
+            filename = str(Path.home()) + "/" + self.preference.get("markerfile")
+            logger.info("%s", filename)
             try:
                 grids = self.db.get_unique_grids()
                 if grids:
