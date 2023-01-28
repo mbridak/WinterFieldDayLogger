@@ -76,6 +76,7 @@ places in the code 'RTTY' is used and Bob's your dads brother.
 
 ## Recent Changes
 
+- [23.1.28] xplanet markers not generating.
 - [23.1.27] Fixed order of CW macro buttons.
 - [23.1.23] Visual tweaks
 - [23.1.20] UI now resizable.
