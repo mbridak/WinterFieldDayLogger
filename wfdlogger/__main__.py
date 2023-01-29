@@ -2173,7 +2173,7 @@ class MainWindow(QtWidgets.QMainWindow):
                             end="\r\n",
                             file=file_descriptor,
                         )
-                    comment = "WINTER-FIELD-DAY"
+                    comment = "WFD"
                     print(
                         f"<COMMENT:{len(comment)}>{comment}",
                         end="\r\n",
