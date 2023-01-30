@@ -2291,7 +2291,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     end="\r\n",
                     file=file_descriptor,
                 )
-                print("CONTEST: WINTER-FIELD-DAY", end="\r\n", file=file_descriptor)
+                print("CONTEST: WFD", end="\r\n", file=file_descriptor)
                 print(
                     f"CALLSIGN: {self.preference.get('mycallsign')}",
                     end="\r\n",
