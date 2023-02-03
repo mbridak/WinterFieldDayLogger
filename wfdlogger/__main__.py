@@ -1735,11 +1735,16 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         self.infobox.clear()
         self.infobox.setTextColor(QtGui.QColor(211, 215, 207))
+        self.section_entry.setStyleSheet("color: rgb(211, 215, 207);")
         sec = self.section_entry.text()
         if sec == "":
             sec = "^"
+        if sec in self.secName:
+            self.section_entry.setStyleSheet("color: rgb(0, 255, 0);")
         x = list(self.secName.keys())
         xx = list(filter(lambda y: y.startswith(sec), x))
+        if (len(xx) == 0) and (sec != "^"):
+            self.section_entry.setStyleSheet("color: rgb(255, 0, 0);")
         for xxx in xx:
             self.infobox.insertPlainText(self.secName[xxx] + "\n")
 
