@@ -6,7 +6,6 @@ GPL V3
 # pylint: disable=c-extension-no-member
 
 import logging
-import sys
 import os
 import pkgutil
 from json import dumps, loads
@@ -69,6 +68,11 @@ class Settings(QtWidgets.QDialog):
         self.preference = None
         self.setup()
 
+    @staticmethod
+    def dictstring(the_object: dict, the_key: str) -> str:
+        """Return safe dict string"""
+        return str(the_object.get(the_key)) if the_object.get(the_key) else ""
+
     def setup(self):
         """setup dialog"""
         with open("./wfd_preferences.json", "rt", encoding="utf-8") as file_descriptor:
@@ -80,32 +84,20 @@ class Settings(QtWidgets.QDialog):
                 bool(self.preference.get("usehamqth"))
             )
             self.lookup_user_name_field.setText(
-                self.preference.get("lookupusername")
-                if self.preference.get("lookupusername")
-                else ""
+                self.dictstring(self.preference, "lookupusername")
             )
             self.lookup_password_field.setText(
-                self.preference.get("lookuppassword")
-                if self.preference.get("lookuppassword")
-                else ""
+                self.dictstring(self.preference, "lookuppassword")
             )
             self.cloudlogapi_field.setText(
-                self.preference.get("cloudlogapi")
-                if self.preference.get("cloudlogapi")
-                else ""
+                self.dictstring(self.preference, "cloudlogapi")
             )
             self.cloudlogurl_field.setText(
-                self.preference.get("cloudlogurl")
-                if self.preference.get("cloudlogurl")
-                else ""
+                self.dictstring(self.preference, "cloudlogurl")
             )
-            self.rigcontrolip_field.setText(
-                self.preference.get("CAT_ip") if self.preference.get("CAT_ip") else ""
-            )
+            self.rigcontrolip_field.setText(self.dictstring(self.preference, "CAT_ip"))
             self.rigcontrolport_field.setText(
-                str(self.preference.get("CAT_port"))
-                if self.preference.get("CAT_port")
-                else ""
+                self.dictstring(self.preference, "CAT_port")
             )
             self.usecloudlog_checkBox.setChecked(bool(self.preference.get("cloudlog")))
             self.userigctld_radioButton.setChecked(
@@ -113,21 +105,13 @@ class Settings(QtWidgets.QDialog):
             )
             self.useflrig_radioButton.setChecked(bool(self.preference.get("useflrig")))
             self.markerfile_field.setText(
-                self.preference.get("markerfile")
-                if self.preference.get("markerfile")
-                else ""
+                self.dictstring(self.preference, "markerfile")
             )
             self.generatemarker_checkbox.setChecked(
                 bool(self.preference.get("usemarker"))
             )
-            self.cwip_field.setText(
-                self.preference.get("cwip") if self.preference.get("cwip") else ""
-            )
-            self.cwport_field.setText(
-                str(self.preference.get("cwport"))
-                if self.preference.get("cwport")
-                else ""
-            )
+            self.cwip_field.setText(self.dictstring(self.preference, "cwip"))
+            self.cwport_field.setText(self.dictstring(self.preference, "cwport"))
             self.usecwdaemon_radioButton.setChecked(
                 bool(self.preference.get("cwtype") == 1)
             )
@@ -136,70 +120,35 @@ class Settings(QtWidgets.QDialog):
             )
             self.connect_to_server.setChecked(bool(self.preference.get("useserver")))
             self.multicast_group.setText(
-                self.preference.get("multicast_group")
-                if self.preference.get("multicast_group")
-                else ""
+                self.dictstring(self.preference, "multicast_group")
             )
             self.multicast_port.setText(
-                str(self.preference.get("multicast_port"))
-                if self.preference.get("multicast_port")
-                else ""
+                self.dictstring(self.preference, "multicast_port")
             )
-            self.interface_ip.setText(
-                self.preference.get("interface_ip")
-                if self.preference.get("interface_ip")
-                else ""
-            )
+            self.interface_ip.setText(self.dictstring(self.preference, "interface_ip"))
 
             self.send_n1mm_packets.setChecked(
                 bool(self.preference.get("send_n1mm_packets"))
             )
             self.n1mm_station_name.setText(
-                self.preference.get("n1mm_station_name")
-                if self.preference.get("n1mm_station_name")
-                else ""
+                self.dictstring(self.preference, "n1mm_station_name")
             )
             self.n1mm_operator.setText(
-                self.preference.get("n1mm_operator")
-                if self.preference.get("n1mm_operator")
-                else ""
+                self.dictstring(self.preference, "n1mm_operator")
             )
-            self.n1mm_ip.setText(
-                self.preference.get("n1mm_ip") if self.preference.get("n1mm_ip") else ""
-            )
+            self.n1mm_ip.setText(self.dictstring(self.preference, "n1mm_ip"))
             self.n1mm_radioport.setText(
-                str(self.preference.get("n1mm_radioport"))
-                if self.preference.get("n1mm_radioport")
-                else ""
+                self.dictstring(self.preference, "n1mm_radioport")
             )
             self.n1mm_contactport.setText(
-                str(self.preference.get("n1mm_contactport"))
-                if self.preference.get("n1mm_contactport")
-                else ""
+                self.dictstring(self.preference, "n1mm_contactport")
             )
             self.n1mm_lookupport.setText(
-                str(self.preference.get("n1mm_lookupport"))
-                if self.preference.get("n1mm_lookupport")
-                else ""
+                self.dictstring(self.preference, "n1mm_lookupport")
             )
             self.n1mm_scoreport.setText(
-                str(self.preference.get("n1mm_scoreport"))
-                if self.preference.get("n1mm_scoreport")
-                else ""
+                self.dictstring(self.preference, "n1mm_scoreport")
             )
-
-    @staticmethod
-    def relpath(filename: str) -> str:
-        """
-        If the program is packaged with pyinstaller,
-        this is needed since all files will be in a temp
-        folder during execution.
-        """
-        if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
-            base_path = getattr(sys, "_MEIPASS")
-        else:
-            base_path = os.path.abspath(".")
-        return os.path.join(base_path, filename)
 
     def save_changes(self):
         """
