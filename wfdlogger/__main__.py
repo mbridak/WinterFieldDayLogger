@@ -20,6 +20,7 @@ import sys
 import socket
 import os
 import logging
+import re
 import threading
 import uuid
 import queue
@@ -216,6 +217,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.F10.clicked.connect(self.sendf10)
         self.F11.clicked.connect(self.sendf11)
         self.F12.clicked.connect(self.sendf12)
+
+        self.classcheck = re.compile("[0-9]+[IOHM]")
+        self.classcheckable = re.compile("[0-9]+[A-Z]")
 
         self.contactlookup = {
             "call": "",
@@ -1475,11 +1479,27 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.callsign_entry.setCursorPosition(washere)
                 self.super_check()
 
+    def test_class_format(self, text):
+        """
+        Checks if class is in proper format.
+        White while entering.
+        Green if proper format and correct values.
+        Red if proper format and wrong values.
+        """
+        if self.classcheckable.match(text.strip().upper()):
+            if self.classcheck.match(text.strip().upper()):
+                self.class_entry.setStyleSheet("color: rgb(0, 255, 0);")
+            else:
+                self.class_entry.setStyleSheet("color: rgb(255, 0, 0);")
+        else:
+            self.class_entry.setStyleSheet("color: rgb(211, 215, 207);")
+
     def classtest(self):
         """
         Strips class of spaces and non alphanumerics, converts to uppercase.
         """
         text = self.class_entry.text()
+        self.test_class_format(text)
         if len(text):
             if text[-1] == " ":
                 self.class_entry.setText(text.strip())
@@ -2456,6 +2476,11 @@ class EditQsoDialog(QtWidgets.QDialog):
         self.buttonBox.accepted.connect(self.save_changes)
         self.change = QSOEdit()
 
+    @staticmethod
+    def dictstring(the_object: dict, the_key: str) -> str:
+        """Return safe dict string"""
+        return str(the_object.get(the_key)) if the_object.get(the_key) else ""
+
     def setup(self, contact, thedatabase):
         """Loads in the contact information and db to access."""
         self.database = thedatabase
@@ -2497,11 +2522,9 @@ class EditQsoDialog(QtWidgets.QDialog):
             command["band"] = self.editBand.currentText()
             command["mode"] = self.editMode.currentText().upper()
             command["power"] = self.editPower.value()
-            command["station"] = (
-                window.preference.get("mycallsign").upper()
-                if window.preference.get("mycallsign")
-                else ""
-            )
+            command["station"] = self.dictstring(
+                window.preference, "mycallsign"
+            ).upper()
             command["unique_id"] = self.contact.get("unique_id")
             command["expire"] = stale.isoformat()
             command["opname"] = self.contact.get("opname")
@@ -2546,11 +2569,9 @@ class EditQsoDialog(QtWidgets.QDialog):
             command = {}
             command["cmd"] = "DELETE"
             command["unique_id"] = self.contact.get("unique_id")
-            command["station"] = (
-                window.preference.get("mycallsign").upper()
-                if window.preference.get("mycallsign")
-                else ""
-            )
+            command["station"] = self.dictstring(
+                window.preference, "mycallsign"
+            ).upper()
             command["expire"] = stale.isoformat()
             window.server_commands.append(command)
             bytesToSend = bytes(dumps(command), encoding="ascii")
