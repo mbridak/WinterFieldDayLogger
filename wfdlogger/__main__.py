@@ -218,7 +218,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.F11.clicked.connect(self.sendf11)
         self.F12.clicked.connect(self.sendf12)
 
-        self.classcheck = re.compile("[0-9]+[IOHM]")
+        self.classcheck = re.compile("[0-9]{1,3}[IOHM]{1}")
         self.classcheckable = re.compile("[0-9]+[A-Z]")
 
         self.contactlookup = {
@@ -1486,9 +1486,14 @@ class MainWindow(QtWidgets.QMainWindow):
         Green if proper format and correct values.
         Red if proper format and wrong values.
         """
-        if self.classcheckable.match(text.strip().upper()):
-            if self.classcheck.match(text.strip().upper()):
-                self.class_entry.setStyleSheet("color: rgb(0, 255, 0);")
+        text = text.strip().upper()
+        if self.classcheckable.match(text):
+            match = self.classcheck.match(text)
+            if match:
+                if len(match[0]) == len(text):
+                    self.class_entry.setStyleSheet("color: rgb(0, 255, 0);")
+                else:
+                    self.class_entry.setStyleSheet("color: rgb(255, 0, 0);")
             else:
                 self.class_entry.setStyleSheet("color: rgb(255, 0, 0);")
         else:
