@@ -26,7 +26,8 @@ import threading
 import uuid
 import queue
 import time
-import pkgutil
+
+# import pkgutil
 from itertools import chain
 
 from json import dumps, loads, JSONDecodeError
@@ -157,9 +158,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.working_path = os.path.dirname(
-            pkgutil.get_loader("wfdlogger").get_filename()
-        )
+        self.working_path = os.path.dirname(__loader__.get_filename())
         data_path = self.working_path + "/data/main.ui"
         uic.loadUi(data_path, self)
         self.db = DataBase(self.database)
@@ -2491,9 +2490,7 @@ class EditQsoDialog(QtWidgets.QDialog):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.working_path = os.path.dirname(
-            pkgutil.get_loader("wfdlogger").get_filename()
-        )
+        self.working_path = os.path.dirname(__loader__.get_filename())
         data_path = self.working_path + "/data/dialog.ui"
         uic.loadUi(data_path, self)
         self.deleteButton.clicked.connect(self.delete_contact)
@@ -2622,9 +2619,7 @@ class Startup(QtWidgets.QDialog):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.working_path = os.path.dirname(
-            pkgutil.get_loader("wfdlogger").get_filename()
-        )
+        self.working_path = os.path.dirname(__loader__.get_filename())
         data_path = self.working_path + "/data/startup.ui"
         uic.loadUi(data_path, self)
         self.continue_pushButton.clicked.connect(self.store)
@@ -2690,7 +2685,7 @@ else:
 
 app = QtWidgets.QApplication(sys.argv)
 app.setStyle("Fusion")
-working_path = os.path.dirname(pkgutil.get_loader("wfdlogger").get_filename())
+working_path = os.path.dirname(__loader__.get_filename())
 font_path = working_path + "/data"
 families = load_fonts_from_dir(os.fspath(font_path))
 logger.info(families)
@@ -2732,7 +2727,7 @@ timer3.timeout.connect(window.send_status_udp)
 
 def run():
     """main entry point"""
-    PATH = os.path.dirname(pkgutil.get_loader("wfdlogger").get_filename())
+    PATH = os.path.dirname(__loader__.get_filename())
     os.system(
         "xdg-icon-resource install --size 64 --context apps --mode user "
         f"{PATH}/data/k6gte-wfdlogger.png k6gte-wfdlogger"
