@@ -16,6 +16,7 @@ GPL V3
 # -projection azmithal -radius 200 -wait 5
 
 from math import radians, sin, cos, atan2, sqrt, asin, pi
+import datetime as dt
 import sys
 import socket
 import os
@@ -693,7 +694,7 @@ class MainWindow(QtWidgets.QMainWindow):
         Update local and UTC time on screen.
         """
         now = datetime.now().isoformat(" ")[5:19].replace("-", "/")
-        utcnow = datetime.utcnow().isoformat(" ")[5:19].replace("-", "/")
+        utcnow = datetime.now(dt.UTC).isoformat(" ")[5:19].replace("-", "/")
         self.localtime.setText(now)
         self.utctime.setText(utcnow)
 
