@@ -2294,7 +2294,8 @@ class MainWindow(QtWidgets.QMainWindow):
         adifq += "<EOR>"
 
         payload_dict = {
-            "key": self.preference.get("cloudlogapi"),
+            "key": self.preference.get("cloudlogapi", ""),
+            "station_profile_id": self.preference.get("cloudlogstationid", ""),
             "type": "adif",
             "string": adifq,
         }
