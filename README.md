@@ -76,22 +76,22 @@ places in the code 'RTTY' is used and Bob's your dads brother.
 
 ## Recent Changes
 
-- [24-1-27] Change band/mode when dropdowns are changed.
-- [23-2-3] Added visual cue as to validity of logged class and section.
-- [23-1-30] Changed Cabrillo tag 'CONTEST' to WFD.
-- [23\.1.28] xplanet markers not generating.
-- [23\.1.27] Fixed order of CW macro buttons.
-- [23\.1.23] Visual tweaks
-- [23\.1.20] UI now resizable.
-- [23\.1.14] Safer access to dict keys.
-- [23\.1.14] Added app icons.
-- [22\.12.28] Repackaged for pypi pip installation.
-- [22\.12.28] Removed use of BeautifulSoup and lxml. Migrated to xmltodict.
-- [22\.12.27] WFDA preferres `DG` as the mode indicator for digital.
-- [22\.12.16] Changed the RAC sections for 2023. Thanks for the heads up WB8ERJ!
-- [22\.11.12] 2023 scoring and antenna bonus.
-- [22\.10.13] Added N1MM XML status packets. So you can use [Kyle AA0Z's Node-Red dashboard](https://github.com/kylekrieg/Node-Red-Contesting-Dashboard).
-- [22\.10.9] Added a group contact aggregation server. So multiple clients can participate in WFD together.
+- [24.1.27] Change band/mode when dropdowns are changed. removed some deprecations.
+- [23.2.3] Added visual cue as to validity of logged class and section.
+- [23.1.30] Changed Cabrillo tag 'CONTEST' to WFD.
+- [23.1.28] xplanet markers not generating.
+- [23.1.27] Fixed order of CW macro buttons.
+- [23.1.23] Visual tweaks
+- [23.1.20] UI now resizable.
+- [23.1.14] Safer access to dict keys.
+- [23.1.14] Added app icons.
+- [22.12.28] Repackaged for pypi pip installation.
+- [22.12.28] Removed use of BeautifulSoup and lxml. Migrated to xmltodict.
+- [22.12.27] WFDA preferres `DG` as the mode indicator for digital.
+- [22.12.16] Changed the RAC sections for 2023. Thanks for the heads up WB8ERJ!
+- [22.11.12] 2023 scoring and antenna bonus.
+- [22.10.13] Added N1MM XML status packets. So you can use [Kyle AA0Z's Node-Red dashboard](https://github.com/kylekrieg/Node-Red-Contesting-Dashboard).
+- [22.10.9] Added a group contact aggregation server. So multiple clients can participate in WFD together.
 
 ## WB8ERJ's blog writeup
 
