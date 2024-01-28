@@ -1312,13 +1312,27 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         Sets the internal band used for logging to the onscreen dropdown value.
         """
-        self.band = self.band_selector.currentText()
+        if self.band != self.band_selector.currentText():
+            self.band = self.band_selector.currentText()
+            if self.cat_control:
+                self.cat_control.set_vfo(
+                    int(float(self.fakefreq(self.band, self.mode)) * 1000)
+                )
+            self.send_status_udp()
 
     def changemode(self):
         """
         Sets the internal mode used for logging to the onscreen dropdown value.
         """
-        self.mode = self.mode_selector.currentText()
+        if self.mode != self.mode_selector.currentText():
+            self.mode = self.mode_selector.currentText()
+            if self.mode == "PH":
+                if int(self.oldfreq) < 10000000:
+                    self.cat_control.set_mode("LSB")
+                else:
+                    self.cat_control.set_mode("USB")
+            self.cat_control.set_mode(self.mode)
+            self.send_status_udp()
 
     def changepower(self):
         """
@@ -2102,7 +2116,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 print("<ADIF_VER:5>2.2.0", end="\r\n", file=file_descriptor)
                 print("<EOH>", end="\r\n", file=file_descriptor)
                 for contact in log:
-
                     hiscall = contact.get("callsign")
                     hisclass = contact.get("class")
                     hissection = contact.get("section")
@@ -2411,7 +2424,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 print("ADDRESS-COUNTRY: ", end="\r\n", file=file_descriptor)
                 print("EMAIL: ", end="\r\n", file=file_descriptor)
                 for contact in log:
-
                     hiscall = contact.get("callsign")
                     hisclass = contact.get("class")
                     hissection = contact.get("section")
@@ -2548,7 +2560,6 @@ class EditQsoDialog(QtWidgets.QDialog):
             except OSError as err:
                 logger.warning("%s", err)
         if window.preference.get("send_n1mm_packets"):
-
             window.n1mm.contact_info["rxfreq"] = self.editFreq.text()[:-1]
             window.n1mm.contact_info["txfreq"] = self.editFreq.text()[:-1]
             window.n1mm.contact_info["mode"] = self.editMode.currentText().upper()
