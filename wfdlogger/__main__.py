@@ -1326,12 +1326,13 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         if self.mode != self.mode_selector.currentText():
             self.mode = self.mode_selector.currentText()
-            if self.mode == "PH":
-                if int(self.oldfreq) < 10000000:
-                    self.cat_control.set_mode("LSB")
-                else:
-                    self.cat_control.set_mode("USB")
-            self.cat_control.set_mode(self.mode)
+            if self.cat_control:
+                if self.mode == "PH":
+                    if int(self.oldfreq) < 10000000:
+                        self.cat_control.set_mode("LSB")
+                    else:
+                        self.cat_control.set_mode("USB")
+                self.cat_control.set_mode(self.mode)
             self.send_status_udp()
 
     def changepower(self):
