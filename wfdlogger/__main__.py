@@ -693,7 +693,7 @@ class MainWindow(QtWidgets.QMainWindow):
         Update local and UTC time on screen.
         """
         now = datetime.now().isoformat(" ")[5:19].replace("-", "/")
-        utcnow = datetime.now(dt.UTC).isoformat(" ")[5:19].replace("-", "/")
+        utcnow = datetime.now(dt.timezone.utc).isoformat(" ")[5:19].replace("-", "/")
         self.localtime.setText(now)
         self.utctime.setText(utcnow)
 
