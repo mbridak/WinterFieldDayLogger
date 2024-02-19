@@ -76,6 +76,7 @@ places in the code 'RTTY' is used and Bob's your dads brother.
 
 ## Recent Changes
 
+- [24.2.19] Fixed the fix for the datetime.utc deprecation. Older Python versions work again.
 - [24.1.27] Change band/mode when dropdowns are changed. removed some deprecations.
 - [23.2.3] Added visual cue as to validity of logged class and section.
 - [23.1.30] Changed Cabrillo tag 'CONTEST' to WFD.
