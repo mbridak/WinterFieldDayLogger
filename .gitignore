@@ -5,7 +5,6 @@ wfdlogger.egg-info
 wfdlogger/__pycache__
 dist
 cwmacros.txt
-rebuild.sh
 publish.sh
 <<<<<<< HEAD
 =======
