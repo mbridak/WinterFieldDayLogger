@@ -2729,11 +2729,12 @@ timer3.timeout.connect(window.send_status_udp)
 def run():
     """main entry point"""
     PATH = os.path.dirname(__loader__.get_filename())
-    os.system(
-        "xdg-icon-resource install --size 64 --context apps --mode user "
-        f"{PATH}/data/k6gte-wfdlogger.png k6gte-wfdlogger"
-    )
-    os.system(f"xdg-desktop-menu install {PATH}/data/k6gte-wfdlogger.desktop")
+    if sys.platform == "linux":
+        os.system(
+            "xdg-icon-resource install --size 64 --context apps --mode user "
+            f"{PATH}/data/k6gte-wfdlogger.png k6gte-wfdlogger"
+        )
+        os.system(f"xdg-desktop-menu install {PATH}/data/k6gte-wfdlogger.desktop")
     timer.start(1000)
     timer2.start(1000)
     timer3.start(15000)
